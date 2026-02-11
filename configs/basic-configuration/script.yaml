@@ -1,0 +1,23 @@
+name: Basic Configuration
+description: |
+  Configuración mínima esencial para empezar rápidamente con agentes de IA.
+
+  Características principales:
+  - Configuración ligera y rápida de instalar
+  - Plantilla base adaptable a cualquier proyecto
+  - Estructura simple con archivos esenciales
+  - Ideal para aprender el flujo de trabajo con agentes
+  - Punto de partida para configuraciones personalizadas
+
+  Estructura final generada:
+  └── AGENTS.md                 # Instrucciones del agente
+
+bootstrap: |
+  Ejecuta el archivo .teleprompter/basic-configuration/scaffolding/01-setup.md para comenzar la configuración inicial.
+
+criteria:
+  - Usar cuando se requiere una configuración básica y rápida
+  - Ideal para proyectos pequeños o personales
+  - Perfecto para primer contacto con agentes de IA
+  - Recomendado cuando no se necesita complejidad multi-agente
+  - Buena opción para prototipos y experimentación

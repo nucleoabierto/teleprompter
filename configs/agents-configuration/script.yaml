@@ -1,0 +1,28 @@
+name: Agents Configuration
+description: |
+  Configuración multi-agente con roles especializados (Product Manager, Developer, Code Reviewer, QA).
+  
+  Características principales:
+  - 4 agentes especializados con personalidades únicas
+  - Selección automática según la solicitud del usuario
+  - Archivos individuales mantenibles
+  - Proceso guiado con memoria compartida (context.md)
+  - Validación continua y recuperación automática
+  
+  Estructura final generada:
+  ├── AGENTS.md                 # Sistema de selección automática
+  └── agents/                   # 4 agentes especializados
+      ├── product-manager.md    # 🎯 Product Manager
+      ├── developer.md          # 💻 Developer
+      ├── code-reviewer.md      # 🔍 Code Reviewer
+      └── qa.md                 # 🧪 QA
+
+bootstrap: |
+  Ejecuta el archivo .teleprompter/agents-configuration/scaffolding/steps/00-overview.md para comenzar el proceso paso a paso.
+
+criteria:
+  - Usar cuando se requiere múltiples roles especializados de agentes
+  - Ideal para equipos de desarrollo completos
+  - Recomendado para proyectos que necesitan diferentes perspectivas técnicas
+  - Perfecto para proyectos complejos que requieren gestión especializada
+  - Superior a basic-configuration cuando se necesita automatización de selección
