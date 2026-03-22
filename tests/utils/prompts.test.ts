@@ -4,7 +4,7 @@ import { test, describe, mock } from 'node:test'
 import logger from '../../src/utils/logger.js'
 import { selectConfig, confirmInstallation } from '../../src/utils/prompts.js'
 
-import type { DetectedConfig } from '../../src/core/processor.js'
+import type { DetectedConfig } from '../../src/core/detector.js'
 
 // Mock interface para readline
 interface MockReadlineInterface {
@@ -41,7 +41,7 @@ describe('Prompts', () => {
         close: mock.fn(),
       } as any))
 
-      const result = await confirmInstallation([mockConfig], '/target', { createInterface: createInterfaceMock })
+      const result = await confirmInstallation([mockConfig], { createInterface: createInterfaceMock })
 
       assert.strictEqual(result, true)
     })
@@ -53,7 +53,7 @@ describe('Prompts', () => {
         close: mock.fn(),
       } as any))
 
-      const result = await confirmInstallation([mockConfig], '/target', { createInterface: createInterfaceMock })
+      const result = await confirmInstallation([mockConfig], { createInterface: createInterfaceMock })
 
       assert.strictEqual(result, true)
     })
@@ -65,7 +65,7 @@ describe('Prompts', () => {
         close: mock.fn(),
       } as any))
 
-      const result = await confirmInstallation([mockConfig], '/target', { createInterface: createInterfaceMock })
+      const result = await confirmInstallation([mockConfig], { createInterface: createInterfaceMock })
 
       assert.strictEqual(result, true)
     })
@@ -77,7 +77,7 @@ describe('Prompts', () => {
         close: mock.fn(),
       } as any))
 
-      const result = await confirmInstallation([mockConfig], '/target', { createInterface: createInterfaceMock })
+      const result = await confirmInstallation([mockConfig], { createInterface: createInterfaceMock })
 
       assert.strictEqual(result, false)
     })
@@ -91,7 +91,7 @@ describe('Prompts', () => {
 
       const configs = [mockConfig, { ...mockConfig, name: 'Config 2', slug: 'config-2', folderName: 'config-2' }]
 
-      await confirmInstallation(configs, '/target', { createInterface: createInterfaceMock })
+      await confirmInstallation(configs, { createInterface: createInterfaceMock })
 
       assert.strictEqual(createInterfaceMock.mock.callCount(), 1)
     })

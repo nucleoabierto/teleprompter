@@ -19,7 +19,7 @@ interface Options {
 export interface ListDeps {
   loadInstalledConfigs: (dir?: string, deps?: SharedDeps) => Promise<DetectedConfig[]>
   listCachedRepos: typeof listCachedRepos
-  downloadRepo: typeof downloadRepo
+  downloadRepo: (owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<{ path: string; fromCache: boolean }>
   detectConfigs: typeof detectConfigs
   parseRepo: typeof parseRepo
   exit: (code: number) => void
@@ -46,11 +46,7 @@ function formatInstallInstruction(
     return 'Ya instalada en este proyecto'
   }
 
-  if (sourceType === 'cached' && repoString) {
-    return `Usa: npx teleprompter ${repoString} --config "${configName}"`
-  }
-
-  if (sourceType === 'remote' && repoString) {
+  if (repoString) {
     return `Usa: npx teleprompter ${repoString} --config "${configName}"`
   }
 
@@ -162,23 +158,8 @@ async function listRemoteConfigs(
   try {
     const { owner, repo } = deps.parseRepo(repoString)
 
-    // Check cache first if enabled
-    if (options.cache !== false) {
-      const cached = await deps.listCachedRepos()
-      const existingCache = cached.find(
-        (r) => r.owner === owner && r.repo === repo && r.branch === (options.branch ?? 'main')
-      )
-
-      if (existingCache) {
-        logger.info(`Usando repositorio en caché: ${repoString}`)
-        const configs = await deps.detectConfigs(existingCache.extractedPath)
-        displayConfigs(configs, 'remote', repoString, options)
-        return
-      }
-    }
-
-    // Download if not in cache or cache disabled
-    const extractedPath = await deps.downloadRepo(owner, repo, options.branch, options.cache)
+    // downloadRepo handles cache internally (ETag validation + persistence)
+    const { path: extractedPath } = await deps.downloadRepo(owner, repo, options.branch, options.cache)
     const configs = await deps.detectConfigs(extractedPath)
 
     if (configs.length === 0) {

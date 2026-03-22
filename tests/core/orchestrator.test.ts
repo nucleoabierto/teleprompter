@@ -7,7 +7,7 @@ import * as orchestrator from '../../src/core/orchestrator.js'
 import logger from '../../src/utils/logger.js'
 
 import type { OrchestratorDeps } from '../../src/core/orchestrator.js'
-import type { DetectedConfig } from '../../src/core/processor.js'
+import type { DetectedConfig } from '../../src/core/detector.js'
 
 describe('Orchestrator', () => {
   const mockConfig: DetectedConfig = {
@@ -21,7 +21,7 @@ describe('Orchestrator', () => {
   const removeMock = mock.fn(async () => {})
   const detectConfigsMock = mock.fn(async () => [mockConfig])
   const copyConfigMock = mock.fn(async () => {})
-  const downloadRepoMock = mock.fn(async () => '/tmp/mock-repo')
+  const downloadRepoMock = mock.fn(async () => ({ path: '/tmp/mock-repo', fromCache: false }))
   const selectConfigMock = mock.fn(async () => mockConfig)
   const confirmInstallationMock = mock.fn(async () => true)
 
@@ -69,13 +69,14 @@ describe('Orchestrator', () => {
 
       await assert.rejects(
         async () => await orchestrator.installConfiguration('owner/repo', {}, deps),
-        /No se encontraron configuraciones válidas en el repositorio/
+        /No se encontraron configuraciones válidas en/
       )
     })
 
-    test('debe instalar configuración única de repo remoto', async () => {
+    test('debe instalar configuración única de repo remoto (sin caché: elimina temp)', async () => {
       const deps = {
         ...mockDeps,
+        downloadRepo: mock.fn(async () => ({ path: '/tmp/mock-repo', fromCache: false })),
         detectConfigs: mock.fn(async () => [mockConfig]),
         copyConfig: mock.fn(async () => {}),
         remove: mock.fn(async () => {}),
@@ -87,10 +88,26 @@ describe('Orchestrator', () => {
       assert.strictEqual(deps.remove.mock.callCount(), 1)
     })
 
+    test('debe instalar configuración única de repo remoto (desde caché: no elimina)', async () => {
+      const deps = {
+        ...mockDeps,
+        downloadRepo: mock.fn(async () => ({ path: '/cache/mock-repo', fromCache: true })),
+        detectConfigs: mock.fn(async () => [mockConfig]),
+        copyConfig: mock.fn(async () => {}),
+        remove: mock.fn(async () => {}),
+      }
+
+      await orchestrator.installConfiguration('owner/repo', {}, deps)
+
+      assert.strictEqual(deps.copyConfig.mock.callCount(), 1)
+      assert.strictEqual(deps.remove.mock.callCount(), 0)
+    })
+
     test('debe instalar múltiples configuraciones de repo remoto con confirmación', async () => {
       const configs = [mockConfig, { ...mockConfig, name: 'Config 2', slug: 'config-2', folderName: 'config-2' }]
       const deps = {
         ...mockDeps,
+        downloadRepo: mock.fn(async () => ({ path: '/tmp/mock-repo', fromCache: false })),
         detectConfigs: mock.fn(async () => configs),
         copyConfig: mock.fn(async () => {}),
         remove: mock.fn(async () => {}),
@@ -109,7 +126,7 @@ describe('Orchestrator', () => {
 
       await assert.rejects(
         async () => await orchestrator.installConfiguration(undefined, {}, deps),
-        /No se encontraron configuraciones locales/
+        /No se encontraron configuraciones válidas en/
       )
     })
 
@@ -194,7 +211,7 @@ describe('Orchestrator', () => {
     test('debe propagar errores correctamente', async () => {
       const deps = {
         ...mockDeps,
-        downloadRepo: mock.fn(async () => {
+        downloadRepo: mock.fn(async (): Promise<{ path: string; fromCache: boolean }> => {
           throw new Error('Download failed')
         }),
       }

@@ -34,9 +34,10 @@ export interface CacheDeps {
   writeJson: (path: string, data: unknown) => Promise<void>
   remove: (path: string) => Promise<void>
   readdir: (path: string) => Promise<string[]>
+  move: (src: string, dest: string, options?: { overwrite?: boolean }) => Promise<void>
 }
 
-const { ensureDir, pathExists, readJson, writeJson, remove, readdir } = fs
+const { ensureDir, pathExists, readJson, writeJson, remove, readdir, move } = fs
 
 const defaultDeps: CacheDeps = {
   ensureDir: ensureDir.bind(fs),
@@ -45,6 +46,7 @@ const defaultDeps: CacheDeps = {
   writeJson: writeJson.bind(fs),
   remove: remove.bind(fs),
   readdir: readdir.bind(fs),
+  move: move.bind(fs),
 }
 
 /**
@@ -128,7 +130,9 @@ async function getCachedRepo(
 }
 
 /**
- * Save repository to cache with metadata
+ * Save repository to cache with metadata.
+ * Moves the extracted directory into the cache dir so it persists across runs.
+ * Returns the permanent cache path where the repo now lives.
  */
 async function saveToCache(
   owner: string,
@@ -138,11 +142,16 @@ async function saveToCache(
   etag: string,
   commitSha?: string,
   deps: CacheDeps = defaultDeps
-): Promise<void> {
+): Promise<string> {
   const cacheDir = getCacheDir()
   const cacheKey = generateCacheKey(owner, repo, branch)
 
   await deps.ensureDir(cacheDir)
+
+  const cachePath = path.join(cacheDir, cacheKey)
+
+  // Move extracted directory to permanent cache location
+  await deps.move(extractedPath, cachePath, { overwrite: true })
 
   const metadata: CacheMetadata = {
     owner,
@@ -155,6 +164,8 @@ async function saveToCache(
 
   const metadataPath = path.join(cacheDir, `${cacheKey}.json`)
   await deps.writeJson(metadataPath, metadata)
+
+  return cachePath
 }
 
 /**
@@ -183,12 +194,15 @@ async function clearAllCache(deps: CacheDeps = defaultDeps): Promise<number> {
   }
 
   const entries = await deps.readdir(cacheDir)
+  // Count only metadata files — each represents one cached repo
+  const metadataFiles = entries.filter(e => e.endsWith('.json'))
   let count = 0
 
   for (const entry of entries) {
     await deps.remove(path.join(cacheDir, entry)).catch(() => { /* ignore */ })
-    count++
   }
+
+  count = metadataFiles.length
 
   return count
 }
@@ -198,14 +212,13 @@ async function clearAllCache(deps: CacheDeps = defaultDeps): Promise<number> {
  */
 async function getCacheStats(deps: CacheDeps = defaultDeps): Promise<{
   entryCount: number
-  totalSize: number
   entries: { key: string; cachedAt: string; etag: string }[]
 }> {
   const cacheDir = getCacheDir()
   const entries: { key: string; cachedAt: string; etag: string }[] = []
 
   if (!await deps.pathExists(cacheDir)) {
-    return { entryCount: 0, totalSize: 0, entries }
+    return { entryCount: 0, entries }
   }
 
   const files = await deps.readdir(cacheDir)
@@ -226,7 +239,6 @@ async function getCacheStats(deps: CacheDeps = defaultDeps): Promise<{
 
   return {
     entryCount: entries.length,
-    totalSize: 0, // Could implement size calculation if needed
     entries,
   }
 }

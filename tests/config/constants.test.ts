@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { test, describe } from 'node:test'
 
-import { generateSlug, getBasicConfigPath, getConfigsPath, TELEPROMPTER_DIR, BASIC_CONFIG_SLUG } from '../../src/config/constants.js'
+import { generateSlug, getConfigsPath, TELEPROMPTER_DIR, BASIC_CONFIG_SLUG } from '../../src/config/constants.js'
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
@@ -96,15 +96,6 @@ describe('Constants', () => {
   })
 
   describe('Path functions (integración)', () => {
-    test('getBasicConfigPath debe apuntar a una configuración válida con script.yaml', async () => {
-      const path = getBasicConfigPath()
-      const fs = await import('node:fs/promises')
-
-      const scriptPath = `${path}/script.yaml`
-      const stats = await fs.stat(scriptPath).catch(() => undefined)
-      assert.ok(stats?.isFile(), 'El path debe contener un script.yaml válido')
-    })
-
     test('getConfigsPath debe apuntar a directorio con configuraciones válidas', async () => {
       const path = getConfigsPath()
       const fs = await import('node:fs/promises')

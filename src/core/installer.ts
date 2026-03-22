@@ -2,6 +2,7 @@ import path from 'path'
 
 import fs from 'fs-extra'
 
+import { ConfigAlreadyExistsError } from '../utils/errors.js'
 import logger, { getErrorMessage } from '../utils/logger.js'
 
 export interface InstallerDeps {
@@ -36,7 +37,7 @@ async function copyConfig(
     // Verificar si ya existe
     if (await deps.pathExists(targetPath)) {
       if (!force) {
-        throw new Error(`La configuración ya existe en ${targetPath}. Use --force para sobrescribir.`)
+        throw ConfigAlreadyExistsError(targetPath)
       }
       logger.warning(`Sobrescribiendo configuración existente en ${targetPath}`)
       await deps.remove(targetPath)

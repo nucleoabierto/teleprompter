@@ -1,5 +1,6 @@
 import os from 'os'
 import path from 'path'
+import { createRequire } from 'node:module'
 
 import fs from 'fs-extra'
 import * as tar from 'tar'
@@ -7,6 +8,9 @@ import * as tar from 'tar'
 import { getCachedRepo, saveToCache } from '../utils/cache.js'
 import { getTarballUrl } from '../utils/github.js'
 import logger, { getErrorMessage } from '../utils/logger.js'
+
+const require = createRequire(import.meta.url)
+const packageJson = require('../../package.json') as { version: string }
 
 export interface DownloaderDeps {
   mkdtemp: (prefix: string) => Promise<string>
@@ -64,13 +68,18 @@ export async function isCacheValid(
 }
 
 /**
- * Descarga y extrae un repositorio de GitHub con soporte de caché
+ * Descarga y extrae un repositorio de GitHub con soporte de caché.
+ * Cuando useCache=true y el repo se descarga por primera vez, los archivos
+ * se mueven al directorio de caché permanente y se retorna ese path.
+ * Cuando hay un hit de caché válido, se retorna directamente el path en caché.
+ * En ambos casos cacheados, el llamador NO debe eliminar el path retornado.
+ *
  * @param owner - Propietario del repositorio GitHub
  * @param repo - Nombre del repositorio
  * @param branch - Rama a descargar (por defecto: 'main')
  * @param useCache - Si se debe usar caché (por defecto: true)
  * @param deps - Dependencias inyectables para testing
- * @returns Promise<string> - Ruta al directorio extraído
+ * @returns Promise<{ path: string; fromCache: boolean }> - Ruta al directorio y si viene del caché
  */
 async function downloadRepo(
   owner: string,
@@ -78,7 +87,7 @@ async function downloadRepo(
   branch = 'main',
   useCache = true,
   deps: DownloaderDeps = defaultDeps
-): Promise<string> {
+): Promise<{ path: string; fromCache: boolean }> {
   try {
     const url = getTarballUrl(owner, repo, branch)
 
@@ -94,7 +103,7 @@ async function downloadRepo(
 
         if (cacheValid) {
           logger.success(`Usando repositorio en caché: ${cached.extractedPath}`)
-          return cached.extractedPath
+          return { path: cached.extractedPath, fromCache: true }
         }
 
         logger.info('Caché desactualizado, descargando nueva versión...')
@@ -114,7 +123,7 @@ async function downloadRepo(
       response = await deps.fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'teleprompter-cli/0.1.0',
+          'User-Agent': `teleprompter-cli/${packageJson.version}`,
         },
       })
       clearTimeout(timeoutId)
@@ -151,14 +160,18 @@ async function downloadRepo(
     // Limpiar el tarball
     await deps.remove(tarballPath)
 
-    // Save to cache if enabled
+    // Save to cache if enabled: moves extractDir to cache dir, returns permanent path
     if (useCache) {
-      await deps.saveToCache(owner, repo, branch, extractDir, etag)
+      const cachePath = await deps.saveToCache(owner, repo, branch, extractDir, etag)
+      // Remove the now-empty temp dir (extractDir was moved)
+      await deps.remove(tempDir).catch(() => { /* ignore if already gone */ })
       logger.info('Guardado en caché para uso futuro')
+      logger.success(`Repositorio en caché: ${cachePath}`)
+      return { path: cachePath, fromCache: false }
     }
 
     logger.success(`Repositorio descargado en: ${extractDir}`)
-    return extractDir
+    return { path: extractDir, fromCache: false }
   } catch (error) {
     logger.error(`Error al descargar repositorio: ${getErrorMessage(error)}`)
     throw error

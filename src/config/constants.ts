@@ -19,14 +19,6 @@ function generateSlug(name: string): string {
 }
 
 /**
- * Obtiene la ruta absoluta a la configuración básica
- */
-function getBasicConfigPath(): string {
-  const baseDir = path.dirname(fileURLToPath(import.meta.url))
-  return path.resolve(baseDir, '../../configs/basic-configuration')
-}
-
-/**
  * Obtiene la ruta absoluta al directorio de configuraciones
  */
 function getConfigsPath(): string {
@@ -46,7 +38,6 @@ const BASIC_CONFIG_SLUG = generateSlug('basic-configuration')
 
 export {
   generateSlug,
-  getBasicConfigPath,
   getConfigsPath,
   TELEPROMPTER_DIR,
   BASIC_CONFIG_SLUG,

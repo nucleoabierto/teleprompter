@@ -1,3 +1,5 @@
+import { InvalidRepoFormatError } from './errors.js'
+
 /**
  * Validates owner/repo format
  */
@@ -27,7 +29,7 @@ function getTarballUrl(owner: string, repo: string, branch = 'main'): string {
  */
 function parseRepo(repoString: string): { owner: string, repo: string } {
   if (!validateRepoFormat(repoString)) {
-    throw new Error('Formato de repositorio inválido. Use: owner/repo')
+    throw InvalidRepoFormatError(repoString)
   }
 
   const [owner, repo] = repoString.split('/')

@@ -30,7 +30,7 @@ describe('Downloader', () => {
   })
 
   const getCachedRepoMock = mock.fn(async () => undefined)
-  const saveToCacheMock = mock.fn(async () => {})
+  const saveToCacheMock = mock.fn(async () => '/cache/owner-repo-main')
 
   const mockDeps: DownloaderDeps = {
     mkdtemp: mkdtempMock,
@@ -173,7 +173,8 @@ describe('Downloader', () => {
       const result = await downloadRepo('owner', 'repo', 'main', true, deps)
 
       // Should use cache since ETag matches
-      assert.strictEqual(result, cachedPath)
+      assert.strictEqual(result.path, cachedPath)
+      assert.strictEqual(result.fromCache, true)
     })
 
     test('debe usar caché cuando isCacheValid retorna true', async () => {
@@ -207,7 +208,8 @@ describe('Downloader', () => {
 
       const result = await downloadRepo('owner', 'repo', 'main', true, deps)
 
-      assert.strictEqual(result, cachedPath)
+      assert.strictEqual(result.path, cachedPath)
+      assert.strictEqual(result.fromCache, true)
       // HEAD request para validar
       assert.strictEqual(fetchWithCacheHit.mock.callCount(), 1)
       // No debe descargar
@@ -242,13 +244,14 @@ describe('Downloader', () => {
         ...mockDeps,
         getCachedRepo: getCachedRepoStaleMock,
         fetch: fetchWithCacheStale,
+        saveToCache: mock.fn(async () => '/cache/owner-repo-main'),
       }
 
       const result = await downloadRepo('owner', 'repo', 'main', true, deps)
 
-      // Descarga nueva versión (diferente path)
-      assert.notStrictEqual(result, cachedPath)
-      assert.strictEqual(result.includes('/tmp/teleprompter-'), true)
+      // Descarga nueva versión y guarda en caché — retorna path de caché
+      assert.notStrictEqual(result.path, cachedPath)
+      assert.strictEqual(result.fromCache, false)
       // HEAD + GET
       assert.strictEqual(fetchWithCacheStale.mock.callCount(), 2)
       assert.strictEqual(writeFileMock.mock.callCount(), 1)
@@ -258,11 +261,11 @@ describe('Downloader', () => {
     test('debe crear directorio temporal y extraer tarball', async () => {
       const result = await downloadRepo('owner', 'repo', 'main', true, mockDeps)
 
-      assert.strictEqual(result.includes('/tmp/teleprompter-'), true)
+      assert.strictEqual(result.fromCache, false)
+      assert.ok(result.path.length > 0)
       assert.strictEqual(mkdtempMock.mock.callCount(), 1)
       assert.strictEqual(writeFileMock.mock.callCount(), 1)
       assert.strictEqual(extractMock.mock.callCount(), 1)
-      assert.strictEqual(removeMock.mock.callCount(), 1)
     })
 
     test('debe usar rama personalizada', async () => {

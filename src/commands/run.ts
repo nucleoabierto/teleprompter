@@ -1,11 +1,7 @@
 import { installConfiguration } from '../core/orchestrator.js'
 import logger, { getErrorMessage } from '../utils/logger.js'
 
-interface Options {
-  dir?: string
-  force?: boolean
-  branch?: string
-}
+import type { OrchestratorOptions } from '../core/orchestrator.js'
 
 export interface RunDeps {
   installConfiguration: typeof installConfiguration
@@ -22,7 +18,7 @@ const defaultDeps: RunDeps = {
  */
 async function runCommand(
   repo: string | undefined,
-  options: Options,
+  options: OrchestratorOptions,
   deps: RunDeps = defaultDeps
 ): Promise<void> {
   try {

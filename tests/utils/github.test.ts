@@ -88,25 +88,25 @@ describe('GitHub Utils', () => {
 
     test('throws error for single component', () => {
       assert.throws(() => parseRepo('owner'), {
-        message: 'Formato de repositorio inválido. Use: owner/repo',
+        message: /Formato de repositorio inválido/,
       })
     })
 
     test('throws error for more than two components', () => {
       assert.throws(() => parseRepo('owner/repo/extra'), {
-        message: 'Formato de repositorio inválido. Use: owner/repo',
+        message: /Formato de repositorio inválido/,
       })
     })
 
     test('throws error for empty string', () => {
       assert.throws(() => parseRepo(''), {
-        message: 'Formato de repositorio inválido. Use: owner/repo',
+        message: /Formato de repositorio inválido/,
       })
     })
 
     test('throws error for whitespace-only string', () => {
       assert.throws(() => parseRepo('   '), {
-        message: 'Formato de repositorio inválido. Use: owner/repo',
+        message: /Formato de repositorio inválido/,
       })
     })
   })

@@ -3,13 +3,15 @@ import path from 'path'
 import fs from 'fs-extra'
 
 import downloadRepo from './downloader.js'
-import { copyConfig, detectConfigs } from './processor.js'
+import { detectConfigs } from './detector.js'
+import { copyConfig } from './installer.js'
 import { TELEPROMPTER_DIR, getConfigsPath } from '../config/constants.js'
+import { NoConfigsFoundError, ConfigFilterNoMatchError } from '../utils/errors.js'
 import { parseRepo } from '../utils/github.js'
 import logger from '../utils/logger.js'
 import { selectConfig, confirmInstallation } from '../utils/prompts.js'
 
-import type { DetectedConfig } from './processor.js'
+import type { DetectedConfig } from './detector.js'
 
 export interface OrchestratorOptions {
   dir?: string
@@ -24,9 +26,9 @@ export interface OrchestratorDeps {
   remove: (path: string) => Promise<void>
   detectConfigs: (sourcePath: string) => Promise<DetectedConfig[]>
   copyConfig: (sourcePath: string, targetPath: string, force?: boolean) => Promise<void>
-  downloadRepo: (owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<string>
+  downloadRepo: (owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<{ path: string; fromCache: boolean }>
   selectConfig: (configs: DetectedConfig[]) => Promise<DetectedConfig>
-  confirmInstallation: (configs: DetectedConfig[], targetDir: string) => Promise<boolean>
+  confirmInstallation: (configs: DetectedConfig[]) => Promise<boolean>
 }
 
 const { remove } = fs
@@ -97,6 +99,7 @@ export async function installConfiguration(
   const teleprompterDir = path.join(targetDir, TELEPROMPTER_DIR)
 
   let sourcePath: string
+  let fromCache = false
   let configs: DetectedConfig[]
 
   const repoString = typeof repo === 'string' && repo.length > 0 ? repo : undefined
@@ -105,11 +108,13 @@ export async function installConfiguration(
     const { owner, repo: repoName } = parseRepo(repoString)
     const branch = options.branch ?? 'main'
     const useCache = options.cache ?? true
-    sourcePath = await deps.downloadRepo(owner, repoName, branch, useCache)
+    const result = await deps.downloadRepo(owner, repoName, branch, useCache)
+    sourcePath = result.path
+    fromCache = result.fromCache
     configs = await deps.detectConfigs(sourcePath)
 
     if (configs.length === 0) {
-      throw new Error('No se encontraron configuraciones válidas en el repositorio')
+      throw NoConfigsFoundError(repoString)
     }
   } else {
     // Usar configuraciones locales
@@ -117,7 +122,7 @@ export async function installConfiguration(
     configs = await deps.detectConfigs(sourcePath)
 
     if (configs.length === 0) {
-      throw new Error('No se encontraron configuraciones locales')
+      throw NoConfigsFoundError('configuraciones locales')
     }
   }
 
@@ -125,7 +130,7 @@ export async function installConfiguration(
   configs = filterConfigs(configs, options.config)
 
   if (configs.length === 0) {
-    throw new Error(`No se encontraron configuraciones que coincidan con "${options.config}"`)
+    throw ConfigFilterNoMatchError(options.config ?? '')
   }
 
   // Mode: Select (interactive selection)
@@ -138,7 +143,7 @@ export async function installConfiguration(
   showPreview(configs, targetDir)
 
   // Confirm installation unless --force is used
-  const shouldInstall = options.force ?? await deps.confirmInstallation(configs, targetDir)
+  const shouldInstall = options.force ?? await deps.confirmInstallation(configs)
 
   if (!shouldInstall) {
     logger.info('Instalación cancelada')
@@ -160,9 +165,9 @@ export async function installConfiguration(
     })
   }
 
-  // Limpiar directorio temporal (solo para repos descargados)
-  if (repoString) {
-    await deps.remove(sourcePath)
+  // Limpiar directorio temporal solo si fue descargado fresco sin caché
+  if (repoString && !fromCache) {
+    await deps.remove(sourcePath).catch(() => { /* ignore: may have been moved to cache */ })
   }
 
   logger.success(`\n¡${configs.length} configuración(es) instalada(s) correctamente!`)

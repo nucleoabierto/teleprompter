@@ -157,8 +157,11 @@ describe('Cache', () => {
   })
 
   describe('saveToCache', () => {
-    test('debe guardar metadata correctamente', async () => {
+    test('debe mover archivos y guardar metadata correctamente', async () => {
       const mockWriteJson = mock.fn(async () => {
+        // Mock implementation - no operation needed
+      })
+      const mockMove = mock.fn(async () => {
         // Mock implementation - no operation needed
       })
       const mockDeps = {
@@ -166,10 +169,14 @@ describe('Cache', () => {
           // Mock implementation - no operation needed
         }),
         writeJson: mockWriteJson,
+        move: mockMove,
       }
 
-      await saveToCache('owner', 'repo', 'main', '/extracted/path', '"abc123"', 'commit-sha', mockDeps as any)
+      const result = await saveToCache('owner', 'repo', 'main', '/extracted/path', '"abc123"', 'commit-sha', mockDeps as any)
 
+      // Debe mover archivos al directorio de caché
+      assert.strictEqual(mockMove.mock.callCount(), 1)
+      // Debe escribir metadata
       assert.strictEqual(mockWriteJson.mock.callCount(), 1)
 
       const call = mockWriteJson.mock.calls[0] as any
@@ -177,6 +184,9 @@ describe('Cache', () => {
       assert.strictEqual(call.arguments[1].owner, 'owner')
       assert.strictEqual(call.arguments[1].repo, 'repo')
       assert.strictEqual(call.arguments[1].etag, '"abc123"')
+
+      // Debe retornar el path de caché
+      assert.ok(typeof result === 'string' && result.length > 0)
     })
   })
 
@@ -220,20 +230,23 @@ describe('Cache', () => {
       assert.strictEqual(result, 0)
     })
 
-    test('debe limpiar todas las entradas', async () => {
+    test('debe limpiar todas las entradas y contar solo repos (archivos .json)', async () => {
       const mockRemove = mock.fn(async () => {
         // Mock implementation - no operation needed
       })
       const mockDeps = {
         pathExists: mock.fn(async () => true),
-        readdir: mock.fn(async () => ['file1.json', 'file2.tar.gz', 'dir1']),
+        // 2 repos: 2 JSON + 2 dirs; 1 JSON = 1 repo counted
+        readdir: mock.fn(async () => ['repo1.json', 'repo1', 'repo2.json', 'repo2']),
         remove: mockRemove,
       }
 
       const result = await clearAllCache(mockDeps as any)
 
-      assert.strictEqual(result, 3)
-      assert.strictEqual(mockRemove.mock.callCount(), 3)
+      // Should return number of repos (JSON files), not total files
+      assert.strictEqual(result, 2)
+      // All files/dirs are removed
+      assert.strictEqual(mockRemove.mock.callCount(), 4)
     })
   })
 

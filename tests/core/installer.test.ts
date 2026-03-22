@@ -73,7 +73,7 @@ describe('Installer', () => {
 
       await assert.rejects(
         async () => await copyConfig(sourceDir, path.join(targetDir, 'existing'), false, mockDeps),
-        /La configuración ya existe en .*\. Use --force para sobrescribir\./
+        /La configuración ya existe en/
       )
 
       assert.strictEqual(ensureDirMock.mock.callCount(), 0)

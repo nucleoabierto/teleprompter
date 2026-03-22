@@ -7,7 +7,7 @@ import listCommand from '../../src/commands/list.js'
 import logger from '../../src/utils/logger.js'
 
 import type { ListDeps } from '../../src/commands/list.js'
-import type { DetectedConfig } from '../../src/core/processor.js'
+import type { DetectedConfig } from '../../src/core/detector.js'
 
 describe('List Command', () => {
   const loadInstalledConfigsMock = mock.fn<() => Promise<DetectedConfig[]>>(async () => [])
@@ -18,7 +18,7 @@ describe('List Command', () => {
     extractedPath: string
     cachedAt: string
   }[]>>(async () => [])
-  const downloadRepoMock = mock.fn<(owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<string>>(async () => '/mock/path')
+  const downloadRepoMock = mock.fn<(owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<{ path: string; fromCache: boolean }>>(async () => ({ path: '/mock/path', fromCache: false }))
   const detectConfigsMock = mock.fn<(sourcePath: string) => Promise<DetectedConfig[]>>(async () => [])
   const parseRepoMock = mock.fn<(repoString: string) => { owner: string, repo: string }>((repoString: string) => {
     const [owner, repo] = repoString.split('/')
@@ -227,34 +227,23 @@ describe('List Command', () => {
   })
 
   // Tests for remote listing mode
+  // Note: cache management is delegated to downloadRepo internally (ETag validation)
   describe('remote listing', () => {
-    test('debe usar cache si está disponible para repositorio remoto', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [
-        { owner: 'owner', repo: 'repo', branch: 'main', extractedPath: '/cache/repo', cachedAt: '2024-01-01T00:00:00Z' },
-      ])
-      detectConfigsMock.mock.mockImplementation(async () => [mockConfig])
-      const infoMock = mock.method(logger, 'info', () => {})
-
-      await listCommand('owner/repo', { branch: 'main', cache: true }, mockDeps)
-
-      assert.strictEqual(listCachedReposMock.mock.callCount(), 1)
-      assert.strictEqual(downloadRepoMock.mock.callCount(), 0) // No debe descargar
-      assert.strictEqual(detectConfigsMock.mock.callCount(), 1)
-
-      const infoCalls = infoMock.mock.calls
-      assert.ok(infoCalls[0]?.arguments[0]?.includes('Usando repositorio en caché'))
-    })
-
-    test('debe descargar si no está en cache', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [])
-      downloadRepoMock.mock.mockImplementation(async () => '/downloaded/path')
+    test('debe llamar a downloadRepo para repositorio remoto', async () => {
+      downloadRepoMock.mock.mockImplementation(async () => ({ path: '/downloaded/path', fromCache: false }))
       detectConfigsMock.mock.mockImplementation(async () => [mockConfig])
 
       await listCommand('owner/repo', { branch: 'main', cache: true }, mockDeps)
 
-      assert.strictEqual(listCachedReposMock.mock.callCount(), 1)
       assert.strictEqual(downloadRepoMock.mock.callCount(), 1)
       assert.strictEqual(detectConfigsMock.mock.callCount(), 1)
+    })
+
+    test('debe pasar parámetros correctamente a downloadRepo', async () => {
+      downloadRepoMock.mock.mockImplementation(async () => ({ path: '/downloaded/path', fromCache: false }))
+      detectConfigsMock.mock.mockImplementation(async () => [mockConfig])
+
+      await listCommand('owner/repo', { branch: 'main', cache: true }, mockDeps)
 
       const { calls } = downloadRepoMock.mock
       assert.strictEqual(calls[0]?.arguments[0], 'owner')
@@ -263,8 +252,7 @@ describe('List Command', () => {
     })
 
     test('debe salir con error si no hay configuraciones válidas en repositorio remoto', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [])
-      downloadRepoMock.mock.mockImplementation(async () => '/downloaded/path')
+      downloadRepoMock.mock.mockImplementation(async () => ({ path: '/downloaded/path', fromCache: false }))
       detectConfigsMock.mock.mockImplementation(async () => [])
 
       await listCommand('owner/repo', { branch: 'main', cache: true }, mockDeps)
@@ -274,8 +262,7 @@ describe('List Command', () => {
     })
 
     test('debe pasar branch correctamente', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [])
-      downloadRepoMock.mock.mockImplementation(async () => '/downloaded/path')
+      downloadRepoMock.mock.mockImplementation(async () => ({ path: '/downloaded/path', fromCache: false }))
       detectConfigsMock.mock.mockImplementation(async () => [mockConfig])
 
       await listCommand('owner/repo', { branch: 'dev', cache: true }, mockDeps)
@@ -285,8 +272,7 @@ describe('List Command', () => {
     })
 
     test('debe mostrar instrucción de instalación para repositorio remoto', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [])
-      downloadRepoMock.mock.mockImplementation(async () => '/downloaded/path')
+      downloadRepoMock.mock.mockImplementation(async () => ({ path: '/downloaded/path', fromCache: false }))
       detectConfigsMock.mock.mockImplementation(async () => [mockConfig])
       const plainMock = mock.method(logger, 'plain', () => {})
 
@@ -299,7 +285,6 @@ describe('List Command', () => {
     })
 
     test('debe manejar error de descarga en listado remoto', async () => {
-      listCachedReposMock.mock.mockImplementation(async () => [])
       downloadRepoMock.mock.mockImplementation(async () => {
         throw new Error('Network error')
       })

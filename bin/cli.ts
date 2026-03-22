@@ -7,6 +7,7 @@ import { Command } from 'commander'
 import bootstrapCommand from '#src/commands/bootstrap'
 import listCommand from '#src/commands/list'
 import runCommand from '#src/commands/run'
+import logger from '#src/utils/logger'
 
 const require = createRequire(import.meta.url)
 const packageJson = require('../package.json')
@@ -39,7 +40,10 @@ Ejemplos:
   .option('--select', 'Seleccionar interactivamente qué configuraciones instalar', false)
   .option('--config <name>', 'Filtrar configuraciones por nombre', '')
   .option('-v, --verbose', 'Mostrar información detallada para debugging', false)
-  .action((repo, options) => runCommand(repo, options))
+  .action((repo: string | undefined, options: Record<string, unknown>) => {
+    logger.setVerbose(options['verbose'] === true)
+    runCommand(repo, options)
+  })
 
 program
   .command('list')
@@ -61,7 +65,10 @@ Ejemplos:
   .option('-b, --branch <branch>', 'Rama del repositorio GitHub a usar (solo con repo)', 'main')
   .option('--no-cache', 'Desactivar caché al listar repositorio remoto')
   .option('-v, --verbose', 'Mostrar información detallada para debugging', false)
-  .action((repo, options) => listCommand(repo, options))
+  .action((repo: string | undefined, options: Record<string, unknown>) => {
+    logger.setVerbose(options['verbose'] === true)
+    listCommand(repo, options)
+  })
 
 program
   .command('bootstrap')
@@ -73,6 +80,10 @@ Ejemplos:
   $ teleprompter bootstrap
   `)
   .option('-d, --dir <path>', 'Directorio base del proyecto', process.cwd())
-  .action(bootstrapCommand)
+  .option('-v, --verbose', 'Mostrar información detallada para debugging', false)
+  .action((options: Record<string, unknown>) => {
+    logger.setVerbose(options['verbose'] === true)
+    bootstrapCommand(options)
+  })
 
 program.parse()

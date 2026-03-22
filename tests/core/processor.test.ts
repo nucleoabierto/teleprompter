@@ -5,7 +5,9 @@ import path from 'path'
 
 import fs from 'fs-extra'
 
-import { copyConfig, detectConfigs, validateScriptYaml } from '../../src/core/processor.js'
+import { copyConfig } from '../../src/core/installer.js'
+import { detectConfigs } from '../../src/core/detector.js'
+import { validateScriptYaml } from '../../src/core/validator.js'
 
 /* eslint-disable @typescript-eslint/no-floating-promises, @typescript-eslint/no-non-null-assertion */
 

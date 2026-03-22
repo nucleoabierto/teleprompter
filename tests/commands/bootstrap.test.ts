@@ -7,7 +7,7 @@ import bootstrapCommand from '../../src/commands/bootstrap.js'
 import logger from '../../src/utils/logger.js'
 
 import type { BootstrapDeps } from '../../src/commands/bootstrap.js'
-import type { DetectedConfig } from '../../src/core/processor.js'
+import type { DetectedConfig } from '../../src/core/detector.js'
 
 describe('Bootstrap Command', () => {
   const loadInstalledConfigsMock = mock.fn<() => Promise<DetectedConfig[]>>(async () => [])

@@ -2,7 +2,7 @@ import readline from 'readline'
 
 import logger from './logger.js'
 
-import type { DetectedConfig } from '../core/processor.js'
+import type { DetectedConfig } from '../core/detector.js'
 
 export interface PromptDeps {
   createInterface: typeof readline.createInterface
@@ -17,7 +17,6 @@ const defaultDeps: PromptDeps = {
  */
 export async function confirmInstallation(
   configs: DetectedConfig[],
-  _targetDir: string,
   deps: PromptDeps = defaultDeps
 ): Promise<boolean> {
   const rl = deps.createInterface({
