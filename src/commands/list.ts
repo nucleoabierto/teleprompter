@@ -5,7 +5,6 @@ import { listCachedRepos } from '../utils/cache.js'
 import { parseRepo } from '../utils/github.js'
 import logger, { getErrorMessage } from '../utils/logger.js'
 
-import type { SharedDeps } from './shared.js'
 import type { DetectedConfig } from '../core/detector.js'
 
 interface Options {
@@ -17,7 +16,7 @@ interface Options {
 }
 
 export interface ListDeps {
-  loadInstalledConfigs: (dir?: string, deps?: SharedDeps) => Promise<DetectedConfig[]>
+  loadInstalledConfigs: (dir?: string) => Promise<DetectedConfig[]>
   listCachedRepos: typeof listCachedRepos
   downloadRepo: (owner: string, repo: string, branch?: string, useCache?: boolean) => Promise<{ path: string; fromCache: boolean }>
   detectConfigs: typeof detectConfigs

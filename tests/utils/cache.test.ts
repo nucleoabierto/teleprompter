@@ -9,7 +9,6 @@ import {
   saveToCache,
   clearCacheEntry,
   clearAllCache,
-  getCacheStats,
   listCachedRepos,
 } from '../../src/utils/cache.js'
 
@@ -247,62 +246,6 @@ describe('Cache', () => {
       assert.strictEqual(result, 2)
       // All files/dirs are removed
       assert.strictEqual(mockRemove.mock.callCount(), 4)
-    })
-  })
-
-  describe('getCacheStats', () => {
-    test('debe retornar stats vacías si no existe caché', async () => {
-      const mockDeps = {
-        pathExists: mock.fn(async () => false),
-        readdir: mock.fn(async () => []),
-        readJson: mock.fn(async () => ({})),
-      }
-
-      const result = await getCacheStats(mockDeps as any)
-
-      assert.strictEqual(result.entryCount, 0)
-      assert.strictEqual(result.entries.length, 0)
-    })
-
-    test('debe retornar stats con entradas válidas', async () => {
-      const mockReadJson = mock.fn(async () => {
-        return {
-          cachedAt: '2024-01-01T00:00:00Z',
-          etag: '"some-etag"',
-        }
-      })
-
-      const mockDeps = {
-        pathExists: mock.fn(async () => true),
-        readdir: mock.fn(async () => ['entry1.json', 'entry2.json', 'invalid.txt']),
-        readJson: mockReadJson,
-      }
-
-      const result = await getCacheStats(mockDeps as any)
-
-      assert.strictEqual(result.entryCount, 2)
-      assert.strictEqual(result.entries.length, 2)
-    })
-
-    test('debe ignorar entradas inválidas en stats', async () => {
-      let callCount = 0
-      const mockReadJson = mock.fn(async () => {
-        callCount++
-        if (callCount === 1) {
-          return { cachedAt: '2024-01-01T00:00:00Z', etag: '"valid"' }
-        }
-        throw new Error('Invalid JSON')
-      })
-
-      const mockDeps = {
-        pathExists: mock.fn(async () => true),
-        readdir: mock.fn(async () => ['valid.json', 'invalid.json']),
-        readJson: mockReadJson,
-      }
-
-      const result = await getCacheStats(mockDeps as any)
-
-      assert.strictEqual(result.entryCount, 1)
     })
   })
 

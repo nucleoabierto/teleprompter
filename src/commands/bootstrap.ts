@@ -1,7 +1,6 @@
 import { loadInstalledConfigs } from './shared.js'
 import logger, { getErrorMessage } from '../utils/logger.js'
 
-import type { SharedDeps } from './shared.js'
 import type { DetectedConfig } from '../core/detector.js'
 
 interface Options {
@@ -9,7 +8,7 @@ interface Options {
 }
 
 export interface BootstrapDeps {
-  loadInstalledConfigs: (dir?: string, deps?: SharedDeps) => Promise<DetectedConfig[]>
+  loadInstalledConfigs: (dir?: string) => Promise<DetectedConfig[]>
   exit: (code: number) => void
 }
 

@@ -4,17 +4,10 @@ import { test, describe } from 'node:test'
 
 import {
   TeleprompterError,
-  RepoNotFoundError,
-  NetworkError,
   InvalidRepoFormatError,
   NoConfigsFoundError,
   ConfigAlreadyExistsError,
-  InvalidScriptYamlError,
   ConfigFilterNoMatchError,
-  CacheError,
-  PermissionDeniedError,
-  DirectoryNotFoundError,
-  UnknownError,
 } from '../../src/utils/errors.js'
 
 describe('Errors', () => {
@@ -48,26 +41,6 @@ describe('Errors', () => {
     })
   })
 
-  describe('RepoNotFoundError', () => {
-    test('debe crear error con datos del repositorio', () => {
-      const error = RepoNotFoundError('nucleoabierto', 'teleprompter', 'main')
-
-      assert.strictEqual(error.code, 'E1001')
-      assert.ok(error.message.includes('nucleoabierto/teleprompter'))
-      assert.ok(error.message.includes('main'))
-      assert.ok(error.suggestions.length > 0)
-    })
-  })
-
-  describe('NetworkError', () => {
-    test('debe crear error con URL', () => {
-      const error = NetworkError('https://github.com/test')
-
-      assert.strictEqual(error.code, 'E1002')
-      assert.ok(error.message.includes('https://github.com/test'))
-    })
-  })
-
   describe('InvalidRepoFormatError', () => {
     test('debe crear error con input inválido', () => {
       const error = InvalidRepoFormatError('invalid-format')
@@ -96,58 +69,12 @@ describe('Errors', () => {
     })
   })
 
-  describe('InvalidScriptYamlError', () => {
-    test('debe crear error con path y razón', () => {
-      const error = InvalidScriptYamlError('/path/script.yaml', 'Missing field')
-
-      assert.strictEqual(error.code, 'E2003')
-      assert.ok(error.message.includes('/path/script.yaml'))
-      assert.ok(error.message.includes('Missing field'))
-    })
-  })
-
   describe('ConfigFilterNoMatchError', () => {
     test('debe crear error con filtro', () => {
       const error = ConfigFilterNoMatchError('my-filter')
 
       assert.strictEqual(error.code, 'E2004')
       assert.ok(error.message.includes('my-filter'))
-    })
-  })
-
-  describe('CacheError', () => {
-    test('debe crear error con operación', () => {
-      const error = CacheError('read')
-
-      assert.strictEqual(error.code, 'E3001')
-      assert.ok(error.message.includes('read'))
-    })
-  })
-
-  describe('PermissionDeniedError', () => {
-    test('debe crear error con path', () => {
-      const error = PermissionDeniedError('/protected/path')
-
-      assert.strictEqual(error.code, 'E4001')
-      assert.ok(error.message.includes('/protected/path'))
-    })
-  })
-
-  describe('DirectoryNotFoundError', () => {
-    test('debe crear error con path', () => {
-      const error = DirectoryNotFoundError('/missing/dir')
-
-      assert.strictEqual(error.code, 'E4002')
-      assert.ok(error.message.includes('/missing/dir'))
-    })
-  })
-
-  describe('UnknownError', () => {
-    test('debe crear error con detalles', () => {
-      const error = UnknownError('Something went wrong')
-
-      assert.strictEqual(error.code, 'E9999')
-      assert.ok(error.message.includes('Something went wrong'))
     })
   })
 })

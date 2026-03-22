@@ -19,7 +19,6 @@ interface CacheMetadata {
  * Cache entry information
  */
 interface CacheEntry {
-  tarballPath: string
   extractedPath: string
   metadata: CacheMetadata
 }
@@ -119,7 +118,6 @@ async function getCachedRepo(
     }
 
     return {
-      tarballPath: path.join(cacheDir, `${cacheKey}.tar.gz`),
       extractedPath,
       metadata,
     }
@@ -208,42 +206,6 @@ async function clearAllCache(deps: CacheDeps = defaultDeps): Promise<number> {
 }
 
 /**
- * Get cache statistics
- */
-async function getCacheStats(deps: CacheDeps = defaultDeps): Promise<{
-  entryCount: number
-  entries: { key: string; cachedAt: string; etag: string }[]
-}> {
-  const cacheDir = getCacheDir()
-  const entries: { key: string; cachedAt: string; etag: string }[] = []
-
-  if (!await deps.pathExists(cacheDir)) {
-    return { entryCount: 0, entries }
-  }
-
-  const files = await deps.readdir(cacheDir)
-  const metadataFiles = files.filter(f => f.endsWith('.json'))
-
-  for (const file of metadataFiles) {
-    try {
-      const metadata = await deps.readJson(path.join(cacheDir, file)) as CacheMetadata
-      entries.push({
-        key: file.replace('.json', ''),
-        cachedAt: metadata.cachedAt,
-        etag: metadata.etag,
-      })
-    } catch {
-      // Skip invalid entries
-    }
-  }
-
-  return {
-    entryCount: entries.length,
-    entries,
-  }
-}
-
-/**
  * List all cached repositories with their configurations
  */
 async function listCachedRepos(
@@ -303,7 +265,6 @@ export {
   saveToCache,
   clearCacheEntry,
   clearAllCache,
-  getCacheStats,
   listCachedRepos,
   type CacheMetadata,
   type CacheEntry,
