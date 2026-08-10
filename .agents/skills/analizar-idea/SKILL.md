@@ -1,272 +1,130 @@
 ---
 name: analizar-idea
 description: >-
-  Analiza preliminarmente una idea de producto definiendo el resultado deseado
-  sin mencionar solución. Evalúa alineación estratégica, urgencia,
-  disponibilidad de recursos y genera recomendación Proceder/Proceder
-  condicional/No proceder. Salida:
-  docs/<domain>/idea/<IDEA-SLUG>/idea-analysis.md. Úsalo como gate preliminar
-  de viabilidad antes de evaluar-alcance-idea. Solo análisis: no implementa,
-  no aprueba, no evalúa alcance (usa evaluar-alcance-idea). Para
-  implementación usa implementar-plan o implementar-ticket.
+  Toma una idea de producto (esbozo o idea bruta) y redacta una descripción
+  narrativa del producto con suficiente detalle para permitir análisis técnico
+  posterior y descomposición en épicas y tareas, sin entrar en stack,
+  arquitectura ni implementación. Úsalo cuando el usuario tenga una idea y
+  quiera describir la forma del producto o funcionalidad antes de formalizar
+  requerimientos. Triggers comunes: describir, narrar, bosquejar la solución,
+  definir la funcionalidad, qué construir. No lo uses para explicar el
+  problema, ni para evaluar viabilidad, ni para estructurar requerimientos
+  formales o generar PRDs.
 ---
 
 # Analizador de Ideas
 
-Combina análisis preliminar de viabilidad con definición de resultado deseado. Evalúa rápidamente si la idea merece inversión y define el resultado sin mencionar la solución.
-
-Solo análisis: no implementa, no aprueba. Prepara punto de control de aprobación. Para implementación usa implementar-plan o implementar-ticket.
+Toma una idea que contenga el problema a resolver y redacta una descripción narrativa del producto que la resuelve. La descripción es de nivel producto: pinta el problema, el resultado al que conduce y la solución que conecta ambos. Sirve para entender qué es el producto, qué experiencia ofrece, qué forma tiene, qué comportamientos entrega, qué no es, sin mencionar tecnología, arquitectura ni implementación. El detalle es lo suficientemente completo para que quien gestione el desarrollo pueda hacer un análisis posterior y descomponer en épicas y tareas sin tener que volver a preguntar lo básico. La viabilidad, el alcance, la priorización, las personas, los casos de uso y el PRD son trabajo de skills posteriores.
 
 ## Cuándo usarlo y cuándo no
 
-- **Sí**: Gate preliminar de viabilidad antes de invertir tiempo en evaluación de alcance
-- **No**: Para implementar funcionalidades (usa implementar-plan), para aprobación final (usa validar-viabilidad-producto), para análisis técnico profundo (usa evaluar-conectividad-tecnica)
+- **Sí**: la idea ya describe un problema claro y se necesita explicar qué producto lo resuelve antes de avanzar a formalización. El objetivo es pintar el producto y la experiencia, no la implementación.
+- **No**: esbozar el resultado sin solución, evaluar viabilidad o generar go/no-go, estructurar requerimientos formales, dividir alcance, definir personas o casos de uso, o generar el PRD. Detener si la descripción empieza a incluir stack técnico, esquemas de datos o detalles de implementación.
+
+NOTA: Al ejecutar las distintas fases, determina las partes que no requieren intervención del usuario y divide las tareas para usar subagentes, ya sea para ejecutar tareas en paralelo o para ejecutarlas de forma consecutiva pero aprovechando el subagente especializado.
 
 ## Fase 0 — Resolver entrada
 
-Requerido: `IDEA-DESCRIPCION`.
+Requerido: `IDEA-DESCRIPCION` (texto con la idea, por vago que sea el producto).
 
 Infiere desde:
-- Descripción pegada: si el usuario pega la idea/solicitud de funcionalidad
-- Contenido breve: "Agregar modo oscuro", "Sistema de notificaciones", "Exportar a PDF"
-- Email o fragmento de chat: si el usuario copia descripción informal
+- Idea expresada en el mensaje: "Quiero algo para que la gente exporte reportes", "estaría bueno notificar a los usuarios", "modo oscuro".
+- Archivo referenciado en el mensaje: si el usuario menciona un archivo que contiene la idea, úsalo y cita la ruta.
 
-Pregunta cuando falta: "¿Cuál es la idea que analizo? (descripción breve o completa)"
+Si no se puede inferir la idea o el resultado no está claro, pregunta: "¿Cuál es la idea y qué resultado quieres lograr? (si no queda claro el problema a resolver, usa `esbozar-idea` primero)" y detente a esperar la respuesta.
 
-Declara inputs resueltos: idea capturada.
+## Fase A — Eco y diagnóstico inicial
 
-## Fase A — Definir Resultado Deseado
+Devuelve al usuario un eco breve de lo que entendiste (problema y objetivo) y un diagnóstico inicial de qué tan lista está la idea para ser descrita como producto.
 
-Extrae el resultado sin mencionar la solución:
+**Diagnóstico de madurez** (clasifica la idea en uno de estos estados):
 
-**Criterios de resultado válido**:
-- Describe el resultado/estado deseado, no la funcionalidad
-- Es medible u observable
-- No menciona tecnología o implementación
-- Responde a "¿Qué queremos lograr?" no "¿Qué vamos a construir?"
+- **Verde**: hay un resultado pero no hay ninguna imagen del producto que lo resuelve. Necesita diálogo completo.
+- **Borrador**: hay un resultado y alguna noción vaga del producto, pero mezclada con solución técnica o sin claridad sobre la experiencia generada. Necesita diálogo focalizado.
+- **Casi lista**: el resultado está claro, el producto es visible y la experiencia se intuye. Diálogo mínimo de confirmación.
 
-**Ejemplos**:
-- Incorrecto: "Implementar sistema de notificaciones" (menciona solución)
-- Correcto: "Los usuarios están informados sobre eventos importantes en tiempo real" (resultado)
-- Incorrecto: "Agregar modo oscuro" (menciona solución)
-- Correcto: "Los usuarios pueden usar el producto cómodamente en ambientes con poca luz" (resultado)
+**Diagnóstico de nivel** (clasifica la idea en uno de estos niveles):
 
-**Si no puede definir resultado sin solución**:
-- Marcar como "necesita reformulación"
-- Sugerir reformulación de la idea
-- Ready for: bloqueado con instrucciones
+- **Producto**: idea de producto completo, nuevo producto o iniciativa nueva que define su propio espacio.
+- **Feature**: idea de funcionalidad nueva dentro de un producto existente.
 
-## Fase B — Evaluar Alineación Estratégica
+Criterios para distinguir nivel:
 
-¿Encaja con visión/plan de trabajo de producto?
+- **Producto**: no hay producto previo o la idea define un espacio nuevo (no extiende uno existente). Requiere crear módulos nuevos y no existe un punto claro del sistema que pueda absorber la idea.
+- **Feature**: hay un módulo en el producto existente que se puede usar como base para realizar una función específica ("modo oscuro", "exportar reportes", "notificaciones push", "agregar autenticación con Google"). Generalmente se expresa como una extensión para mejorar la experiencia del usuario.
 
-**Criterios**:
-- ¿Esta idea es consistente con dirección de producto?
-- ¿Mueve un norte explícito de la compañía?
-- ¿Es esencial o deseable?
-- ¿Mantiene foco o lo dispersa?
+Presenta ambos diagnósticos y confirma que quiere describir la funcionalidad antes de avanzar. Si el usuario ya trae una idea con producto visible (madurez "Casi lista"), ofrece generar la descripción con la información disponible. En cualquiera de los casos detente y espera la respuesta
 
-**Veredicto**: Alineado / Parcialmente alineado / Desalineado
+## Fase B - Resolución de dominio
 
-**Estrategia de fallo**: Si no hay información sobre visión/plan de trabajo, marcar como "Parcialmente alineado" y documentar en Preguntas abiertas.
+`domain` es la carpeta raíz que agrupa los artefactos del workflow de PRD.
 
-## Fase C — Evaluar Urgencia y Momento
+El diagnóstico de nivel (Producto vs Feature) informa la lógica: **Feature** → dominio del producto existente que extiende; **Producto** → dominio nuevo o existente según encaje. Resumen operativo:
 
-¿Por qué ahora?
+1. **Inventariar dominios existentes** en `docs/`.
+2. **Inferir 1–3 candidatos** en kebab-case del área de producto (no técnica).
+3. **Filtrar por nivel**: Feature → solo dominios existentes; Producto → existentes o nuevo.
+4. **Decidir**: 0 candidatos → preguntar; 1 candidato → usar; >1 candidatos → preguntar.
 
-**Criterios**:
-- ¿Hay fecha límite externa (regulatorio, mercado, cliente)?
-- ¿Es bloqueante para otra iniciativa?
-- ¿Es oportunidad sensible al tiempo?
-- ¿Puede esperar sin costo significativo?
+Consulta [references/domain-resolution-guide.md](references/domain-resolution-guide.md) para la lógica completa, ejemplos y reglas.
 
-**Veredicto**: Urgente / Importante / Puede esperar
+## Fase C — Diálogo de descripción interactiva
 
-**Estrategia de fallo**: Si no hay información sobre fechas límite o prioridades, marcar como "Importante" (default conservador) y documentar en Preguntas abiertas.
+Conduce un diálogo de ida y vuelta con el usuario. **Describe el producto, no la implementación**: el objetivo es pintar el problema, el resultado y la solución con suficiente detalle para planificar, no cómo se construye. Si el usuario empieza a proponer stack técnico o arquitectura, redirígelo al producto ("¿Qué experiencia quieres que el usuario viva con eso?"). Busca cubrir las dimensiones del artefacto, en este orden:
 
-## Fase D — Evaluar Disponibilidad Básica de Recursos
+1. **Confirmar el problema** — si viene de esbozo, confirma brevemente. Si la idea viene bruta, aclara los síntomas de hoy, quién sufre y el workaround actual sin solución.
+2. **Confirmar el resultado** — el estado final al que se quiere llegar, el flujo del usuario después del cambio, qué deja de pasar. Sin solución.
+3. **Pintar la solución** — la pregunta central: "¿Qué producto entrega ese estado final? Descríbelo por la experiencia que ofrece el usuario, no por cómo se construye." Explora la forma, la experiencia, qué es y qué no es.
+4. **Explorar comportamientos clave** — qué hace el producto, en términos de experiencia.
+5. **Explorar escenarios y variantes** — las bifurcaciones de experiencia que el producto necesita resolver (fallo, saturación, ausencia, etc.). No las resuelvas aquí; identifícalas para análisis posterior.
+6. **Aclarar el beneficiario** — quién se beneficia, ligero (un rol o segmento). Se introduce naturalmente al hablar del producto, no como pregunta aislada.
 
-Verificación rápida de viabilidad:
+El nivel diagnosticado en la Fase A modula el alcance del diálogo:
+- **Producto** → diálogo amplio para establecer un espacio nuevo (la experiencia se describe de cero)
+- **Feature** → diálogo acotado que asume el producto existente como contexto y extiende lo que ya existe.
 
-**Criterios**:
-- ¿Equipo disponible (capacidad básica)?
-- ¿Stack tecnológico compatible con arquitectura existente?
-- ¿Dependencias externas críticas disponibles?
-- ¿Riesgo técnico manejable?
+La diferencia de alcance por nivel está ejemplificada en [references/examples/example-producto.md](references/examples/example-producto.md) y [references/examples/example-feature.md](references/examples/example-feature.md).
 
-**Veredicto**: Viable / Desafiante / No viable
+No interroges al usuario con un cuestionario largo de una sola vez, trabaja en bloques pequeños (2 o 3 preguntas a la vez). No todas las preguntas necesitan una respuesta explícita: muchas pueden inferirse del diálogo o del contexto del repo. Si el usuario ya describió el producto con suficiente claridad, no prolongues el diálogo para llenar huecos imaginarios.
 
-**Estrategia de fallo**: Si no hay información sobre recursos, marcar como "Desafiante" (default conservador) y documentar en Preguntas abiertas.
+## Fase D — Consolidar descripción
 
-## Fase E — Generar Recomendación Preliminar
+Consolida la descripción usando el template en [idea-analysis-template.md](assets/idea-analysis-template.md). El template especifica la estructura del artefacto. Sigue el template como guía, no de forma literal. Usa tu juicio para determinar si se necesita alguna modificicación o cambio debido al tipo de información existente.
 
-Usar template en `assets/decision-matrix-template.md` para estructurar la decisión.
+El artefacto se escribe en forma narrativa (prosa), pero con la densidad necesaria para que quien gestione el desarrollo pueda hacer análisis técnico y descomponer en épicas y tareas sin tener que volver a preguntar lo básico. Los comportamientos clave son las semillas de épicas/tareas: cada uno es una unidad de producto descomponible. Las variantes se declaran como decisiones diferidas, no se resuelven aquí.
 
-**Matriz de decisión** (resumen, mismo esquema que el template — justificaciones en lista, no en celdas):
+Para referencia de formato, consulta el ejemplo canónico correspondiente al nivel:
+- **Producto**: [references/examples/example-producto.md](references/examples/example-producto.md) — descripción de "marketplace-interno" con solución amplia y fronteras numerosas.
+- **Feature**: [references/examples/example-feature.md](references/examples/example-feature.md) — descripción de "notificaciones-push" con solución acotada y fronteras con "No aplica" como base.
 
-| Criterio | Status | Weight | Score |
-|-------|--------|--------|-------|
-| Resultado claro | Pass - Partial - Fail | 25% | 25% - 12.5% - 0% |
-| Alineación estratégica | Pass - Partial - Fail | 25% | 25% - 12.5% - 0% |
-| Urgencia | Pass - Partial - Fail | 25% | 25% - 12.5% - 0% |
-| Recursos básicos | Pass - Partial - Fail | 25% | 25% - 12.5% - 0% |
+Refina `IDEA-SLUG` si el diálogo aclaró el producto desde la Fase 0.
 
-**Reglas de formato de la matriz** (no opcionales):
+Para las preguntas abiertas, usa el template en [open-questions-template.md](assets/open-questions-template.md).
 
-- La tabla tiene **exactamente 4 columnas**: `Criterio | Status | Weight | Score`. No añadas una 5ª columna `Justificación` a la tabla — las celdas deben quedar ≤50 chars.
-- Las justificaciones van en **lista debajo de la tabla**, una por criterio (ver abajo).
-- `Status` usa **texto**, no emojis: `Pass` / `Partial` / `Fail` (o `Sí` / `Parcial` / `No`). No uses `✅` / `⚠️` / `❌` — degradan legibilidad en terminales y no renderizan uniformemente.
+## Fase E — Gate de listo para el workflow de PRD
 
-**Justificaciones** (una por criterio, en lista debajo de la tabla):
+**Gate obligatorio.** Antes de fijar `status` y `next` en el frontmatter y escribir el documento final, verifica que la descripción está lista para pasar al workflow de PRD (`evaluar-alcance-idea` o `orquestar-prd-workflow`).
 
-- **Resultado claro**: Por qué este status
-- **Alineación estratégica**: Por qué este status
-- **Urgencia**: Por qué este status
-- **Recursos básicos**: Por qué este status
+El gate evalúa si la narrativa pinta un producto válido, no si llenó campos. Las preguntas del gate (2 Críticas, 2 Importantes, 2 Menores) están especificadas en [idea-analysis-template.md](assets/idea-analysis-template.md). Sigue las instrucciones del template al escribir el artefacto. Resumen operativo:
 
-**Recomendación**:
-- **Proceder**: Todos los criterios afirmativos o mayoría afirmativos
-- **Proceder condicional**: Algunos parciales, necesita aclaración
-- **No proceder**: Criterios críticos negativos (resultado no claro, desalineado, no viable)
+1. **Decisión de status**: evalúa el inventario de preguntas abiertas. `ready` si no hay Críticas/Importantes sin resolver. `conditional` si hay Importantes sin resolver (el usuario fue alertado y eligió avanzar). `blocked` si hay Críticas sin resolver.
+2. **Decisión de next**: si `status` es `ready` o `conditional`, `next: evaluar-alcance-idea` (o `orquestar-prd-workflow`). Si `blocked`, `next` se omite.
+3. **Documentación del gate**: añade al artefacto una subsección "Gate de avance" que registre inventario de preguntas (críticas/importantes/menores) con estado de resolución, evidencia de alerta (si hubo), y estado final de avance. Obligatoria incluso si todas las preguntas se resolvieron inline.
 
-**Mapeo a Ready for** (refinado por la Fase G según preguntas abiertas):
-- Proceder → `evaluar-alcance-idea` (avance libre, sin preguntas Críticas/Importantes sin resolver)
-- Proceder condicional → `evaluar-alcance-idea (condicionado)` o `bloqueado` según severidad de preguntas abiertas
-- No proceder → `bloqueado`
-
-**Detección de `profile` (full / lite)**: además del veredicto, declara un campo `profile` que el orquestador (`orquestar-prd-workflow` Fase 0) consume para activar shortcuts lite. Criterios:
-
-- `profile: lite` cuando **al menos 2** de:
-  - dogfooding O internal tool (no producto externo)
-  - 1-2 personas
-  - greenfield (sin codebase de producto previo)
-  - stage MVP con N=1 funcionalidad
-- `profile: full` cuando:
-  - producto externo, O
-  - stage Growth/Scale, O
-  - N>1 funcionalidades, O
-  - requiere validación de demanda externa
-
-El `profile` no reemplaza el veredicto (Proceder/Condicional/No proceder) — es una señal ortogonal sobre cuánta ceremonia aplica el workflow downstream. Un PRD puede ser `Proceder` con `profile: lite` (dogfooding) o `Proceder` con `profile: full` (producto externo Growth).
-
-Para detalles completos de sistema de scoring, umbrales y customización por contexto, consultar el template.
-
-## Fase F — Escribir Análisis Preliminar
-
-Estructura:
-
-1. **Declaración de resultado**: 1-2 frases del resultado deseado
-2. **Validación de resultado**: Si es válido o necesita reformulación
-3. **Alineación estratégica**: ¿Encaja con visión?
-4. **Urgencia y momento**: ¿Por qué ahora?
-5. **Disponibilidad de recursos**: Verificación básica de viabilidad
-6. **Recomendación preliminar**: Proceder/Proceder condicional/No proceder con justificación
-7. **Profile**: `full` o `lite` (con justificación — ver criterios en Fase E). El orquestador lo consume para activar shortcuts lite (stub RICE N=1, connectivity short-form, 1 persona, experiment-design omitido).
-8. **Ready for**: `evaluar-alcance-idea`, `evaluar-alcance-idea (condicionado)` o `bloqueado`
-
-## Fase G — Gate de Avance Condicionado (Preguntas Abiertas)
-
-**Gate obligatorio.** Después de completar el análisis (Fases A–F) y antes de fijar el `Ready for` y escribir el documento final, ejecuta este gate. El documento **no está completo** hasta que Fase G se ejecuta y se documenta, incluso si todas las preguntas se resolvieron inline durante las Fases B/C/D.
-
-**Principio**: Las preguntas abiertas no bloquean automáticamente el avance, pero el usuario debe ser alertado y tener la opción de responderlas antes de avanzar. El avance es **condicionado**, no automático. La alerta ocurre **antes de comenzar** la siguiente etapa (fijar el `Ready for` y avanzar a `evaluar-alcance-idea`), no después.
-
-### Estados de avance
-
-1. **Inventariar preguntas abiertas**: Reúne todas las preguntas generadas en las estrategias de fallo de las Fases B, C y D, clasificadas por severidad (Crítico / Importante / Menor). Incluye también las preguntas que se resolvieron inline durante el análisis — el inventario debe reflejar todo lo que se identificó, con su estado de resolución.
-
-2. **Clasificar el estado de avance**:
-   - **Avance bloqueado**: Hay preguntas Críticas sin resolver → `Ready for: bloqueado`
-   - **Avance condicionado**: Hay preguntas Importantes sin resolver → `Ready for: evaluar-alcance-idea (condicionado)`. Alerta al usuario con el inventario; ofrece responder ahora o avanzar con default conservador.
-   - **Avance libre**: Solo hay preguntas Menores o todas las Críticas/Importantes están resueltas → `Ready for: evaluar-alcance-idea`
-
-3. **Documentar la ejecución del gate**: Con independencia del resultado, añade al documento una subsección "Gate de avance (Fase G)" que registre:
-   - Inventario de preguntas identificadas (críticas/importantes/menores) con su estado (resuelta inline / resuelta en gate / pendiente).
-   - Si hubo alerta: confirma que se presentó al usuario y qué decidió.
-   - Estado final de avance (bloqueado / condicionado / libre) que justifica el `Ready for`.
-
-### Reglas
-
-- **Nunca** omitir la alerta cuando hay preguntas Críticas o Importantes sin resolver.
-- **Nunca** marcar `Ready for: evaluar-alcance-idea` (libre) si hay preguntas Importantes o Críticas sin resolver.
-- **Nunca** omitir la subsección "Gate de avance (Fase G)" del documento — es la evidencia de que el gate se ejecutó.
-- Las preguntas Menores no requieren alerta ni condicionan el avance; se documentan para seguimiento.
-- Si todas las preguntas se resolvieron inline durante B/C/D, el gate sigue documentándose (inventario con estado "resuelta inline", avance libre) — el gate no se omite, se registra como ejecutado sin alerta necesaria.
-
-### Ejemplo canónico — Gate con todas resueltas inline
-
-Cuando todas las preguntas se resolvieron inline durante B/C/D (caso más común en ideas bien formadas), la subsección "Gate de avance (Fase G)" del documento se ve así:
-
-```markdown
-## Gate de avance (Fase G)
-
-- **Inventario de preguntas identificadas**:
-  - [Importante] ¿El instalador debe ser agnóstico al agente destino? — Estado: resuelta inline
-  - [Importante] ¿Cómo entregar las instructions al agente? — Estado: resuelta inline
-  - [Menor] ¿Canal de publicación del paquete npm? — Estado: resuelta inline
-- **Alerta al usuario**: No necesaria — todas las Críticas/Importantes se resolvieron inline durante el análisis.
-- **Estado final de avance**: Libre — `Ready for: evaluar-alcance-idea`
-```
-
-Para el flujo detallado del gate (formato de alerta, manejo de respuestas del usuario, herencia de preguntas pendientes en el siguiente skill, best practices), consultar `assets/open-questions-template.md` sección "Integración con Ready For — Avance Condicionado".
+Consulta [references/gate-guide.md](references/gate-guide.md) para la lógica completa de severidad, estados de avance, flujo del gate y reglas.
 
 ## Salida
 
-Escribe en (formato principal): `docs/<domain>/idea/<IDEA-SLUG>/idea-analysis.md` (subdirectorio)
-Compatibilidad legacy: `docs/<domain>/idea/<IDEA-SLUG>-idea-analysis.md` (prefijo)
+Escribe en: `docs/<domain>/idea/<IDEA-SLUG>/idea-analysis.md`
 
-Para la estructura completa del artefacto (header requerido, secciones requeridas, convenciones de formato, nota opcional de relación con downstream, y valores de `Ready for` con links), usa el template en `assets/idea-analysis-template.md`.
+Adicionalmente, gestiona el índice del dominio siguiendo [references/domain-readme-spec.md](references/domain-readme-spec.md):
 
-**Resumen de secciones requeridas** (ver template para detalle):
-- Header (incluyendo línea `Input:`)
-- Resumen de la idea, Declaración de resultado, Validación de resultado
-- Alineación estratégica, Urgencia y momento, Disponibilidad de recursos
-- Recomendación preliminar, Fase F (observaciones de diseño)
-- Gate de avance (Fase G) — **obligatoria** incluso si todas las preguntas se resolvieron inline
-- Preguntas Abiertas (resueltas/pendientes), Checklist de salida, Ready for con link relativo
-
-**Convenciones clave** (ver template para detalle):
-- Sin emojis: usa `Pass`/`Partial`/`Fail` o `Sí`/`Parcial`/`No`
-- Matriz de decisión: 4 columnas, justificaciones en lista debajo
-
-### README del dominio (índice)
-
-Como primer skill del Workflow 0, este skill es responsable de crear o actualizar el índice del dominio en `docs/<domain>/README.md`. La estructura requerida (título, puntos de entrada, árbol, convenciones) está especificada en `references/domain-readme-spec.md` — ese spec es compartido con otros skills del workflow que actualizan el README.
-
-- **Si no existe**: créalo con la estructura completa del spec.
-- **Si existe**: actualiza la tabla de "Puntos de entrada" con `idea/<IDEA-SLUG>/idea-analysis.md` y el árbol de estructura si hay nuevos archivos.
+- **Si no existe `docs/<domain>/README.md`**: créalo con la estructura completa del spec. En esta primera ejecución del workflow, la única fila con artefacto real en "Puntos de entrada" es `idea/<IDEA-SLUG>/idea-analysis.md`; las demás (roadmap, personas, ADRs, PRD, epics) quedan como placeholders pendientes que los skills posteriores poblarán.
+- **Si ya existe `docs/<domain>/README.md`**: actualiza la tabla de "Puntos de entrada" con el enlace al `idea-analysis.md` recién generado.
 
 ## Checklist de salida
 
-Antes de marcar el skill como terminado, verifica cada ítem. Si alguno es "No", revisa y completa antes de terminar — el documento no está completo hasta que todos pasan.
+Verificación final, no parte del artefacto. Antes de terminar, verifica el checklist en [idea-analysis-template.md](assets/idea-analysis-template.md) (sección "Checklist de salida") más estos dos ítems adicionales:
 
-### Contenido
-
-1. Resultado definido sin mencionar solución
-2. Resultado es medible u observable
-3. Alineación estratégica evaluada correctamente
-4. Urgencia justificada
-5. Recursos básicos evaluados
-6. Recomendación preliminar justificada
-7. `Ready for` correcto según el estado de avance de la Fase G
-
-### Formato (verificación de convenciones)
-
-8. Header incluye línea `Input:` (no la omitas aunque el input sea texto libre del usuario)
-9. Matriz de decisión tiene **exactamente 4 columnas** (`Criterio | Status | Weight | Score`) — sin 5ª columna `Justificación` en la tabla; las justificaciones van en lista debajo
-10. `Status` usa **texto** (`Pass`/`Partial`/`Fail` o `Sí`/`Parcial`/`No`) — sin emojis (`✅`/`⚠️`/`❌`) en matriz, validación ni checklist de salida
-11. Sección **"Gate de avance (Fase G)"** presente y documentada con inventario de preguntas, evidencia de alerta (si hubo) y estado final de avance — **obligatoria incluso si todas las preguntas se resolvieron inline**
-12. `Ready for` incluye link relativo al siguiente artefacto
-
-## Preguntas Abiertas
-
-Usar template en `assets/open-questions-template.md` para documentar información faltante. El flujo de avance condicionado está definido en la **Fase G** y detallado en la sección "Integración con Ready For — Avance Condicionado" del template.
-
-**Categorías comunes para este skill**:
-- Si la visión/plan de trabajo de producto no está clara
-- Si no hay información sobre fechas límite externas
-- Si la disponibilidad de recursos es desconocida
-- Si el resultado no puede definirse sin mencionar solución
-
-Para estructura completa, severidad levels, flujo del gate de avance condicionado y best practices, consultar el template.
-
-**Importante**: Las preguntas abiertas generadas en las estrategias de fallo de las Fases B, C y D alimentan directamente el gate de la Fase G. No se avanza al siguiente skill sin pasar por ese gate.
+- Frontmatter con `domain`, `level`, `status` y `next` correctos según Fase A (dominio) y Fase D (status/next, `next` ausente si `blocked`)
+- `status` y `next` van en el frontmatter, no como sección del body

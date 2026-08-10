@@ -34,7 +34,7 @@ Después de completar la evaluación de alcance, responde estas preguntas:
    - [ ] Sí, contiene recomendaciones claras y next steps
    - [ ] No, falta claridad en qué hacer después
 
-9. **¿Ejecuté y documenté el gate de avance (Fase G)?**
+9. **¿Ejecuté y documenté el gate de avance (Fase F)?**
    - [ ] Sí, el inventario de preguntas está completo, la alerta al usuario está documentada (si hubo), y el estado final de avance justifica el Ready for
    - [ ] No, omití el gate, no documenté el inventario, o no registré la alerta
 

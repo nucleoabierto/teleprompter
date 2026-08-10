@@ -1,55 +1,130 @@
-# Template: Scope Roadmap
+# Template: Evaluación y Roadmap de Alcance
 
 Template para estructurar el artefacto de salida de `evaluar-alcance-idea`. El agente sigue este formato al escribir `docs/<domain>/idea/<IDEA-SLUG>/scope-roadmap.md`.
 
-## Header requerido (al inicio del documento)
+## Objetivo del artefacto
 
-- [Idea slug]
-- Dominio
-- Fecha
-- Skill: evaluar-alcance-idea
-- Input: ruta del artefacto fuente (`idea-analysis.md` si existe) o descripción de la idea. **No omitas la línea `Input:`** del header.
+Documento de decisión que combina la evaluación estratégica con la planificación táctica. Responde: ¿Merece inversión? ¿Es una o múltiples funcionalidades? ¿En qué orden? ¿Hay decisiones pendientes?
 
-## Secciones requeridas
+## Frontmatter requerido (al inicio del documento)
 
-- Header requerido (al inicio del documento, incluyendo línea `Input:`)
-- Análisis de alcance (tipo, justificación, timeline)
-- Estrategia de división (si aplica)
-- Notas de modelo (aclaraciones de conceptos clave que puedan ser ambiguos — ej: qué constituye una "funcionalidad", criterios de división, definición de bounded context, framing correcto del producto)
-- Desglose interno de PRDs/funcionalidades: para cada funcionalidad/PRD, incluir fases internas con descripción, decisiones resueltas (con fecha), decisiones pendientes (con opciones y trade-offs)
-- Roadmap de Funcionalidades (resumen ejecutivo que complementa el desglose detallado — tabla de alto nivel con nombre, alcance, timeline y dependencias por funcionalidad)
-- Recomendación de implementación
-- Gate de avance (Fase G): inventario de preguntas identificadas (críticas/importantes/menores) con estado de resolución, evidencia de la alerta al usuario (si hubo) y estado final de avance que justifica el `Ready for`. **Obligatoria** incluso si todas las preguntas se resolvieron inline.
-- Preguntas Abiertas (resueltas/pendientes): documenta decisiones con severidad original y estado de resolución. Marcar como "Pendiente — usuario eligió avanzar con default conservador" las que el usuario decidió no resolver en el gate de la Fase G.
-- Checklist de salida (validación de contenido + formato)
-- Ready for con link relativo al siguiente artefacto
-
-## Convenciones de formato del documento
-
-- Sin emojis en el documento. Usa texto: `Pass`/`Partial`/`Fail`, `Sí`/`Parcial`/`No`. Símbolos tipográficos estándar (`→`, `—`, `≥`, `≤`) sí están permitidos.
-
-## Estructura del desglose interno de PRDs
-
-Para cada PRD/funcionalidad, desglosar en fases internas:
-
-```markdown
-### PRD N — [Nombre]
-
-Fases internas que componen PRD N:
-
-#### Fase N — [Nombre]
-
-- [Descripción de la fase]
-- **Decisión resuelta ([fecha])**: [decisión tomada, con rationale]
-- **Decisión pendiente**: [decisión no resuelta, con opciones enumeradas y trade-offs]
+```yaml
+---
+idea_slug: <IDEA-SLUG>
+domain: <domain>
+date: <YYYY-MM-DD>
+skill: evaluar-alcance-idea
+profile: lite | full
+status: ready | conditional | blocked
+next: priorizar-roadmap | evaluar-conectividad-tecnica
+---
 ```
 
-Las decisiones pendientes identificadas aquí son las preguntas abiertas que alimentan el gate de la Fase G.
+- **profile**: el tamaño de la idea según la Fase B. `lite` (producto interno o funcionalidad única cohesiva) o `full` (producto externo o múltiples funcionalidades).
+- **status**: `ready` (avance libre), `conditional` (Importantes sin resolver), `blocked` (Críticas sin resolver o No proceder). Lógica en `references/advancement-gate-guide.md`.
+- **next**: la señal de routing al siguiente skill. Presente solo cuando `status` es `ready` o `conditional`. Valores: `priorizar-roadmap` (múltiples funcionalidades) o `evaluar-conectividad-tecnica` (funcionalidad única).
 
-## Ready for valores (con link relativo al siguiente artefacto)
+## Estructura del documento
 
-- `priorizar-roadmap`: Múltiples funcionalidades identificadas, avance libre (sin preguntas Críticas/Importantes sin resolver). Link: `feature-prioritization.md`
-- `priorizar-roadmap (condicionado)`: Múltiples funcionalidades, hay preguntas Importantes sin resolver; el usuario fue alertado y eligió avanzar con defaults conservadores. Las preguntas pendientes se heredan en `priorizar-roadmap`. Link: `feature-prioritization.md`
-- `evaluar-conectividad-tecnica`: Funcionalidad única, avance libre. Link: `../../initiatives/<PRD-SLUG>/connectivity/prerequisites-assessment.md`
-- `evaluar-conectividad-tecnica (condicionado)`: Funcionalidad única, hay preguntas Importantes sin resolver; el usuario fue alertado y eligió avanzar con defaults conservadores. Link: `../../initiatives/<PRD-SLUG>/connectivity/prerequisites-assessment.md`
-- `bloqueado`: Hay preguntas Críticas sin resolver o la clasificación de alcance es ambigua. Necesita aclaración antes de cualquier avance.
+### 1. Evaluación Estratégica (Fail-Fast)
+
+```markdown
+## Evaluación Estratégica
+
+- **Veredicto**: [Proceder | No proceder | Condicionado]
+- **Alineación**: [Descripción de alineación con visión del producto]
+- **Tamaño**: [full | lite]
+- **Justificación**: [Por qué este veredicto]
+```
+
+Si el veredicto es "No proceder", el documento termina aquí. No se requieren más secciones.
+
+### 2. Clasificación de Alcance
+
+```markdown
+## Clasificación de Alcance
+
+- **Tipo**: [Funcionalidad única | Múltiples funcionalidades]
+- **Justificación**: [Criterios específicos de scope-analysis-guide.md]
+
+```
+
+### 3. Roadmap de Funcionalidades
+
+```markdown
+## Roadmap de Funcionalidades
+
+### [Nombre de funcionalidad 1]
+- **Alcance**: [qué incluye]
+- **Valor**: [valor para usuario]
+- **Depende de**: [otras funcionalidades o "ninguno"]
+- **Estado**: [bloqueada | lista | condicionada]
+
+### [Nombre de funcionalidad 2]
+- **Alcance**: [qué incluye]
+- **Valor**: [valor para usuario]
+- **Depende de**: [otras funcionalidades o "ninguno"]
+- **Estado**: [bloqueada | lista | condicionada]
+```
+
+Si es funcionalidad única, usa una sola sección.
+
+### 4. Desglose por Funcionalidad
+
+Para cada funcionalidad del roadmap:
+
+```markdown
+## Desglose: [Nombre de funcionalidad]
+
+### Fases
+1. **[Fase 1]**: [descripción]
+2. **[Fase 2]**: [descripción]
+
+### Decisiones
+- **Resuelta ([fecha])**: [decisión] - [rationale]
+- **Pendiente**: [decisión] - [opciones con trade-offs]
+```
+
+Mínimo 2 fases por funcionalidad. Decisiones pendientes alimentan la sección 5.
+
+### 5. Decisiones Pendientes y Next Steps
+
+```markdown
+## Decisiones Pendientes
+
+### Críticas (bloquean avance)
+- [Pregunta]: [opciones] - [impacto si no se resuelve]
+
+### Importantes (afectan calidad)
+- [Pregunta]: [opciones] - [impacto si no se resuelve]
+
+### Menores (ideal resolver)
+- [Pregunta]: [opciones] - [impacto si no se resuelve]
+
+## Recomendación
+
+- **Empezar con**: [funcionalidad]
+- **Next step**: [priorizar-roadmap | evaluar-conectividad-tecnica | bloqueado]
+- **Justificación**: [por qué este orden y next step]
+```
+
+## Convenciones de formato
+
+- Sin emojis en el documento. Usa texto como `Pass`/`Partial`/`Fail` o `Sí`/`Parcial`/`No`. Símbolos tipográficos estándar como `→`, `—`, `≥`, `≤` sí están permitidos.
+- Nombres de funcionalidades en kebab-case
+- Decisiones resueltas siempre incluyen fecha en formato YYYY-MM-DD
+
+## Validación de calidad
+
+El documento está completo cuando:
+
+1. La evaluación estratégica tiene veredicto claro con justificación
+2. La clasificación de alcance cita criterios específicos
+3. El roadmap de funcionalidades tiene dependencias claras
+4. Cada funcionalidad tiene desglose con fases y decisiones
+5. Las decisiones pendientes están clasificadas por severidad
+6. La recomendación tiene next step consistente con el estado
+
+## Ejemplo de referencia
+
+Para un ejemplo completo del documento final, consulta `references/scope-roadmap-guide.md` sección "Ejemplo Completo".

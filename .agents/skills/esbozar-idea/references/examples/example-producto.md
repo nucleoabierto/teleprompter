@@ -9,7 +9,7 @@ next: analizar-idea
 
 # Esbozo: exportar-reportes-pdf
 
-## Resumen de la idea
+## Idea inicial
 
 "estaría bueno que la gente se pueda llevar sus reportes"
 
@@ -64,15 +64,11 @@ Valores que distinguen esta idea de alternativas:
 
 Ninguna registrada.
 
-## Contexto organizacional
+## Gate de avance
 
-Equipo de producto — plataforma de reportes. Genera la idea desde feedback recurrente de usuarios que solicitan exportar su historial.
-
-## Gate de avance (Fase D)
-
-- **Estado del resultado**: Claro — formulado sin mención de solución, medible (registro durable fuera de la plataforma).
+- **Estado del resultado**: Claro. Formulado sin mención de solución, medible (registro durable fuera de la plataforma).
 - **Inventario de preguntas identificadas**:
-  - [Menor] ¿Qué formatos específicos? — Estado: pendiente (lo trabaja un skill posterior, no bloquea).
+  - [Menor] ¿Qué formatos específicos de exportación soportar?
 - **Estado final de avance**: Libre — `status: ready`, `next: analizar-idea`.
 
 ## Preguntas Abiertas (resueltas/pendientes)
@@ -82,16 +78,12 @@ Equipo de producto — plataforma de reportes. Genera la idea desde feedback rec
 - **Pregunta**: ¿La exportación es un producto nuevo o una funcionalidad de la plataforma existente?
 - **Impacto**: Define el nivel del esbozo (producto vs feature) y qué dimensiones de enriquecimiento aplican.
 - **Severidad**: Importante
-- **Propuesta**: Funcionalidad de la plataforma existente — pero el resultado define un espacio nuevo (registro durable fuera de la plataforma), por eso se trata como producto.
-- **Responsable**: N/A (decisión de producto)
-- **Plazo**: N/A
-- **Estado**: Resuelta inline — se documenta como `level: producto` en el frontmatter.
+- **Respuesta**: Funcionalidad de la plataforma existente pero el resultado define un espacio nuevo (registro durable fuera de la plataforma), por eso se trata como producto.
+- **Estado**: Resuelta inline. Se documenta como `level: producto` en el frontmatter.
 
 ### Pendientes
 
 - **Pregunta**: ¿Qué formatos específicos de exportación soportar?
-- **Impacto**: No bloquea el esbozo; un skill posterior lo resolverá en `capturar-requerimiento` / `mapear-casos-uso`.
+- **Impacto**: No bloquea el esbozo, se resuelve en un skill posterior por ser de detalle técnico.
 - **Severidad**: Menor
-- **Propuesta**: Heredar en `analizar-idea`.
-- **Responsable**: N/A
-- **Plazo**: Antes de `capturar-requerimiento`
+- **Propuesta**: Soportar PDF y CSV como formato base.

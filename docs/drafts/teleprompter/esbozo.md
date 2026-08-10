@@ -83,7 +83,7 @@ Ninguna registrada.
 
 ## Contexto organizacional
 
-Nucleoabierto — equipo que mantiene configuraciones de agentes IA compartidas para adopcion interna y externa. La idea surge de la experiencia propia de iterar skills y necesitar un mecanismo confiable para distribuirlos.
+Nucleo abierto — equipo que mantiene configuraciones de agentes IA compartidas para adopcion interna y externa. La idea surge de la experiencia propia de iterar skills y necesitar un mecanismo confiable para distribuirlos.
 
 ## Gate de avance (Fase D)
 

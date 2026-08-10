@@ -9,7 +9,7 @@ next: analizar-idea
 
 # Esbozo: modo-oscuro
 
-## Resumen de la idea
+## Idea inicial
 
 "estaría bueno tener modo oscuro"
 
@@ -42,7 +42,7 @@ No aplica — feature extiende producto existente.
 
 ### Sin default
 
-No aplica — el stack existente constriñe las decisiones.
+No aplica — el stack existente determina las opciones disponibles.
 
 ### Con default a reevaluar
 
@@ -57,15 +57,11 @@ No aplica — el stack existente constriñe las decisiones.
 
 Ninguna registrada.
 
-## Contexto organizacional
+## Gate de avance
 
-Inferir del repository/workspace (ejemplo standalone — en ejecución real, inferir del repo sin preguntar).
-
-## Gate de avance (Fase D)
-
-- **Estado del resultado**: Claro — formulado sin mención de solución, medible (uso cómodo en ambientes con poca luz).
+- **Estado del resultado**: Claro. Formulado sin mención de solución, medible (uso cómodo en ambientes con poca luz).
 - **Inventario de preguntas identificadas**:
-  - [Menor] ¿Detección automática al inicio o solo interruptor manual? — Estado: pendiente (lo trabaja un skill posterior, no bloquea).
+  - [Menor] ¿Detección automática al inicio o solo interruptor manual?
 - **Estado final de avance**: Libre — `status: ready`, `next: analizar-idea`.
 
 ## Preguntas Abiertas (resueltas/pendientes)
@@ -75,16 +71,12 @@ Inferir del repository/workspace (ejemplo standalone — en ejecución real, inf
 - **Pregunta**: ¿El tema debe seguir la preferencia del sistema operativo o solo un interruptor manual?
 - **Impacto**: Define el alcance de la detección automática.
 - **Severidad**: Importante
-- **Propuesta**: Soportar ambos — interruptor manual con detección automática como valor por defecto.
-- **Responsable**: N/A (decisión de producto)
-- **Plazo**: N/A
+- **Respuesta**: Soportar ambos, con interruptor manual y detección automática como valor por defecto.
 - **Estado**: Resuelta inline — se documenta en Espacio abierto (con default a reevaluar).
 
 ### Pendientes
 
 - **Pregunta**: ¿Detección automática al inicio o solo interruptor manual?
-- **Impacto**: No bloquea el esbozo; un skill posterior lo resolverá en `capturar-requerimiento`.
+- **Impacto**: No bloquea el esbozo.
 - **Severidad**: Menor
-- **Propuesta**: Heredar en `analizar-idea`.
-- **Responsable**: N/A
-- **Plazo**: Antes de `capturar-requerimiento`
+- **Propuesta**: Inicializar con tema por defecto y permitir cambio manual (valor seleccionado o cambio automático).

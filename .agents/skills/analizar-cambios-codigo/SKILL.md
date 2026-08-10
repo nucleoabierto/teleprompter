@@ -25,6 +25,8 @@ Orquestador que ejecuta análisis completo de código: documentación, impacto, 
 
 Solo análisis: no modifica código. Gate de calidad antes de PR.
 
+NOTA: Al ejecutar las distintas fases, determina las partes que no requieren intervención del usuario y divide las tareas para usar subagentes, ya sea para ejecutar tareas en paralelo o para ejecutarlas de forma consecutiva pero aprovechando el subagente especializado.
+
 ## Fase 0 — Resolver entrada
 
 Requerido: `PLAN-DOC` (plan de implementación) o `BRANCH` (rama local).
