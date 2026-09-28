@@ -23,7 +23,7 @@ para mantenedores.
 
 ## Piezas
 
-- [ ] docs/tasks/001-investigar-formatos-manifiesto.md — Investigar
+- [x] docs/tasks/001-investigar-formatos-manifiesto.md — Investigar
   formatos de manifiesto existentes
 - [ ] docs/tasks/002-definir-formato-paquete.md — Definir el formato de
   paquete

@@ -73,8 +73,9 @@ dentro.
 
 ## Investigaciones de apoyo
 
-- Ninguna todavía: el borrador 01 es una tarea de investigación sobre
-  formatos de manifiesto existentes.
+- `docs/research/2026-09-formatos-manifiesto.md` — comparación de
+  formatos de manifiesto existentes y decisiones candidatas para el
+  formato de paquete.
 
 ## Borradores
 
