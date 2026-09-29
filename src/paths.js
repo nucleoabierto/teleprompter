@@ -22,3 +22,26 @@ export function isSafeRelative(p) {
   if (/^[a-zA-Z]:[\\/]/.test(p) || p.startsWith('\\\\')) return false;
   return !p.split('/').concat(p.split('\\')).includes('..');
 }
+
+// A relative path can still escape the root through a symlink in its
+// parent chain: existsSync-style checks follow links, so the deepest
+// existing ancestor must resolve — after dereferencing — to a
+// directory inside the root. Anything else (dangling ancestor, an
+// ancestor that is a file, a link pointing outside) means the write
+// would not land where the plan claims.
+export function resolvesUnder(root, dir) {
+  let probe = dir;
+  while (!hasEntry(probe)) {
+    const parent = path.dirname(probe);
+    if (parent === probe) return false;
+    probe = parent;
+  }
+  try {
+    const real = fs.realpathSync(probe);
+    if (!fs.statSync(real).isDirectory()) return false;
+    const rootReal = fs.realpathSync(root);
+    return real === rootReal || real.startsWith(`${rootReal}${path.sep}`);
+  } catch {
+    return false;
+  }
+}

@@ -217,6 +217,28 @@ test('an interactive console without an asker reports conflicts and aborts', asy
   assert.match(stderr.join('\n'), /conflicto sin resolver/);
 });
 
+test('plan downgrades managed-update to conflict when the parent chain escapes', async () => {
+  const dest = tmp();
+  const outside = tmp();
+  fs.writeFileSync(path.join(outside, 'f.txt'), 'x');
+  fs.symlinkSync(outside, path.join(dest, 'vendor'));
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      trapdoor: {
+        version: '1.0.0',
+        files: [{
+          target: 'vendor/f.txt', action: 'create',
+          sha256: hashPath(path.join(outside, 'f.txt')),
+        }],
+      },
+    },
+  }));
+  const pkg = pkgWith('trapdoor', { 'vendor/f.txt': 'y' });
+  const { code, stdout } = await run(['install', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stdout.join('\n'), /conflict\s+vendor\/f\.txt/);
+});
+
 test('--dry-run prints the plan and exits without writing', async () => {
   const dest = tmp();
   const pkg = pkgWith('seco', { 'a.txt': 'a' });
@@ -232,15 +254,18 @@ test('--force resolves every conflict as overwrite', async () => {
   const pkg = pkgWith('fuerza', { 'a.txt': 'a' });
   const { code, stdout } = await run(['install', pkg, dest, '--force']);
   assert.equal(code, EXIT_OK);
-  assert.match(stdout.join('\n'), /plan resuelto/);
+  assert.match(stdout.join('\n'), /a\.txt → overwrite/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
 });
 
 test('--skip resolves every conflict as skip', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'ajeno');
   const pkg = pkgWith('omite', { 'a.txt': 'a' });
-  const { code } = await run(['install', pkg, dest, '--skip']);
+  const { code, stdout } = await run(['install', pkg, dest, '--skip']);
   assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /a\.txt → skip/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'ajeno');
 });
 
 test('an interactive console resolves each conflict per answer', async () => {

@@ -154,6 +154,40 @@ test('main passes when the required path already exists', async () => {
   assert.equal(code, EXIT_OK);
 });
 
+test('main exits 1 when two install entries share a target', async () => {
+  const pkg = path.join(tmp(), 'duplicado');
+  writePkg(pkg, {
+    name: 'duplicado',
+    version: '1.0.0',
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'a.txt', target: 'a.txt' },
+    ],
+  }, { 'a.txt': 'a' });
+  const { code, stderr } = await run(['install', pkg, tmp()]);
+  assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /target duplicado/);
+});
+
+test('main exits 1 on normalized duplicate, nested, or reserved targets', async () => {
+  const cases = [
+    { targets: ['a.txt', 'a.txt/'], match: /target duplicado/ },
+    { targets: ['a', 'a/b.txt'], match: /dentro de otro target/ },
+    { targets: ['teleprompter-lock.json'], match: /target reservado/ },
+  ];
+  for (const { targets, match } of cases) {
+    const pkg = path.join(tmp(), 'colisiones');
+    writePkg(pkg, {
+      name: 'colisiones',
+      version: '1.0.0',
+      install: targets.map((t) => ({ source: 'a.txt', target: t })),
+    }, { 'a.txt': 'a' });
+    const { code, stderr } = await run(['install', pkg, tmp()]);
+    assert.equal(code, EXIT_MANIFEST);
+    assert.match(stderr.join('\n'), match);
+  }
+});
+
 test('main warns on unknown top-level fields and still succeeds', async () => {
   const pkg = path.join(tmp(), 'con-aviso');
   writePkg(pkg, validManifest('con-aviso', { campo_raro: 1 }), { 'a.txt': 'a' });

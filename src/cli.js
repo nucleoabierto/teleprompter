@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import { verifyPackage } from './verify.js';
-import { readLock } from './lock.js';
+import { readLock, writeLock } from './lock.js';
 import { buildPlan } from './plan.js';
+import { executePlan } from './execute.js';
 
 export const EXIT_OK = 0;
 export const EXIT_MANIFEST = 1;
@@ -102,8 +103,22 @@ export async function main(argv, io = {}) {
     return EXIT_OK;
   }
 
-  // Execution and registry are the next layer; a resolved plan is the
-  // boundary this command currently stops at.
-  out(`plan resuelto: ${plan.resources.length} recursos`);
+  let actions;
+  try {
+    actions = executePlan(pkgDir, destDir, plan);
+    writeLock(destDir, lock, result.manifest, actions);
+  } catch (error) {
+    for (const a of error.applied ?? actions) {
+      out(`  ${a.action.padEnd(15)}${a.target}`);
+    }
+    err(`error de ejecución: ${error.message}`);
+    return EXIT_EXECUTION;
+  }
+  out('resultado:');
+  for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
+  if (result.manifest.personalization) {
+    out(`personalización: instrucciones en "${result.manifest.personalization}" del paquete`);
+  }
+  out(`instalado: ${result.manifest.name}@${result.manifest.version}`);
   return EXIT_OK;
 }

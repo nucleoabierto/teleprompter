@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { hashPath } from './hash.js';
-import { hasEntry } from './paths.js';
+import { hasEntry, resolvesUnder } from './paths.js';
 
 // Classifies each install entry by comparing the destination with the
 // package resource and the recorded history:
@@ -16,11 +16,20 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
   const updatesAllowed = semverAtLeast(manifest.version, record?.version);
   const resources = manifest.install.map(({ source, target }) => {
     const dest = path.join(destDir, target);
-    if (!hasEntry(dest)) return { source, target, status: 'create' };
+    if (!hasEntry(dest)) {
+      // A write whose parent chain escapes the root cannot be a
+      // create: the path may be free here but not where it lands.
+      const status = resolvesUnder(destDir, path.dirname(dest)) ? 'create' : 'conflict';
+      return { source, target, status };
+    }
     const destHash = hashPath(dest);
     const status = destHash === hashPath(path.join(pkgDir, source)) ? 'identical'
       : updatesAllowed && recorded.get(target) === destHash ? 'managed-update'
         : 'conflict';
+    if (status !== 'identical' && status !== 'conflict'
+        && !resolvesUnder(destDir, path.dirname(dest))) {
+      return { source, target, status: 'conflict' };
+    }
     return { source, target, status };
   });
   return {

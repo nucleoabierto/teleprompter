@@ -63,11 +63,27 @@ instalado.
   - Un lock ilegible o con estructura inesperada degrada a «sin
     historia» con aviso, nunca a crash.
     Ancla: `readLock`/`isValidLock` en `src/lock.js`
+  - Ninguna escritura puede salir de la raíz por un enlace en la
+    cadena de padres: el ancestro existente más profundo debe
+    resolver a un directorio dentro del destino, en el plan y en la
+    ejecución. Ancla: `resolvesUnder` en `src/paths.js`
+  - Dos entradas `install` no pueden compartir `target`: el plan sería
+    ambiguo. Ancla: `checkInstall` en `src/manifest.js`
+  - Un recurso `identical` conserva su registro previo —el contenido
+    sigue siendo propio— pero no crea registro si nunca se escribió.
+    Ancla: `writeLock` en `src/lock.js`
 - **Operaciones:**
   - `teleprompter install <paquete> <destino> [--force|--skip]
-    [--dry-run]` — verifica, planea, resuelve y (pendiente de la tarea
-    010) ejecuta y registra.
+    [--dry-run]` — verifica, planea, resuelve, ejecuta y registra.
     - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`
+  - Ejecutar el plan resuelto: `mkdirs` primero, luego cada recurso
+    según su acción; `overwrite` elimina el destino antes de escribir
+    —nunca a través de un enlace— y los enlaces se copian como
+    enlaces.
+    - Ancla: `executePlan` en `src/execute.js`
+  - Registrar la instalación: fusiona el lock preservando otros
+    paquetes; `identical` no se registra y `skip` va sin hash.
+    - Ancla: `writeLock` en `src/lock.js`
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación.
     - Ancla: `EXIT_*` en `src/cli.js`; contrato en
@@ -96,9 +112,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-09-28
-- Divergencias conocidas: el dominio cubre la ejecución y el registro,
-  pero solo verificación, plan y resolución están implementados (las
-  tareas 010 y 007 lo completan). Anotado en la tarea 010: el
-  `overwrite` debe eliminar el destino antes de escribir —nunca a
-  través de un enlace— y falta decidir la fusión del registro entre
-  paquetes.
+- Divergencias conocidas: cuando un paquete sobrescribe un recurso
+  registrado por otro, la entrada del primero queda intacta aunque su
+  contenido ya no coincida —el plan siguiente lo marcará `conflict` en
+  el paquete viejo, que es conservador pero puede sorprender.

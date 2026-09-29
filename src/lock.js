@@ -38,3 +38,37 @@ function isValidLock(data) {
       && typeof f.target === 'string'
       && (f.sha256 === undefined || typeof f.sha256 === 'string')));
 }
+
+// Merges the new install into the existing history: other packages'
+// records survive untouched, while this package's entry is replaced
+// wholesale because it describes the installation just performed.
+// `identical` keeps any previous record — the content is still ours
+// and the recorded hash still matches — but creates none for a
+// resource we never wrote. `mkdir` actions are plan bookkeeping, not
+// installed files.
+export function writeLock(destDir, lock, manifest, actions) {
+  const previous = new Map(
+    (lock.packages[manifest.name]?.files ?? []).map((f) => [f.target, f]),
+  );
+  const files = actions.flatMap(({ target, action, sha256 }) => {
+    if (action === 'identical' || action === 'mkdir') {
+      const prev = previous.get(target);
+      return prev === undefined ? [] : [prev];
+    }
+    return [sha256 === undefined ? { target, action } : { target, action, sha256 }];
+  });
+  const data = {
+    packages: {
+      ...lock.packages,
+      [manifest.name]: {
+        version: manifest.version,
+        installedAt: new Date().toISOString(),
+        files,
+      },
+    },
+  };
+  fs.writeFileSync(
+    path.join(destDir, 'teleprompter-lock.json'),
+    `${JSON.stringify(data, null, 2)}\n`,
+  );
+}

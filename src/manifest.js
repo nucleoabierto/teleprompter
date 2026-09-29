@@ -109,6 +109,25 @@ const VALIDATORS = [
       return;
     }
     manifest.install.forEach((entry, index) => checkInstallEntry(entry, index, pkgDir, errors));
+    // Target collisions make the plan ambiguous: two entries writing
+    // the same path, one nested under the other, or the lock file
+    // itself would let the second silently overwrite the first.
+    const targets = manifest.install
+      .map((e) => (typeof e?.target === 'string'
+        ? path.normalize(e.target).replace(/\/+$/, '')
+        : null))
+      .filter((t) => t !== null);
+    const seen = new Set();
+    for (const t of targets) {
+      if (t === 'teleprompter-lock.json') {
+        errors.push('install: "teleprompter-lock.json" es un target reservado');
+      } else if (seen.has(t)) {
+        errors.push(`install: target duplicado "${t}"`);
+      } else if (seen.has([...seen].find((o) => t.startsWith(`${o}/`)))) {
+        errors.push(`install: target "${t}" queda dentro de otro target`);
+      }
+      seen.add(t);
+    }
   },
   function checkRequires(manifest, _ctx, errors) {
     if (manifest.requires === undefined) return;
