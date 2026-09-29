@@ -4,8 +4,9 @@ Define la estructura de un directorio de paquete y el contrato de su
 manifiesto. Es la definición interna del formato: deriva de la
 investigación de formatos existentes
 (`docs/research/2026-09-formatos-manifiesto.md`, citada como «rec. N»)
-y sirve de base a la especificación para mantenedores. Cada campo lleva
-su razón de ser entre paréntesis.
+y sirve de base a la especificación para mantenedores
+(`docs/especificacion-paquete.md`), la cara externa autocontenida del
+mismo contrato. Cada campo lleva su razón de ser entre paréntesis.
 
 ## Unidad de empaquetado
 
@@ -109,7 +110,9 @@ Política mixta (rec. 9):
 
 Un `teleprompter.json` con `"collection": true` describe una colección.
 Sus campos son `name`, `description`, `license`, `author`, `metadata`,
-`format` —con la misma semántica que en un paquete— más:
+`format` —con la misma semántica que en un paquete, salvo `name`, que
+en una colección es cosmético y no debe coincidir con el directorio—
+más:
 
 - `collection` — booleano, obligatorio y `true`. Es el discriminador.
 - `packages` — lista obligatoria de entradas `{ "path": "..." }` con la

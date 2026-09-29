@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada
+[x] Completada
 
 ## Objetivo
 
@@ -25,11 +25,11 @@ para mantenedores.
 
 - [x] docs/tasks/001-investigar-formatos-manifiesto.md — Investigar
   formatos de manifiesto existentes
-- [ ] docs/tasks/002-definir-formato-paquete.md — Definir el formato de
+- [x] docs/tasks/002-definir-formato-paquete.md — Definir el formato de
   paquete
-- [ ] docs/tasks/003-paquete-referencia.md — Empaquetar un par de
+- [x] docs/tasks/003-paquete-referencia.md — Empaquetar un par de
   skills como paquete de referencia
-- [ ] docs/tasks/004-especificar-formato.md — Especificar el formato de
+- [x] docs/tasks/004-especificar-formato.md — Especificar el formato de
   paquete para mantenedores
 
 ## Plan técnico
