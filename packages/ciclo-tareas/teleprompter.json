@@ -1,0 +1,25 @@
+{
+  "format": "teleprompter-package@1",
+  "name": "ciclo-tareas",
+  "version": "1.0.0",
+  "description": "Ciclo de tareas del proyecto: creación, ejecución con revisión dual y commit",
+  "license": "MIT",
+  "install": [
+    {
+      "source": "skills/crear-tareas/",
+      "target": ".agents/skills/crear-tareas/"
+    },
+    {
+      "source": "skills/ejecutar-tareas/",
+      "target": ".agents/skills/ejecutar-tareas/"
+    },
+    {
+      "source": "skills/commit/",
+      "target": ".agents/skills/commit/"
+    }
+  ],
+  "requires": {
+    "paths": [{ "path": ".agents/skills/", "create": true }]
+  },
+  "metadata": { "origin": "teleprompter" }
+}
