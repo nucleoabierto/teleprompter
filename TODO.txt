@@ -10,4 +10,11 @@
 - [x] docs/tasks/003-paquete-referencia.md — Empaquetar un par de skills como paquete de referencia
 - [x] docs/tasks/004-especificar-formato.md — Especificar el formato de paquete para mantenedores
 
+## Hito 2: Motor de instalación
+<!-- épica: docs/epics/002-motor-instalacion.md -->
+
+- [ ] docs/tasks/005-investigar-motores-instalacion.md — Investigar cómo instalan las herramientas comparables
+- [ ] docs/tasks/006-definir-comportamiento-instalador.md — Definir el comportamiento del instalador
+- [ ] docs/tasks/007-instalar-paquete-referencia.md — Instalar el paquete de referencia sobre un destino real
+
 ## Propuestas en revisión

@@ -4,6 +4,7 @@
 > **Fecha:** 2026-09
 > **Orden sugerido:** 2 de 3 — presupone el formato de paquete; es la
 > pieza que convierte el contrato en experiencia ejecutable.
+> **Procesada en:** docs/proposals/002-motor-instalacion/
 
 ## Problema
 

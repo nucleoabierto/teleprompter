@@ -4,6 +4,7 @@
 > **Fecha:** 2026-09
 > **Orden sugerido:** 1 de 3 — es la idea estructural: sin un contrato de
 > qué es un paquete, no hay nada que instalar ni reportar.
+> **Procesada en:** docs/proposals/001-formato-paquete/
 
 ## Problema
 
