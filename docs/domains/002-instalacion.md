@@ -1,0 +1,104 @@
+# Instalación
+
+## Propósito
+
+Llevar un paquete válido a un repositorio con trabajo previo sin
+pisarlo: verificar, presentar un plan completo antes de escribir,
+resolver colisiones con una política declarada y dejar registro de lo
+instalado.
+
+## Referencia del modelo
+
+- **Lenguaje ubicuo:**
+  - **Plan:** la lista completa de acciones calculada antes de tocar
+    el destino; incluye los `mkdir` de las precondiciones con
+    `create: true` y una entrada por recurso con su marca.
+    - Ancla: `buildPlan` en `src/plan.js`; contrato en
+      `docs/instalador.md` sección «El plan»
+    - Origen: tarea `docs/tasks/009-plan-de-instalacion.md`
+  - **Marca del plan:** estado de cada recurso —`create` (destino
+    libre), `identical` (contenido igual), `managed-update` (propio y
+    sin tocar, versión igual o posterior) o `conflict` (contenido
+    distinto ajeno o propio modificado).
+    - Ancla: `buildPlan` en `src/plan.js`
+  - **Resolución:** la decisión sobre un `conflict` —`overwrite` o
+    `skip`— por flag, por respuesta interactiva o por aborto.
+    - Ancla: `src/cli.js` (bucle de resolución) y `createAsker` en
+      `src/prompt.js`
+  - **Registro (lock):** `teleprompter-lock.json` en la raíz del
+    destino; por paquete guarda `version`, `installedAt` y `files`
+    con `target`, acción y `sha256` —las entradas `skip` no llevan
+    hash. Es la memoria que distingue lo propio de lo ajeno.
+    - Ancla: `readLock` y `isValidLock` en `src/lock.js`; D007
+  - **Propiedad:** un recurso es propio cuando el destino actual
+    hashea igual que lo que el registro anotó para él.
+    - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
+- **Entidades / estado:**
+  - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
+    manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
+    - Ancla: `verifyPackage` en `src/verify.js`
+  - `Plan` — `{ mkdirs, resources, conflicts }`; cada recurso lleva
+    `source`, `target`, `status` y, tras resolver, `resolution`.
+    - Ancla: `buildPlan` en `src/plan.js`
+  - Hash de recurso — SHA-256 sobre dominios separados (`file\n`,
+    `link\n`, `dir\n`) para que tipos distintos nunca colisionen;
+    los árboles ordenan sus entradas para que el digest sea
+    independiente del orden de lectura.
+    - Ancla: `hashPath` en `src/hash.js`
+- **Invariantes:**
+  - El plan completo se calcula antes de escribir; un plan no
+    ejecutable aborta sin escribir nada —ni recursos ni registro
+    (D005). Ancla: `main` en `src/cli.js`
+  - «Existe» significa «hay una entrada en el directorio», sin seguir
+    enlaces: un enlace colgado ocupa su ruta.
+    Ancla: `hasEntry` en `src/paths.js`
+  - `--force` y `--skip` son mutuamente excluyentes; el error es de
+    invocación (código 4). Ancla: `parseArgs` en `src/cli.js`
+  - `managed-update` exige hash registrado coincidente **y** versión
+    del paquete ≥ versión registrada; un downgrade es `conflict`.
+    Ancla: `semverAtLeast` en `src/plan.js`
+  - Una respuesta interactiva que no es afirmativa significa `skip`:
+    el defecto ante trabajo ajeno es no sobrescribir.
+    Ancla: `createAsker` en `src/prompt.js`
+  - Un lock ilegible o con estructura inesperada degrada a «sin
+    historia» con aviso, nunca a crash.
+    Ancla: `readLock`/`isValidLock` en `src/lock.js`
+- **Operaciones:**
+  - `teleprompter install <paquete> <destino> [--force|--skip]
+    [--dry-run]` — verifica, planea, resuelve y (pendiente de la tarea
+    010) ejecuta y registra.
+    - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`
+  - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
+    ejecutable, 3 error de ejecución, 4 invocación.
+    - Ancla: `EXIT_*` en `src/cli.js`; contrato en
+      `docs/instalador.md` «Resultado y errores»
+
+## Explicación del dominio
+
+- **Fronteras:**
+  - Dentro: verificación, plan, resolución de colisiones, ejecución y
+    registro de una instalación.
+  - Fuera: la forma del manifiesto (dominio del paquete), el contenido
+    de la personalización y la distribución del CLI.
+  - Relaciones: consume el dominio del paquete a través del resultado
+    estructurado de `verifyPackage`; la invocación (`bin/`) es una
+    capa delgada sin dominio.
+- **Decisiones relevantes:**
+  - `docs/decisions/D005` — plan completo antes de escribir, aborto
+    total.
+  - `docs/decisions/D006` — política de colisiones: interactiva,
+    aborto sin consola, `--force`/`--skip` excluyentes.
+  - `docs/decisions/D007` — `teleprompter-lock.json` como memoria de
+    propiedad.
+  - `docs/decisions/D008` — implementación JavaScript vía `npx` como
+    `@nucleoabierto/teleprompter`.
+
+## Estado de salud
+
+- Última revisión: 2026-09-28
+- Divergencias conocidas: el dominio cubre la ejecución y el registro,
+  pero solo verificación, plan y resolución están implementados (las
+  tareas 010 y 007 lo completan). Anotado en la tarea 010: el
+  `overwrite` debe eliminar el destino antes de escribir —nunca a
+  través de un enlace— y falta decidir la fusión del registro entre
+  paquetes.
