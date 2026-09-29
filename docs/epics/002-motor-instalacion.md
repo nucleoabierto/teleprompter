@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada
+[x] Completada
 
 ## Objetivo
 
@@ -35,7 +35,7 @@ resultado —validado con la instalación real del paquete de referencia.
   detección de colisiones
 - [x] docs/tasks/010-ejecucion-y-registro.md — Ejecución del plan y
   registro de instalación
-- [ ] docs/tasks/007-instalar-paquete-referencia.md — Instalar el
+- [x] docs/tasks/007-instalar-paquete-referencia.md — Instalar el
   paquete de referencia sobre un destino real
 
 ## Plan técnico

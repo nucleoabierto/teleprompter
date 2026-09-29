@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -62,7 +62,55 @@ contrato declara.
 5. Documentar las fricciones y corregirlas en el instalador o en el
    manifiesto.
 
+## Plan técnico
+
+La validación es un test e2e reproducible (`test/e2e.test.js`) que
+ejercita el binario real con `execFileSync` sobre un destino con
+trabajo previo construido en cada ejecución — el destino no es un
+fixture congelado sino un escenario que se recrea en tmpdir, así que
+la prueba corre en cada `npm test`.
+
+- [x] Destino con historia: README propio, `.agents/skills/` ya
+  existente (satisface `requires`), un skill ajeno al paquete y
+  `.agents/skills/ejecutar-tareas/SKILL.md` con contenido local — la
+  colisión provocada
+- [x] Sin flags en consola no interactiva → código 2, conflicto
+  listado, destino intacto
+- [x] `--skip` → los otros skills se crean, el conflictivo intacto,
+  lock registra `skip` sin hash
+- [x] `--force` → sobrescribe; lock registra `overwrite` con hash;
+  una pasada más informa `identical`
+- [x] Fricciones del ejercicio real documentadas en la tarea
+
+Resultado del ejercicio: el recorrido completo con el binario real se
+comportó según el contrato a la primera —aborto no interactivo con el
+conflicto listado y destino intacto, `--skip` conservando el trabajo
+local, `--force` reemplazándolo y una reinstalación totalmente
+`identical`—. Fricciones encontradas: ninguna; el escenario no
+requirió correcciones al instalador ni al manifiesto.
+
+## Suite de pruebas esperada
+
+UC1 el recorrido completo funciona con el binario real; UC2 la
+colisión se detecta y resuelve por política; UC3 el registro
+reconstruye lo ocurrido.
+
+- Sin flags no interactivo con conflicto → código 2, destino intacto
+  — UC2 (B)
+- `--skip` instala lo no conflictivo, registra omisión sin hash —
+  UC1/UC3 (M)
+- `--force` sobrescribe y registra `overwrite` con hash — UC1/UC3 (M)
+- Reinstalación → `identical` sin escrituras — UC1 (Z)
+- El lock reconstruye acción por recurso — UC3 (I)
+- Fricciones documentadas en la tarea — proceso (sin letra)
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: Aprueba — el test ejercita el binario real sobre trabajo
+  previo genuino con colisión real, determinista y autocontenido.
+  Observaciones menores aplicadas: `process.execPath` en lugar de
+  `node` del PATH, aserción del formato del hash y verificación de la
+  marca `conflict` en la salida del plan. Desviación benéfica
+  registrada: `spawnSync` en lugar de `execFileSync` para capturar
+  códigos de salida no cero sin excepción.
+- Usuario: aprobada tras la revisión.
