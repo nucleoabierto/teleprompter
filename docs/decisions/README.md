@@ -58,3 +58,10 @@ decisión antes de actuar.
   - Disparadores: `npx`, npm, `@nucleoabierto`, JavaScript, CLI,
     distribución
   - Estado: Aceptada
+- [D009-documentacion-producto-manual-mkdocs.md](D009-documentacion-producto-manual-mkdocs.md)
+  — la documentación de producto vive en `manual/` y se publica con
+  MkDocs; `index.md` es la portada del sitio y `README.md` el índice
+  del directorio.
+  - Disparadores: `manual/`, `mkdocs.yml`, `index.md`, documentación de
+    producto, MkDocs, `docs_dir`, `exclude_docs`, sitio
+  - Estado: Aceptada

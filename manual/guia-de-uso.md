@@ -1,0 +1,90 @@
+# Guía de uso
+
+Cómo instalar un paquete Teleprompter en un repositorio, paso a paso.
+
+## Requisitos
+
+- Node.js 22 o superior.
+- Un paquete: un directorio con un manifiesto `teleprompter.json` en su
+  raíz. Este repositorio incluye uno de referencia en
+  `packages/ciclo-tareas/`.
+- El directorio del repositorio destino donde se instalarán los
+  recursos.
+
+## Instalar un paquete
+
+Desde la raíz del repositorio destino —o dando su ruta como segundo
+argumento—:
+
+```sh
+npx @nucleoabierto/teleprompter install /ruta/al/paquete .
+```
+
+El instalador trabaja en cuatro fases: verificación, plan, ejecución y
+registro. Las dos primeras no escriben nada.
+
+1. **Verificación.** Lee y valida el manifiesto del paquete y comprueba
+   sus precondiciones sobre el destino. Si algo falla, la operación
+   aborta antes de tocar el disco. Si todo va bien, verás:
+
+```text
+verificado: ciclo-tareas@1.0.0
+```
+
+2. **Plan.** Se calculan todas las acciones antes de escribir y se
+   muestran recurso a recurso con una marca por línea (`create`,
+   `identical`, `conflict`, `managed-update`):
+
+```text
+plan de instalación:
+ mkdir          .agents/skills/
+ create         .agents/skills/crear-tareas/
+ create         .agents/skills/ejecutar-tareas/
+ create         .agents/skills/commit/
+```
+
+3. **Ejecución.** Si el plan no tiene colisiones, se ejecuta tal como se
+   presentó. Si las hay, se resuelven antes de escribir: en una consola
+   interactiva el instalador pregunta por cada recurso en conflicto;
+   en una ejecución no interactiva la operación aborta. `--force` y
+   `--skip` resuelven todas las colisiones por adelantado (véase la
+   [referencia](referencia-install.md#colisiones)).
+
+4. **Registro.** Terminada la ejecución se escribe
+   `teleprompter-lock.json` en la raíz del destino y se informa del
+   resultado:
+
+```text
+resultado:
+ mkdir          .agents/skills/
+ create         .agents/skills/crear-tareas/
+ create         .agents/skills/ejecutar-tareas/
+ create         .agents/skills/commit/
+instalado: ciclo-tareas@1.0.0
+```
+
+   El archivo de registro está pensado para versionarse con el
+   repositorio: es lo que permite a Teleprompter distinguir lo que él
+   instaló de lo que ya existía.
+
+## Inspeccionar sin instalar
+
+`--dry-run` ejecuta solo la verificación y el plan, y termina sin
+escribir ni registrar nada:
+
+```sh
+npx @nucleoabierto/teleprompter install /ruta/al/paquete . --dry-run
+```
+
+Es la forma de ver qué haría una instalación —incluidas las colisiones
+que habría que resolver— antes de decidir.
+
+## Reinstalar
+
+Reinstalar un paquete ya instalado es una operación válida e inocua:
+los recursos que siguen idénticos se marcan `identical` y no se
+escriben; los que difieren en contenido se actualizan
+(`managed-update`) solo si el paquete ofrece una versión igual o
+posterior a la registrada y el destino sigue conteniendo lo que la
+instalación anterior escribió. Si un recurso instalado se modificó a
+mano, se trata como colisión y pide resolución.

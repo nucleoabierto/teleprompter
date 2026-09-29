@@ -1,0 +1,16 @@
+site_name: Teleprompter
+site_description: Instalador de paquetes de configuración para repositorios
+repo_url: https://github.com/nucleoabierto/teleprompter
+edit_uri: edit/master/manual/
+docs_dir: manual
+theme:
+  name: mkdocs
+nav:
+  - Inicio: index.md
+  - Guía de uso: guia-de-uso.md
+  - Referencia de install: referencia-install.md
+  - Instalar un paquete: 001-instalar-un-paquete.md
+# README.md es el índice del directorio en el repositorio y en el
+# paquete npm; la portada del sitio es index.md.
+exclude_docs: |
+  README.md

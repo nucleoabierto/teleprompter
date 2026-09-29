@@ -3,13 +3,21 @@
   "version": "0.1.0",
   "description": "Instalador de paquetes de configuración Teleprompter",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nucleoabierto/teleprompter.git"
+  },
   "type": "module",
   "bin": {
     "teleprompter": "bin/teleprompter.js"
   },
   "files": [
     "bin/",
-    "src/"
+    "src/",
+    "README.md",
+    "manual/",
+    "docs/domains/",
+    "docs/especificacion-paquete.md"
   ],
   "engines": {
     "node": ">=22"

@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -67,5 +67,9 @@ instalador sin leer el código ni la documentación de proceso.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-09-28 — Aprueba (tras dos rondas de cambios:
+  tabla de opciones del README, distinción registro ausente/corrupto,
+  contenido publicable en `files`, ejemplos alineados a la salida real
+  del binario y enlaces internos del tarball)
+- Usuario: 2026-09-29 — Aprueba (doc de producto en `manual/` publicada
+  con MkDocs; decisión registrada en D009)
