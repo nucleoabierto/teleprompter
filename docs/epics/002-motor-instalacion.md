@@ -25,12 +25,16 @@ resultado —validado con la instalación real del paquete de referencia.
 
 ## Piezas
 
-- [ ] docs/tasks/005-investigar-motores-instalacion.md — Investigar
+- [x] docs/tasks/005-investigar-motores-instalacion.md — Investigar
   cómo instalan las herramientas comparables
-- [ ] docs/tasks/006-definir-comportamiento-instalador.md — Definir el
+- [x] docs/tasks/006-definir-comportamiento-instalador.md — Definir el
   comportamiento del instalador
-- Las tareas de implementación que la 006 derive de la definición del
-  comportamiento, sin número hasta que existan.
+- [ ] docs/tasks/008-esqueleto-cli-y-verificacion.md — Esqueleto del
+  CLI y verificación del paquete
+- [ ] docs/tasks/009-plan-de-instalacion.md — Plan de instalación y
+  detección de colisiones
+- [ ] docs/tasks/010-ejecucion-y-registro.md — Ejecución del plan y
+  registro de instalación
 - [ ] docs/tasks/007-instalar-paquete-referencia.md — Instalar el
   paquete de referencia sobre un destino real
 

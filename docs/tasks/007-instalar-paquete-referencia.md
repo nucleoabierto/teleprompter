@@ -18,7 +18,9 @@ contrato declara.
 
 ## Dependencias
 
-- Las tareas de implementación derivadas de la tarea 006.
+- 008.
+- 009.
+- 010.
 
 ## Entrada
 

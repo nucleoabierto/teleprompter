@@ -34,3 +34,27 @@ decisión antes de actuar.
   - Disparadores: `install`, mapa de instalación, source, target,
     manifiesto
   - Estado: Aceptada
+- [D005-plan-completo-aborto-total.md](D005-plan-completo-aborto-total.md)
+  — el instalador calcula el plan completo antes de escribir y aborta
+  la operación entera si no es ejecutable.
+  - Disparadores: instalador, plan, aborto, verificación, ejecución
+  - Estado: Aceptada
+- [D006-politica-colisiones.md](D006-politica-colisiones.md) — ante una
+  colisión se resuelve interactivamente en consola interactiva y se
+  aborta sin ella; `--force` y `--skip` resuelven por adelantado y son
+  excluyentes.
+  - Disparadores: colisión, `--force`, `--skip`, conflicto,
+    interactivo, sobrescritura
+  - Estado: Aceptada
+- [D007-registro-teleprompter-lock.md](D007-registro-teleprompter-lock.md)
+  — cada instalación escribe `teleprompter-lock.json` en la raíz del
+  destino con los recursos instalados, sus acciones y sus hashes.
+  - Disparadores: `teleprompter-lock.json`, registro, lock, propiedad,
+    `managed-update`, hash
+  - Estado: Aceptada
+- [D008-implementacion-javascript-npx.md](D008-implementacion-javascript-npx.md)
+  — el instalador es JavaScript distribuido como el paquete npm
+  `@nucleoabierto/teleprompter`, ejecutable con `npx`.
+  - Disparadores: `npx`, npm, `@nucleoabierto`, JavaScript, CLI,
+    distribución
+  - Estado: Aceptada
