@@ -90,8 +90,11 @@ con conocimiento.
 
 ## Investigaciones de apoyo
 
-- Ninguna todavía; la descomposición incluye una investigación sobre
-  cómo resuelven la instalación las herramientas comparables.
+- `docs/research/2026-09-motores-instalacion.md` — comparación de cómo
+  instalan las herramientas comparables y decisiones candidatas para
+  el comportamiento del instalador.
+- `docs/research/2026-09-formatos-manifiesto.md` — la investigación de
+  la épica anterior; define el contrato que el instalador ejecuta.
 
 ## Borradores
 

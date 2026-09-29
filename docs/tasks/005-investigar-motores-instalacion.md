@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -65,5 +65,6 @@ colisión y registro del resultado.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-09-28 — Aprueba (2ª pasada, tras corregir la
+  descripción de los archivos de bloqueo de skills.sh)
+- Usuario: 2026-09-28 — Aprueba
