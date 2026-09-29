@@ -4,6 +4,8 @@ import { createAsker } from '../src/prompt.js';
 
 try {
   process.exitCode = await main(process.argv.slice(2), {
+    cwd: process.cwd(),
+    fetch,
     interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
     createAsker,
   });

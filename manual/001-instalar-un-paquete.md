@@ -1,6 +1,7 @@
 # Instalar un paquete
 
-El usuario ejecuta `teleprompter install <paquete> <destino>` para
+El usuario ejecuta `teleprompter <user/repo> [destino]` —o
+`teleprompter --path <paquete> [destino]` para un paquete local— para
 llevar los recursos de un paquete a un repositorio existente, con el
 plan completo visible antes de escribir y un registro de lo instalado.
 Qué es un paquete y qué garantiza la instalación están definidos en
@@ -10,6 +11,35 @@ mecánica detallada, en la [referencia](referencia-install.md).
 
 ## Escenarios
 
+- **El paquete puede venir de un repositorio público de GitHub:**
+  `user/repo` descarga el tarball por HTTP —sin git— e instala la raíz
+  del árbol extraído. — módulo `test/cli.test.js`, «user/repo with OUT
+  installs into it»
+- **`install` es un alias de la forma corta.** — módulo
+  `test/cli.test.js`, «install is an alias of the short form»
+- **El destino por defecto es el directorio de trabajo.** — módulo
+  `test/cli.test.js`, «user/repo without OUT installs into the working
+  directory»
+- **`--path` instala un paquete local sin peticiones HTTP.** — módulo
+  `test/cli.test.js`, «--path installs the local package without any
+  HTTP request»
+- **La referencia se elige con `@ref` o `--ref`;** declarar ambas es un
+  error de invocación. — módulos `test/cli.test.js` («the ref reaches
+  the download URL via @ref or --ref», «declaring @ref and --ref at
+  once is a usage error») y `test/fetch.test.js` («fetchRepoTree asks
+  for the ref in the URL when given»)
+- **Un repositorio inaccesible o una referencia inexistente abortan
+  con código 5 sin escribir nada.** — módulo `test/cli.test.js` («a
+  missing repository exits 5 and writes nothing», «a network failure
+  exits 5 and writes nothing»)
+- **El temporal de extracción se elimina siempre:** tras éxito, error
+  y `--dry-run`. — módulos `test/cli.test.js` («a repo without
+  teleprompter.json exits 1 and cleans the temp dir», «--dry-run with
+  a remote origin writes nothing and cleans the temp dir») y
+  `test/fetch.test.js`
+- **Un archivo hostil no escribe fuera del temporal** — las rutas con
+  `..` no se extraen. — módulo `test/fetch.test.js`, «fetchRepoTree
+  does not let a hostile entry escape the temp dir»
 - **Un paquete se instala de principio a fin con el binario real.** —
   módulo `test/e2e.test.js`, «the reference package installs end to end
   through the real binary»

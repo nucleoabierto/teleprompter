@@ -8,11 +8,40 @@ la investigación de motores de instalación
 y sirve de contrato para las tareas de implementación. Cada
 comportamiento lleva su razón de ser entre paréntesis.
 
+## El origen del paquete
+
+El paquete puede venir de un repositorio público de GitHub o de un
+directorio local:
+
+```sh
+teleprompter <user/repo[@ref]> [destino]     # origen remoto
+teleprompter --path <paquete> [destino]      # origen local
+teleprompter install …                       # alias de ambas formas
+```
+
+- `user/repo` descarga el tarball público del repositorio por HTTP
+  —sin git ni credenciales— desde `codeload.github.com`, con el
+  endpoint `tarball` de la API como alternativa, y lo extrae en un
+  directorio temporal que se elimina al terminar, también en caso de
+  error y en `--dry-run`. El paquete es la raíz del árbol extraído.
+- La referencia se elige con `@ref` en el argumento o con `--ref`
+  (declarar ambas es un error de invocación); sin indicación se
+  descarga la rama por defecto del repositorio.
+- `--path` toma un directorio local como origen y el argumento
+  posicional `user/repo` no se procesa.
+- `destino` es el segundo parámetro posicional; omitido, es el
+  directorio de trabajo.
+
+La obtención sucede antes de la verificación: un repositorio
+inaccesible, una referencia inexistente o un archivo corrupto abortan
+con el código `5` sin tocar el destino.
+
 ## La operación
 
 Instalar es ejecutar cuatro fases en orden —verificación, plan,
-ejecución y registro— sobre dos entradas: el directorio del paquete y
-la raíz del repositorio destino (rec. 1 y 2).
+ejecución y registro— sobre dos entradas: el directorio del paquete
+ya resuelto —descargado o local— y la raíz del repositorio destino
+(rec. 1 y 2).
 
 1. **Verificación.** Se lee el `teleprompter.json` del paquete y se
    valida contra la especificación; un manifiesto inválido aborta la
@@ -163,6 +192,8 @@ Los códigos de salida son:
 - `3` — error de ejecución.
 - `4` — error de invocación: argumentos ausentes o rutas que no
   existen.
+- `5` — error de obtención: el repositorio remoto es inaccesible, la
+  referencia no existe o el archivo descargado no se pudo extraer.
 
 ## Distribución
 

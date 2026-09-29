@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -161,7 +161,7 @@ que se materializa antes de verificar: local (`--path`) o remoto
 (`user/repo` descargado a un temporal). Todo lo posterior al
 origen queda intacto.
 
-- [ ] Extender `parseArgs` a la nueva gramática: subcomando
+- [x] Extender `parseArgs` a la nueva gramática: subcomando
   `install` opcional, opciones con valor (`--path`, `--ref`),
   origen posicional `user/repo[@ref]`, `OUT` posicional opcional
   y las flags existentes
@@ -172,7 +172,7 @@ origen queda intacto.
     declarar `@ref` y `--ref` a la vez es error de uso; con
     `--path`, el posicional restante es `OUT` y ningún origen
     remoto se procesa
-- [ ] Crear `src/fetch.js`: `parseRepoSpec` + `fetchRepoTree` —
+- [x] Crear `src/fetch.js`: `parseRepoSpec` + `fetchRepoTree` —
   descarga `codeload.github.com/{owner}/{repo}/tar.gz/{ref|HEAD}`
   con fallback al endpoint `tarball` de la API, y extrae a un
   temporal con `tar` (`strip: 1` por el directorio raíz
@@ -184,30 +184,30 @@ origen queda intacto.
     fija URLs y dependencia; `fetch` se inyecta vía `io` (sin
     mocks de globals); el archivo es remoto — `tar` ya sanea
     rutas hostiles por defecto
-- [ ] Añadir la dependencia `tar` con `npm add`
+- [x] Añadir la dependencia `tar` con `npm add`
   - Aporta: primera dependencia de ejecución del paquete;
     extracción segura en proceso sin depender del binario del
     sistema
-- [ ] Resolver el origen en `main`: `--path` → directorio local;
+- [x] Resolver el origen en `main`: `--path` → directorio local;
   `user/repo` → temporal con limpieza en `finally`; `OUT` →
   posicional o `process.cwd()` (`io.cwd` en tests)
   - Aporta: conecta el origen materializado con el flujo
     existente sin cambiarlo; el temporal se libera siempre,
     también en error y `--dry-run`
-- [ ] Nuevo código de salida `EXIT_FETCH = 5` con mensaje claro
+- [x] Nuevo código de salida `EXIT_FETCH = 5` con mensaje claro
   por causa (404/privado, red, ref inexistente)
   - Aporta: distingue «no se pudo obtener el paquete» de
     invocación inválida (4) y manifiesto inválido (1)
-- [ ] La raíz del árbol extraído es el directorio del paquete:
+- [x] La raíz del árbol extraído es el directorio del paquete:
   `teleprompter.json` ausente o `collection` se rechaza por la
   verificación existente
   - Aporta: resuelve D002 sin lógica nueva — el paquete vive en
     la raíz del repo
-- [ ] Actualizar USAGE, `README.md`, `docs/instalador.md`
+- [x] Actualizar USAGE, `README.md`, `docs/instalador.md`
   (invocación + código 5) y `manual/`
   - Aporta: la documentación publica el contrato nuevo con
     `install` como alias
-- [ ] Cobertura 100 % sobre `src/` mantenida
+- [x] Cobertura 100 % sobre `src/` mantenida
   - Aporta: convención del proyecto (`npm test` la exige)
 
 ## Suite de pruebas esperada
@@ -243,7 +243,41 @@ referencia; CU5 destino y limpieza del temporal.
 - archive con ruta hostil (`../x`) no escribe fuera del
   temporal — CU1 (B)
 
+## Desviaciones del plan
+
+- La extracción aterriza en `{tmp}/{repo}`, no en la raíz del
+  temporal: la regla del manifiesto que exige `name` igual al nombre
+  del directorio sigue aplicando al origen remoto, así que el
+  directorio del paquete se llama como el repositorio. Consecuencia:
+  un repositorio cuyo nombre no coincide con el `name` del manifiesto
+  se rechaza como manifiesto inválido —y como `name` además debe ser
+  kebab-case, un repositorio con un nombre que no lo sea (`my_repo`,
+  `Mi.Repo`) nunca podrá instalarse por vía remota mientras la regla
+  exista.
+- La forma `install <paquete> <destino>` con rutas locales deja de
+  funcionar: `install` es alias de la gramática nueva y el origen
+  local pasa siempre por `--path`. Es la consecuencia de la sintaxis
+  acordada; la suite existente migró a `--path`.
+- Se añadió `io.tmpBase` además de `io.cwd` e `io.fetch`: la base del
+  temporal inyectable permite verificar la limpieza sin depender del
+  listado global de `os.tmpdir()` (los archivos de test corren en
+  paralelo).
+- La salida gana una línea `obteniendo: owner/repo[@ref]` al inicio
+  de la fase remota: sin ella la descarga sería silenciosa.
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: ronda 1 — Aprueba, con observaciones cerradas en la
+  misma iteración: dominio `002-instalacion.md` obsoleto
+  (invocación y códigos actualizados), ejemplos de salida sin la
+  línea `obteniendo:` (corregidos en README y guía), `.gitignore`
+  sin `node_modules/` (añadido), tests nominales ausentes para
+  `--force` remoto y ref+404 (añadidos), `parseRepoSpec` aceptaba
+  `.`/`..` (rechazados), ref sin validar en la URL (se rechazan
+  espacios, `?`, `#`, `%` y `..`), `fetch` ausente degradaba a error
+  de red (error explícito), bloque de sintaxis de la referencia
+  ambiguo con las flags (reformateado). Quedan sin tratar por
+  ínfimos: la distinción 404 vs. 5xx en el mensaje de obtención, la
+  ausencia de timeout/tamaño máximo de descarga, y `mkdtempSync`
+  fuera del `try` propaga como «error inesperado» si el FS falla.
+- Usuario: 2026-09-29 — Aprueba

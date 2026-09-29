@@ -52,7 +52,7 @@ function writeTree(dir, files) {
 test('plan marks every resource create on an empty destination', async () => {
   const dest = tmp();
   const pkg = pkgWith('vacio', { 'a.txt': 'a', 'd/': { 'x.txt': 'x' } });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   const out = stdout.join('\n');
   assert.match(out, /create\s+a\.txt/);
@@ -69,7 +69,7 @@ test('plan marks identical when the destination already holds the same content',
     'a.txt': 'igual',
     'dir': { 'f.txt': 'inside', 'sub': { 'g.txt': 'deep' } },
   });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   const out = stdout.join('\n');
   assert.match(out, /identical\s+a\.txt/);
@@ -80,7 +80,7 @@ test('plan reports conflict for foreign content without a lock record', async ()
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'otro contenido');
   const pkg = pkgWith('choque', { 'a.txt': 'a' });
-  const { code, stderr } = await run(['install', pkg, dest]);
+  const { code, stderr } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
   assert.match(stderr.join('\n'), /conflicto sin resolver: a\.txt/);
   assert.match(stderr.join('\n'), /plan no ejecutable/);
@@ -94,7 +94,7 @@ test('plan marks managed-update when the destination still holds what the lock r
     packages: { propio: { version: '1.0.0', files: [{ target: 'a.txt', action: 'create', sha256 }] } },
   }));
   const pkg = pkgWith('propio', { 'a.txt': 'nueva' });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /managed-update\s+a\.txt/);
 });
@@ -111,7 +111,7 @@ test('plan marks conflict when a recorded resource was modified locally', async 
     },
   }));
   const pkg = pkgWith('mano', { 'a.txt': 'x' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -119,7 +119,7 @@ test('plan still computes with a missing or corrupt lock file', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
   const pkg = pkgWith('sinlock', { 'a.txt': 'a' });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /aviso:.*lock.*corrupto/s);
 });
@@ -132,7 +132,7 @@ test('plan treats a recorded resource as conflict when the package downgrades it
     packages: { viejo: { version: '2.0.0', files: [{ target: 'a.txt', action: 'create', sha256 }] } },
   }));
   const pkg = pkgWith('viejo', { 'a.txt': 'x' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -140,7 +140,7 @@ test('plan ignores a lock file that is valid JSON without a packages map', async
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{}');
   const pkg = pkgWith('sinpkgs', { 'a.txt': 'a' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
 });
 
@@ -154,7 +154,7 @@ test('plan warns and treats a structurally malformed lock as empty history', asy
     const dest = tmp();
     fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), content);
     const pkg = pkgWith('malformado', { 'a.txt': 'a' });
-    const { code, stdout } = await run(['install', pkg, dest]);
+    const { code, stdout } = await run(['--path', pkg, dest]);
     assert.equal(code, EXIT_OK);
     assert.match(stdout.join('\n'), /aviso:.*lock.*corrupto/s);
   }
@@ -167,7 +167,7 @@ test('plan treats a skip-recorded target as conflict since it carries no hash', 
     packages: { saltado: { version: '1.0.0', files: [{ target: 'a.txt', action: 'skip' }] } },
   }));
   const pkg = pkgWith('saltado', { 'a.txt': 'x' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -175,7 +175,7 @@ test('plan does not confuse an empty file with an empty directory', async () => 
   const dest = tmp();
   fs.mkdirSync(path.join(dest, 'a.txt'));
   const pkg = pkgWith('hueco', { 'a.txt': '' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -183,7 +183,7 @@ test('plan treats a dangling symlink at the target as occupied', async () => {
   const dest = tmp();
   fs.symlinkSync('no-existe', path.join(dest, 'a.txt'));
   const pkg = pkgWith('colgado', { 'a.txt': 'a' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -192,7 +192,7 @@ test('plan hashes a destination that is itself a symlink', async () => {
   fs.writeFileSync(path.join(dest, 'real.txt'), 'contenido real');
   fs.symlinkSync('real.txt', path.join(dest, 'a.txt'));
   const pkg = pkgWith('enlaceraiz', { 'a.txt': 'a' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
 });
 
@@ -203,7 +203,7 @@ test('plan treats symlinks inside resources as comparable leaves', async () => {
   fs.symlinkSync('f.txt', path.join(dest, 'd', 'l'));
   const pkg = pkgWith('enlace', { 'd': { 'f.txt': 'x' } });
   fs.symlinkSync('f.txt', path.join(pkg, 'd', 'l'));
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /identical\s+d/);
 });
@@ -212,7 +212,7 @@ test('an interactive console without an asker reports conflicts and aborts', asy
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'ajeno');
   const pkg = pkgWith('sinpregunta', { 'a.txt': 'a' });
-  const { code, stderr } = await run(['install', pkg, dest], { interactive: true });
+  const { code, stderr } = await run(['--path', pkg, dest], { interactive: true });
   assert.equal(code, EXIT_PLAN);
   assert.match(stderr.join('\n'), /conflicto sin resolver/);
 });
@@ -234,7 +234,7 @@ test('plan downgrades managed-update to conflict when the parent chain escapes',
     },
   }));
   const pkg = pkgWith('trapdoor', { 'vendor/f.txt': 'y' });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
   assert.match(stdout.join('\n'), /conflict\s+vendor\/f\.txt/);
 });
@@ -242,7 +242,7 @@ test('plan downgrades managed-update to conflict when the parent chain escapes',
 test('--dry-run prints the plan and exits without writing', async () => {
   const dest = tmp();
   const pkg = pkgWith('seco', { 'a.txt': 'a' });
-  const { code, stdout } = await run(['install', pkg, dest, '--dry-run']);
+  const { code, stdout } = await run(['--path', pkg, dest, '--dry-run']);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /--dry-run/);
   assert.deepEqual(fs.readdirSync(dest), []);
@@ -252,7 +252,7 @@ test('--force resolves every conflict as overwrite', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'ajeno');
   const pkg = pkgWith('fuerza', { 'a.txt': 'a' });
-  const { code, stdout } = await run(['install', pkg, dest, '--force']);
+  const { code, stdout } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /a\.txt → overwrite/);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
@@ -262,7 +262,7 @@ test('--skip resolves every conflict as skip', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'ajeno');
   const pkg = pkgWith('omite', { 'a.txt': 'a' });
-  const { code, stdout } = await run(['install', pkg, dest, '--skip']);
+  const { code, stdout } = await run(['--path', pkg, dest, '--skip']);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /a\.txt → skip/);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'ajeno');
@@ -275,7 +275,7 @@ test('an interactive console resolves each conflict per answer', async () => {
   const pkg = pkgWith('interactivo', { 'a.txt': 'a', 'b.txt': 'b' });
   const answers = [true, false];
   const questions = [];
-  const { code, stdout } = await run(['install', pkg, dest], {
+  const { code, stdout } = await run(['--path', pkg, dest], {
     interactive: true,
     createAsker: () => ({
       ask: async (q) => { questions.push(q); return answers.shift(); },

@@ -32,7 +32,7 @@ function destWithPriorWork() {
 function install(dest, flags = []) {
   // process.execPath guarantees the child runs the same Node the
   // suite runs on — a bare "node" could resolve to another version.
-  return spawnSync(process.execPath, [bin, 'install', referencePkg, dest, ...flags], {
+  return spawnSync(process.execPath, [bin, 'install', '--path', referencePkg, dest, ...flags], {
     encoding: 'utf8',
   });
 }

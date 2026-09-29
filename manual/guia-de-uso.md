@@ -5,11 +5,11 @@ Cómo instalar un paquete Teleprompter en un repositorio, paso a paso.
 ## Requisitos
 
 - Node.js 22 o superior.
-- Un paquete: un directorio con un manifiesto `teleprompter.json` en su
-  raíz. Este repositorio incluye uno de referencia en
-  `packages/ciclo-tareas/`.
+- Un paquete: un repositorio público de GitHub o un directorio con un
+  manifiesto `teleprompter.json` en su raíz. Este repositorio incluye
+  uno de referencia en `packages/ciclo-tareas/`.
 - El directorio del repositorio destino donde se instalarán los
-  recursos.
+  recursos —por defecto, el directorio de trabajo.
 
 ## Instalar un paquete
 
@@ -17,7 +17,18 @@ Desde la raíz del repositorio destino —o dando su ruta como segundo
 argumento—:
 
 ```sh
-npx @nucleoabierto/teleprompter install /ruta/al/paquete .
+npx @nucleoabierto/teleprompter nucleoabierto/ciclo-tareas .
+```
+
+`user/repo` descarga el tarball público del repositorio de GitHub y
+usa su raíz como paquete —el `name` del manifiesto debe coincidir con
+el nombre del repositorio, como exige la especificación—;
+`user/repo@v1.0.0` o `--ref v1.0.0` eligen
+la referencia (rama, tag o commit), y sin indicación se usa la rama
+por defecto. Para un paquete en disco se usa `--path`:
+
+```sh
+npx @nucleoabierto/teleprompter --path /ruta/al/paquete .
 ```
 
 El instalador trabaja en cuatro fases: verificación, plan, ejecución y
@@ -28,6 +39,7 @@ registro. Las dos primeras no escriben nada.
    aborta antes de tocar el disco. Si todo va bien, verás:
 
 ```text
+obteniendo: nucleoabierto/ciclo-tareas
 verificado: ciclo-tareas@1.0.0
 ```
 
@@ -73,7 +85,7 @@ instalado: ciclo-tareas@1.0.0
 escribir ni registrar nada:
 
 ```sh
-npx @nucleoabierto/teleprompter install /ruta/al/paquete . --dry-run
+npx @nucleoabierto/teleprompter nucleoabierto/ciclo-tareas . --dry-run
 ```
 
 Es la forma de ver qué haría una instalación —incluidas las colisiones

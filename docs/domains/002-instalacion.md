@@ -73,8 +73,11 @@ instalado.
     sigue siendo propio— pero no crea registro si nunca se escribió.
     Ancla: `writeLock` en `src/lock.js`
 - **Operaciones:**
-  - `teleprompter install <paquete> <destino> [--force|--skip]
-    [--dry-run]` — verifica, planea, resuelve, ejecuta y registra.
+  - `teleprompter [install] <user/repo[@ref]> [destino]` o
+    `teleprompter [install] --path <paquete> [destino]` — obtiene el
+    paquete (tarball público de GitHub o directorio local), verifica,
+    planea, resuelve, ejecuta y registra; el destino por defecto es el
+    directorio de trabajo.
     - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`
   - Ejecutar el plan resuelto: `mkdirs` primero, luego cada recurso
     según su acción; `overwrite` elimina el destino antes de escribir
@@ -85,7 +88,8 @@ instalado.
     paquetes; `identical` no se registra y `skip` va sin hash.
     - Ancla: `writeLock` en `src/lock.js`
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
-    ejecutable, 3 error de ejecución, 4 invocación.
+    ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
+    repositorio remoto.
     - Ancla: `EXIT_*` en `src/cli.js`; contrato en
       `docs/instalador.md` «Resultado y errores»
 

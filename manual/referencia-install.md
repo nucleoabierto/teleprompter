@@ -1,11 +1,32 @@
 # Referencia de `install`
 
 ```text
-teleprompter install <paquete> <destino> [--force|--skip] [--dry-run]
+teleprompter [install] <user/repo[@ref]> [destino] [--ref <ref>]
+teleprompter [install] --path <paquete> [destino]
+
+Opciones comunes: [--force|--skip] [--dry-run]
 ```
 
-Instala el paquete del directorio `<paquete>` en el repositorio cuya
-raíz es `<destino>`. Ambos argumentos deben ser directorios existentes.
+Instala un paquete en el repositorio cuya raíz es `destino` —por
+defecto, el directorio de trabajo—. `install` es un alias opcional de
+la forma corta.
+
+## El origen
+
+- `<user/repo>`: descarga el tarball público del repositorio de
+  GitHub por HTTP —sin git ni credenciales—, lo extrae en un
+  directorio temporal y usa la raíz del árbol como paquete. El
+  temporal se elimina al terminar, también en error y en `--dry-run`.
+  La referencia se elige con `@ref` o `--ref` —declarar ambas es un
+  error de invocación—; sin indicación se descarga la rama por
+  defecto. Un repositorio inaccesible o una referencia inexistente
+  abortan con código `5`.
+- `--path <paquete>`: usa el directorio local como origen y el
+  argumento posicional `user/repo` no se procesa —de declararse, se
+  interpreta como `destino`.
+
+`destino` y el directorio de `--path` deben ser directorios
+existentes.
 
 ## Fases
 
@@ -118,3 +139,4 @@ también figuren en `install`.
 | `2`    | Plan no ejecutable: precondiciones incumplidas o colisiones     |
 | `3`    | Error de ejecución (informa de lo ya aplicado antes de fallar)  |
 | `4`    | Error de invocación: argumentos ausentes o rutas que no existen |
+| `5`    | Error de obtención: repositorio inaccesible, referencia inexistente o archivo corrupto |

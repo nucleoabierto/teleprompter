@@ -54,7 +54,7 @@ const readLockFile = (dest) => JSON.parse(
 test('install copies every resource and writes the lock on an empty destination', async () => {
   const dest = tmp();
   const pkg = pkgWith('completo', { 'a.txt': 'a', 'd': { 'f.txt': 'x' } });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
   assert.equal(fs.readFileSync(path.join(dest, 'd', 'f.txt'), 'utf8'), 'x');
@@ -72,8 +72,8 @@ test('install copies every resource and writes the lock on an empty destination'
 test('reinstalling the same package reports identical and keeps the recorded entry', async () => {
   const dest = tmp();
   const pkg = pkgWith('repetido', { 'a.txt': 'a' });
-  assert.equal((await run(['install', pkg, dest])).code, EXIT_OK);
-  const { code, stdout } = await run(['install', pkg, dest]);
+  assert.equal((await run(['--path', pkg, dest])).code, EXIT_OK);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /identical\s+a\.txt/);
   const files = readLockFile(dest).packages['repetido'].files;
@@ -96,7 +96,7 @@ test('a mixed plan applies only the action each resource was assigned', async ()
   const pkg = pkgWith('mixto', {
     'nueva.txt': 'n', 'vieja.txt': 'v2', 'queda.txt': 'x',
   });
-  const { code, stdout } = await run(['install', pkg, dest, '--skip']);
+  const { code, stdout } = await run(['--path', pkg, dest, '--skip']);
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'nueva.txt'), 'utf8'), 'n');
   assert.equal(fs.readFileSync(path.join(dest, 'vieja.txt'), 'utf8'), 'v2');
@@ -115,7 +115,7 @@ test('overwrite removes a symlink destination instead of writing through it', as
   fs.writeFileSync(path.join(outside, 'fuera.txt'), 'no tocar');
   fs.symlinkSync(path.join(outside, 'fuera.txt'), path.join(dest, 'a.txt'));
   const pkg = pkgWith('sobre-enlace', { 'a.txt': 'nuevo' });
-  const { code } = await run(['install', pkg, dest, '--force']);
+  const { code } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(outside, 'fuera.txt'), 'utf8'), 'no tocar');
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
@@ -125,7 +125,7 @@ test('install copies a symlink resource as a symlink', async () => {
   const dest = tmp();
   const pkg = pkgWith('enlazado', { 'd': { 'f.txt': 'x' } });
   fs.symlinkSync('f.txt', path.join(pkg, 'd', 'l'));
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.ok(fs.lstatSync(path.join(dest, 'd', 'l')).isSymbolicLink());
   assert.equal(fs.readlinkSync(path.join(dest, 'd', 'l')), 'f.txt');
@@ -138,7 +138,7 @@ test('install copies a top-level symlink resource as a symlink', async () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'));
   manifest.install.push({ source: 'atajo.txt', target: 'atajo.txt' });
   fs.writeFileSync(path.join(pkg, 'teleprompter.json'), JSON.stringify(manifest));
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.ok(fs.lstatSync(path.join(dest, 'atajo.txt')).isSymbolicLink());
   assert.equal(fs.readlinkSync(path.join(dest, 'atajo.txt')), 'real.txt');
@@ -156,7 +156,7 @@ test('writeLock preserves records belonging to other packages', async () => {
     },
   }));
   const pkg = pkgWith('segundo', { 'a.txt': 'a' });
-  const { code } = await run(['install', pkg, dest]);
+  const { code } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   const lock = readLockFile(dest);
   assert.equal(lock.packages['otro'].version, '3.2.1');
@@ -168,7 +168,7 @@ test('install reports the personalization instructions location', async () => {
   const pkg = pkgWith('con-guia', { 'a.txt': 'a', 'guia.md': 'sigue esto' }, {
     personalization: 'guia.md',
   });
-  const { code, stdout } = await run(['install', pkg, dest]);
+  const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /personalización:.*guia\.md/);
 });
@@ -180,7 +180,7 @@ test('a mid-execution error exits 3 and reports what was applied', async () => {
   fs.chmodSync(blocked, 0o555);
   try {
     const pkg = pkgWith('falla', { 'a.txt': 'a', 'sub/f.txt': 'x' });
-    const { code, stdout, stderr } = await run(['install', pkg, dest]);
+    const { code, stdout, stderr } = await run(['--path', pkg, dest]);
     assert.equal(code, EXIT_EXECUTION);
     assert.match(stdout.join('\n'), /create\s+a\.txt/);
     assert.match(stderr.join('\n'), /error de ejecución/);
@@ -193,7 +193,7 @@ test('a lock write failure exits 3 and still reports what was applied', async ()
   const dest = tmp();
   fs.mkdirSync(path.join(dest, 'teleprompter-lock.json'));
   const pkg = pkgWith('lockroto', { 'a.txt': 'a' });
-  const { code, stdout, stderr } = await run(['install', pkg, dest]);
+  const { code, stdout, stderr } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_EXECUTION);
   assert.match(stdout.join('\n'), /create\s+a\.txt/);
   assert.match(stderr.join('\n'), /error de ejecución/);
@@ -204,7 +204,7 @@ test('overwrite replaces a whole directory destination', async () => {
   fs.mkdirSync(path.join(dest, 'd'));
   fs.writeFileSync(path.join(dest, 'd', 'viejo.txt'), 'fuera');
   const pkg = pkgWith('sobre-dir', { 'd': { 'f.txt': 'dentro' } });
-  const { code } = await run(['install', pkg, dest, '--force']);
+  const { code } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'd', 'f.txt'), 'utf8'), 'dentro');
   assert.equal(fs.existsSync(path.join(dest, 'd', 'viejo.txt')), false);
@@ -215,7 +215,7 @@ test('a target under a symlinked directory is a conflict, not a create', async (
   const outside = tmp();
   fs.symlinkSync(outside, path.join(dest, 'vendor'));
   const pkg = pkgWith('tras-enlace', { 'vendor/f.txt': 'x' });
-  const { code, stdout } = await run(['install', pkg, dest, '--force']);
+  const { code, stdout } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_EXECUTION);
   assert.match(stdout.join('\n'), /conflict\s+vendor\/f\.txt/);
   assert.equal(fs.existsSync(path.join(outside, 'f.txt')), false);
@@ -225,7 +225,7 @@ test('a target whose ancestor is a file is a conflict, not a create', async () =
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a'), 'soy un archivo');
   const pkg = pkgWith('tras-archivo', { 'a/b.txt': 'x' });
-  const { code } = await run(['install', pkg, dest, '--force']);
+  const { code } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_EXECUTION);
   assert.equal(fs.readFileSync(path.join(dest, 'a'), 'utf8'), 'soy un archivo');
 });
@@ -234,7 +234,7 @@ test('a target under a dangling symlink is a conflict, not a create', async () =
   const dest = tmp();
   fs.symlinkSync('no-existe', path.join(dest, 'vendor'));
   const pkg = pkgWith('tras-colgado', { 'vendor/f.txt': 'x' });
-  const { code } = await run(['install', pkg, dest, '--force']);
+  const { code } = await run(['--path', pkg, dest, '--force']);
   assert.equal(code, EXIT_EXECUTION);
 });
 
@@ -245,7 +245,7 @@ test('a precondition directory under a symlinked path is an unmet precondition',
   const pkg = pkgWith('mkdir-fuera', { 'a.txt': 'a' }, {
     requires: { paths: [{ path: 'vendor/sub', create: true }] },
   });
-  const { code, stderr } = await run(['install', pkg, dest]);
+  const { code, stderr } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_PLAN);
   assert.match(stderr.join('\n'), /precondición incumplida/);
   assert.equal(fs.existsSync(path.join(outside, 'sub')), false);

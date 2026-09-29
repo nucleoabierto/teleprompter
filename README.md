@@ -17,25 +17,42 @@ registro auditable de la instalación en `teleprompter-lock.json`.
 No hace falta instalar nada: el CLI se ejecuta directamente con `npx`:
 
 ```sh
-npx @nucleoabierto/teleprompter install <paquete> <destino>
+npx @nucleoabierto/teleprompter user/repo
 ```
 
 También puede instalarse como herramienta global:
 
 ```sh
 npm install -g @nucleoabierto/teleprompter
-teleprompter install <paquete> <destino>
+teleprompter user/repo
 ```
 
 ## Uso
 
-`install` recibe el directorio del paquete y la raíz del repositorio
-destino. Antes de escribir nada, el instalador verifica el manifiesto y
+El primer argumento es el origen del paquete. `user/repo` descarga el
+tarball público del repositorio de GitHub —sin git ni credenciales—
+y usa la raíz del árbol como paquete; la referencia se elige con
+`user/repo@ref` o `--ref <ref>` (la rama por defecto si no se indica).
+Para un paquete local se usa `--path <directorio>`, que no procesa el
+argumento `user/repo`. El segundo argumento posicional es el destino
+de la copia —la raíz del repositorio donde instalar— y por defecto es
+el directorio de trabajo:
+
+```sh
+teleprompter nucleoabierto/mi-paquete          # remoto, destino: pwd
+teleprompter nucleoabierto/mi-paquete ./destino
+teleprompter nucleoabierto/mi-paquete@v1.2.0 ./destino
+teleprompter --path ./mi-paquete ./destino     # local
+teleprompter install nucleoabierto/mi-paquete  # alias
+```
+
+Antes de escribir nada, el instalador verifica el manifiesto y
 las precondiciones del paquete, calcula el plan completo y lo presenta
 recurso a recurso:
 
 ```text
-$ teleprompter install ./mi-paquete ./mi-repo
+$ teleprompter nucleoabierto/mi-paquete ./mi-repo
+obteniendo: nucleoabierto/mi-paquete
 verificado: mi-paquete@1.0.0
 plan de instalación:
   mkdir          .agents/skills/
@@ -75,6 +92,7 @@ qué hash.
 | `2`    | Plan no ejecutable (precondiciones o colisiones)     |
 | `3`    | Error de ejecución                                   |
 | `4`    | Error de invocación (argumentos o rutas)             |
+| `5`    | Error de obtención del repositorio remoto            |
 
 ## Documentación
 
