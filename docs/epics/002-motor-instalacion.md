@@ -29,7 +29,7 @@ resultado —validado con la instalación real del paquete de referencia.
   cómo instalan las herramientas comparables
 - [x] docs/tasks/006-definir-comportamiento-instalador.md — Definir el
   comportamiento del instalador
-- [ ] docs/tasks/008-esqueleto-cli-y-verificacion.md — Esqueleto del
+- [x] docs/tasks/008-esqueleto-cli-y-verificacion.md — Esqueleto del
   CLI y verificación del paquete
 - [ ] docs/tasks/009-plan-de-instalacion.md — Plan de instalación y
   detección de colisiones

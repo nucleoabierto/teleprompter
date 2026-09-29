@@ -66,6 +66,11 @@ modificación local es trabajo ajeno a la herramienta y merece la misma
 protección (precedente: chezmoi pregunta cuando el destino cambió
 desde su última escritura; rec. 3).
 
+Las marcas del plan no son acciones del registro: la ejecución traduce
+`create` a `create`, `conflict` y `managed-update` a `overwrite`,
+`identical` a ninguna escritura, y `skip` —resolución, no marca— a
+`skip`.
+
 ## Colisiones
 
 Una **colisión** es una entrada de `install` cuyo `target` existe en
@@ -156,6 +161,8 @@ Los códigos de salida son:
 - `2` — plan no ejecutable: precondiciones incumplidas o colisiones
   sin resolver.
 - `3` — error de ejecución.
+- `4` — error de invocación: argumentos ausentes o rutas que no
+  existen.
 
 ## Distribución
 

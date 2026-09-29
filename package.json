@@ -1,0 +1,20 @@
+{
+  "name": "@nucleoabierto/teleprompter",
+  "version": "0.1.0",
+  "description": "Instalador de paquetes de configuración Teleprompter",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "teleprompter": "bin/teleprompter.js"
+  },
+  "files": [
+    "bin/",
+    "src/"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test --experimental-test-coverage --test-coverage-include='**/src/**' --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100"
+  }
+}
