@@ -99,6 +99,150 @@ es el destino de la copia y por defecto el directorio de trabajo.
   decide si el paquete se busca en la raíz del árbol extraído o cómo
   se localiza.
 
+## Contexto
+
+- **Archivos similares:**
+  - `src/cli.js` — capa de invocación que la tarea reescribe:
+    `parseArgs` + validación de directorios + flujo
+    verificar → plan → resolver → ejecutar → registrar; `io`
+    inyectable (`out`, `err`, `interactive`, `createAsker`) es la
+    vía para inyectar también la obtención remota en tests.
+  - `src/verify.js`, `src/paths.js` — módulos pequeños con una
+    función exportada que devuelve resultados estructurados
+    (`{ kind, warnings, errors }`); el módulo de obtención debe
+    seguir esa forma.
+  - `test/cli.test.js` — modelo de pruebas del CLI: `run(argv, io)`
+    captura salida y códigos sin procesos; `writePkg` materializa
+    paquetes en temporales.
+  - `test/e2e.test.js` — ejercita el binario real con
+    `execFileSync`; modelo para una prueba de la nueva invocación.
+- **Patrones:**
+  - Sin dependencias de ejecución hoy (`package.json` no declara
+    ninguna); añadir `tar` sería la primera.
+  - Cobertura obligatoria del 100 % sobre `src/` (`npm test`).
+  - Mensajes de usuario en español; códigos de salida numerados
+    (0-4) con una constante exportada por código.
+  - Comentarios escasos que explican el *porqué*, no el qué.
+- **Lecciones:** ninguna aplica —no existe `docs/lessons/`—.
+- **Decisiones:**
+  - D005 — plan completo antes de escribir; el origen remoto debe
+    resolverse y extraerse antes de la verificación, sin tocar el
+    destino.
+  - D006 — `--force`/`--skip` excluyentes se conservan en la nueva
+    sintaxis.
+  - D007 — el registro se escribe en `OUT`, no en el temporal de
+    extracción.
+  - D008 — el cambio redefine justo la invocación `npx` que la
+    decisión fija como forma de distribución.
+  - D002 — un repositorio puede contener varios paquetes
+    (`collection`); la tarea decide cómo se localiza el paquete en
+    el árbol extraído.
+
+## Conectividad
+
+**Veredicto: conectada.**
+
+Todo lo que la tarea asume existe con la forma esperada: el flujo
+verificar → plan → ejecutar → registrar consume un directorio local
+(`verifyPackage(pkgDir, destDir)`), así que el origen remoto solo
+debe producir un directorio para conectarse; la inyección de `io`
+en `main` ya es la vía de testeo y admite inyectar la descarga;
+`fetch` global y `mkdtemp` están en Node 22, que `engines` exige.
+Lo que falta —el módulo de obtención y la dependencia `tar`— es lo
+que la propia tarea construye dentro de su alcance.
+
+## Plan técnico
+
+El CLI es una capa de invocación delgada: `parseArgs` valida la
+línea y `main` encadena verificación → plan → colisiones →
+ejecución → registro sobre dos directorios locales. El cambio
+sustituye el «directorio del paquete» obligatorio por un origen
+que se materializa antes de verificar: local (`--path`) o remoto
+(`user/repo` descargado a un temporal). Todo lo posterior al
+origen queda intacto.
+
+- [ ] Extender `parseArgs` a la nueva gramática: subcomando
+  `install` opcional, opciones con valor (`--path`, `--ref`),
+  origen posicional `user/repo[@ref]`, `OUT` posicional opcional
+  y las flags existentes
+  - Aporta: la invocación nueva es el contrato visible de la
+    tarea; toda combinación inválida se rechaza aquí sin tocar
+    nada
+  - Contexto: `install` queda como alias de la forma corta;
+    declarar `@ref` y `--ref` a la vez es error de uso; con
+    `--path`, el posicional restante es `OUT` y ningún origen
+    remoto se procesa
+- [ ] Crear `src/fetch.js`: `parseRepoSpec` + `fetchRepoTree` —
+  descarga `codeload.github.com/{owner}/{repo}/tar.gz/{ref|HEAD}`
+  con fallback al endpoint `tarball` de la API, y extrae a un
+  temporal con `tar` (`strip: 1` por el directorio raíz
+  `owner-repo-sha/`)
+  - Aporta: encapsula la obtención remota como módulo inyectable
+    como los demás `src/`; devuelve `{ dir, cleanup }` o error
+    estructurado
+  - Contexto: `docs/research/2026-09-descarga-archivos-github.md`
+    fija URLs y dependencia; `fetch` se inyecta vía `io` (sin
+    mocks de globals); el archivo es remoto — `tar` ya sanea
+    rutas hostiles por defecto
+- [ ] Añadir la dependencia `tar` con `npm add`
+  - Aporta: primera dependencia de ejecución del paquete;
+    extracción segura en proceso sin depender del binario del
+    sistema
+- [ ] Resolver el origen en `main`: `--path` → directorio local;
+  `user/repo` → temporal con limpieza en `finally`; `OUT` →
+  posicional o `process.cwd()` (`io.cwd` en tests)
+  - Aporta: conecta el origen materializado con el flujo
+    existente sin cambiarlo; el temporal se libera siempre,
+    también en error y `--dry-run`
+- [ ] Nuevo código de salida `EXIT_FETCH = 5` con mensaje claro
+  por causa (404/privado, red, ref inexistente)
+  - Aporta: distingue «no se pudo obtener el paquete» de
+    invocación inválida (4) y manifiesto inválido (1)
+- [ ] La raíz del árbol extraído es el directorio del paquete:
+  `teleprompter.json` ausente o `collection` se rechaza por la
+  verificación existente
+  - Aporta: resuelve D002 sin lógica nueva — el paquete vive en
+    la raíz del repo
+- [ ] Actualizar USAGE, `README.md`, `docs/instalador.md`
+  (invocación + código 5) y `manual/`
+  - Aporta: la documentación publica el contrato nuevo con
+    `install` como alias
+- [ ] Cobertura 100 % sobre `src/` mantenida
+  - Aporta: convención del proyecto (`npm test` la exige)
+
+## Suite de pruebas esperada
+
+CU1 instalar desde `user/repo` remoto; CU2 instalar desde
+`--path`; CU3 gramática de invocación; CU4 selección de
+referencia; CU5 destino y limpieza del temporal.
+
+- `teleprompter user/repo` con descarga simulada instala en el
+  directorio de trabajo — CU1 (Z)
+- `teleprompter user/repo out` instala en `out` — CU1 (O)
+- `install user/repo out` produce el mismo plan y registro — CU3
+- `--path dir` instala el paquete local sin realizar petición
+  HTTP — CU2 (O)
+- `--path dir out` usa `out` como destino — CU2 (M)
+- `user/repo@v1.2.0` y `--ref v1.2.0` descargan la URL con esa
+  referencia — CU4 (O)
+- declarar `@ref` y `--ref` a la vez → error de uso — CU4 (B)
+- `user/repo` con formato inválido → error de uso — CU3 (I)
+- repo inexistente o privado (404) → mensaje claro, código 5,
+  nada escrito — CU1 (E)
+- fallo de red durante la descarga → código 5, nada escrito —
+  CU1 (E)
+- ref inexistente → código 5 — CU4 (E)
+- árbol sin `teleprompter.json` → código 1, nada escrito —
+  CU1 (I)
+- el temporal no existe tras éxito, error ni `--dry-run` —
+  CU5 (B)
+- `OUT` que no es directorio → error de uso (4), como hoy —
+  CU5 (I)
+- `--force`/`--skip`/`--dry-run` funcionan igual con origen
+  remoto — CU3
+- archive con ruta hostil (`../x`) no escribe fuera del
+  temporal — CU1 (B)
+
 ## Revisión
 
 - Subagente: [fecha] — [Aprueba | Solicita cambios]
