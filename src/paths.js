@@ -1,4 +1,17 @@
+import fs from 'node:fs';
 import path from 'node:path';
+
+// "Exists" means a directory entry is present, whatever it points
+// at: existsSync follows links, so a dangling symlink would report
+// the path as free and a later write could escape through it.
+export function hasEntry(p) {
+  try {
+    fs.lstatSync(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Rejects anything that could escape the package or the destination
 // root: absolute paths and ".." segments, plus Windows-style absolute

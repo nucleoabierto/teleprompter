@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { isSafeRelative } from './paths.js';
+import { isSafeRelative, hasEntry } from './paths.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -51,7 +51,7 @@ function checkInstallEntry(entry, index, pkgDir, errors) {
   checkKeys(entry, OBJECT_KEYS.installEntry, where, errors);
   const sourceOk = checkRelativePath(entry.source, `${where}.source`, errors);
   checkRelativePath(entry.target, `${where}.target`, errors);
-  if (sourceOk && !fs.existsSync(path.join(pkgDir, entry.source))) {
+  if (sourceOk && !hasEntry(path.join(pkgDir, entry.source))) {
     errors.push(`${where}.source: no existe "${entry.source}" dentro del paquete`);
   }
 }

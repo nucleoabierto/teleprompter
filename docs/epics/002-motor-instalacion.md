@@ -31,7 +31,7 @@ resultado —validado con la instalación real del paquete de referencia.
   comportamiento del instalador
 - [x] docs/tasks/008-esqueleto-cli-y-verificacion.md — Esqueleto del
   CLI y verificación del paquete
-- [ ] docs/tasks/009-plan-de-instalacion.md — Plan de instalación y
+- [x] docs/tasks/009-plan-de-instalacion.md — Plan de instalación y
   detección de colisiones
 - [ ] docs/tasks/010-ejecucion-y-registro.md — Ejecución del plan y
   registro de instalación

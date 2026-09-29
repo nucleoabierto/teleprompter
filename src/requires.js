@@ -1,5 +1,5 @@
-import fs from 'node:fs';
 import path from 'node:path';
+import { hasEntry } from './paths.js';
 
 // Splits missing precondition paths into hard failures and deferred
 // creations: `create: true` entries become plan actions rather than
@@ -8,7 +8,7 @@ export function checkRequires(manifest, destDir) {
   const failures = [];
   const creates = [];
   for (const entry of manifest.requires?.paths ?? []) {
-    if (fs.existsSync(path.join(destDir, entry.path))) continue;
+    if (hasEntry(path.join(destDir, entry.path))) continue;
     if (entry.create === true) creates.push(entry.path);
     else failures.push(entry.path);
   }
