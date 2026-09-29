@@ -2,6 +2,8 @@
 
 ## General
 
+- [ ] docs/tasks/011-documentacion-publica.md — Generar la documentación pública del producto
+
 ## Hito 1: Formato de paquete
 <!-- épica: docs/epics/001-formato-paquete.md -->
 
