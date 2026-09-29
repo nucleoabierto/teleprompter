@@ -89,9 +89,12 @@ es el destino de la copia y por defecto el directorio de trabajo.
 
 ## Notas
 
-- Node 22 incluye `fetch` y `zlib`, pero no un extractor tar; la
-  extracción puede apoyarse en el binario `tar` del sistema o en una
-  dependencia mínima —decidir en la implementación—.
+- La investigación `docs/research/2026-09-descarga-archivos-github.md`
+  resuelve la obtención: URL directa de codeload
+  (`/tar.gz/{ref|HEAD}`) con el endpoint `tarball` de la API como
+  fallback, y la dependencia `tar` para extraer —sanea rutas
+  hostiles por defecto y hay que eliminar el directorio raíz
+  `owner-repo-sha/` que envuelve el archive (`strip`)—.
 - Un repositorio puede contener varios paquetes (D002); la tarea
   decide si el paquete se busca en la raíz del árbol extraído o cómo
   se localiza.
