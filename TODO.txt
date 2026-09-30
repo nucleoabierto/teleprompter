@@ -24,3 +24,5 @@
 - [x] docs/tasks/007-instalar-paquete-referencia.md — Instalar el paquete de referencia sobre un destino real
 
 ## Propuestas en revisión
+
+- [p] docs/proposals/003-personalizacion-guiada/ — Personalización guiada: el paquete declara cómo adaptarse (3 borradores)

@@ -5,6 +5,7 @@
 > **Orden sugerido:** 3 de 3 — presupone el formato de paquete, donde
 > vive el artefacto, y completa la experiencia que el instalador
 > cierra.
+> **Procesada en:** docs/proposals/003-personalizacion-guiada/
 
 ## Problema
 
