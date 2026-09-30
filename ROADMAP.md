@@ -10,22 +10,26 @@ ciclo de vida —visible, contrastable, actualizable—.
 
 ## Now
 
-- Ninguna línea comprometida: la épica 003 cerró con la entrega de
-  la guía al instalar y el subcomando `guide`.
+- 1. Hito «Ciclo de vida del paquete instalado» — primera pieza:
+  `docs/tasks/016-listar-paquetes-instalados.md` (propuesta 004
+  aprobada)
+  - Estado: pendiente de arrancar.
+  - Justificación: es la pieza mínima del ciclo de vida —convierte
+    el registro en superficie legible— y sus hermanas (deriva y
+    actualización, ideas 005 y 006) presuponen esa lectura.
 
 ## Next
 
-- Ninguna línea validada todavía. Las siguientes candidatas son las
-  ideas del ciclo de vida del paquete (`Later`), que entran al
-  índice cuando pasen por el flujo de idea a tarea.
+- Las ideas 005 (detección de deriva) y 006 (actualización entre
+  versiones) completarían el hito cuando pasen por el flujo de idea
+  a tarea; `list` es su precondición.
 
 ## Later
 
-- **Ciclo de vida del paquete instalado** — ideas
-  `004-listado-paquetes-instalados`, `005-deteccion-deriva` y
-  `006-actualizacion-entre-versiones`: registro legible, contraste
-  con el disco y actualización entre versiones; se presuponen en ese
-  orden y aprovechan el registro que D007 ya fijó.
+- **Ciclo de vida del paquete instalado** — las ideas
+  `005-deteccion-deriva` y `006-actualizacion-entre-versiones`
+  siguen pendientes de propuesta; la primera pieza (listado) ya está
+  comprometida en Now.
 - **Publicación a npm** — convertir `npx @nucleoabierto/teleprompter`
   en realidad; pendiente de decidir la cadena de release que D008
   aplazó.

@@ -30,6 +30,8 @@
 - [x] docs/tasks/014-declarar-personalizacion-en-el-formato.md — Declarar las instrucciones de personalización en el formato de paquete
 - [x] docs/tasks/015-entregar-personalizacion-al-instalar.md — Entregar las instrucciones al instalar y bajo demanda
 
-## Propuestas en revisión
+## Hito 4: Ciclo de vida del paquete instalado
 
-- [p] docs/proposals/004-listado-paquetes-instalados/ — Listado de paquetes instalados (1 borrador)
+- [ ] docs/tasks/016-listar-paquetes-instalados.md — Listar los paquetes instalados
+
+## Propuestas en revisión

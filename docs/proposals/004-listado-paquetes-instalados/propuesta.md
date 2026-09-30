@@ -2,7 +2,7 @@
 
 ## Estado
 
-[p] Pendiente de revisión
+[a] Aprobada
 
 ## Problema
 
@@ -83,11 +83,13 @@ respuesta lo dice claramente en lugar de fallar o quedar vacía.
 Ninguna — el patrón de consulta sobre el destino ya tiene precedente
 en la herramienta y el registro a leer está fijado por D007.
 
-## Borradores
+## Tareas
 
-- `01-listar-paquetes-instalados.md` — Listar los paquetes instalados
+- `docs/tasks/016-listar-paquetes-instalados.md` — Listar los
+  paquetes instalados (borrador `01-listar-paquetes-instalados.md`)
 
 ## Revisión
 
 - Usuario: 2026-09-30 — Aprueba el enmarcado del problema, la
   oportunidad y la forma de solución en el diálogo de descubrimiento.
+- Usuario: 2026-09-30 — Aprueba la propuesta.
