@@ -78,3 +78,9 @@ decisión antes de actuar.
   - Disparadores: `guide`, subcomando, consulta, gramática del CLI,
     `parseArgs`, guía de personalización
   - Estado: Aceptada
+- [D012-subcomando-list-del-registro.md](D012-subcomando-list-del-registro.md)
+  — `teleprompter list` lista los paquetes instalados leyendo el
+  registro del directorio de trabajo.
+  - Disparadores: `list`, subcomando, consulta, gramática del CLI,
+    `parseArgs`, registro, `teleprompter-lock.json`
+  - Estado: Aceptada

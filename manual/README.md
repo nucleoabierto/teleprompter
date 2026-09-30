@@ -15,11 +15,15 @@ instalación, empezar por la guía de uso.
   y códigos de salida.
 - [Referencia de `guide`](referencia-guide.md) — consultar las
   instrucciones de personalización de los paquetes instalados.
+- [Referencia de `list`](referencia-list.md) — listar los paquetes
+  instalados con su versión, fecha y recursos.
 
 ## Funcionalidades
 
 - [001 — Instalar un paquete](001-instalar-un-paquete.md) — qué hace
   `install` y los escenarios que la suite de pruebas verifica.
+- [002 — Listar los paquetes instalados](002-listar-paquetes-instalados.md)
+  — qué muestra `list` y los escenarios que la suite verifica.
 
 ## Documentos relacionados
 

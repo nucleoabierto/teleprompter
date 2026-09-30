@@ -18,6 +18,7 @@ teleprompter <user/repo[@ref]> [destino]     # origen remoto
 teleprompter --path <paquete> [destino]      # origen local
 teleprompter install …                       # alias de ambas formas
 teleprompter guide [<paquete>]               # consulta la guía instalada
+teleprompter list                            # lista los paquetes instalados
 ```
 
 - `user/repo` descarga el tarball público del repositorio por HTTP
@@ -187,6 +188,23 @@ instalado, paquete sin declaración o ningún paquete con guía— es un
 error de invocación; la ruta registrada insegura —`..` o enlaces que
 salen del destino— o el archivo ausente o ilegible es un error de
 ejecución.
+
+## La consulta del registro
+
+`teleprompter list` —ejecutado dentro del repositorio destino, sin
+argumentos ni opciones— traduce el registro a lenguaje de producto:
+una entrada por paquete instalado con su `nombre@version`, el
+instante `installedAt` de la instalación y una línea por recurso que
+la herramienta escribió —las entradas `skip` registran una omisión,
+no un recurso, y no se listan—. Un paquete con guía de
+personalización la señala con la invocación `guide` que la consulta.
+No se exponen hashes ni acciones internas: la respuesta a «qué
+tengo instalado» no exige conocer el formato del lock.
+
+Sin instalaciones registradas —lock ausente, vacío o ilegible— la
+consulta responde «no hay paquetes instalados» con código `0`: es
+una respuesta, no un fallo; un registro corrupto añade el mismo
+aviso que el resto de lecturas del lock.
 
 ## Resultado y errores
 

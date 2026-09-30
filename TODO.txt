@@ -32,6 +32,6 @@
 
 ## Hito 4: Ciclo de vida del paquete instalado
 
-- [ ] docs/tasks/016-listar-paquetes-instalados.md — Listar los paquetes instalados
+- [x] docs/tasks/016-listar-paquetes-instalados.md — Listar los paquetes instalados
 
 ## Propuestas en revisión

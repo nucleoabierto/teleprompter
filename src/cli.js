@@ -14,7 +14,7 @@ export const EXIT_EXECUTION = 3;
 export const EXIT_USAGE = 4;
 export const EXIT_FETCH = 5;
 
-const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>]';
+const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>] | list';
 const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
 const VALUE_OPTIONS = new Set(['--path', '--ref']);
 
@@ -22,13 +22,17 @@ const VALUE_OPTIONS = new Set(['--path', '--ref']);
 // positional user/repo[@ref] spec, plus an optional positional OUT
 // (defaults to the working directory). --ref and @ref are mutually
 // exclusive; with --path no remote spec is processed at all. `guide`
-// is its own command: it consults the working directory's lock and
-// admits at most one package name — no options, no destination.
+// and `list` are their own commands: both consult the working
+// directory's lock — `guide` admits at most one package name, `list`
+// admits nothing — no options, no destination.
 function parseArgs(argv) {
   if (argv[0] === 'guide') {
     const rest = argv.slice(1);
     if (rest.length > 1 || rest.some((a) => a.startsWith('-'))) return null;
     return { command: 'guide', pkg: rest[0] };
+  }
+  if (argv[0] === 'list') {
+    return argv.length === 1 ? { command: 'list' } : null;
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
   const args = [];
@@ -127,6 +131,37 @@ function showGuide(io, out, err, pkgName) {
   return EXIT_OK;
 }
 
+// `list` presents what the lock recorded — the registry as product
+// surface: name, version, when, and the written targets, without
+// internal details like hashes or actions. A `skip` entry recorded
+// the decision but wrote nothing, so it is not listed; a package
+// with a managed guide points at `guide` as the way to consult it;
+// an entry without `installedAt` — valid per the lock contract —
+// shows no date. No recorded installations is an answer, not a
+// failure.
+function showList(io, out) {
+  const lock = readLock(io.cwd);
+  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  const entries = Object.entries(lock.packages);
+  if (entries.length === 0) {
+    out('no hay paquetes instalados');
+    return EXIT_OK;
+  }
+  out('paquetes instalados:');
+  for (const [name, entry] of entries) {
+    const when = typeof entry.installedAt === 'string'
+      ? ` — instalado ${entry.installedAt}` : '';
+    out(`  ${name}@${entry.version}${when}`);
+    if (typeof entry.personalization === 'string') {
+      out(`    guía: teleprompter guide ${name}`);
+    }
+    for (const f of entry.files) {
+      if (f.action !== 'skip') out(`    ${f.target}`);
+    }
+  }
+  return EXIT_OK;
+}
+
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
 
 // Invocation layer only: parses arguments, delegates to src/ and maps
@@ -144,6 +179,7 @@ export async function main(argv, io = {}) {
     return EXIT_USAGE;
   }
   if (parsed.command === 'guide') return showGuide(io, out, err, parsed.pkg);
+  if (parsed.command === 'list') return showList(io, out);
   const { source, dest, flags } = parsed;
   const destDir = dest ?? io.cwd;
   const badPaths = source.kind === 'path'

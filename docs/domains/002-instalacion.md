@@ -111,6 +111,14 @@ instalado.
     registrada insegura o el archivo ausente es código 3 —el lock
     es dato versionado y se revalida antes de leer.
     - Ancla: `showGuide` en `src/cli.js`; D011
+  - Consultar el registro: `teleprompter list` lee el registro del
+    directorio de trabajo —sin argumentos ni opciones— y muestra una
+    entrada por paquete con `nombre@version`, `installedAt` y los
+    `target` escritos; las entradas `skip` no se listan —registran
+    una omisión— y no se exponen hashes ni acciones. Sin
+    instalaciones responde «no hay paquetes instalados» con código
+    0: es una respuesta, no un fallo.
+    - Ancla: `showList` en `src/cli.js`; D012
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
@@ -140,10 +148,12 @@ instalado.
     de la guía de personalización.
   - `docs/decisions/D011` — `guide` como subcomando de consulta sobre
     el directorio de trabajo.
+  - `docs/decisions/D012` — `list` como subcomando de consulta del
+    registro sobre el directorio de trabajo.
 
 ## Estado de salud
 
-- Última revisión: 2026-09-29
+- Última revisión: 2026-09-30
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

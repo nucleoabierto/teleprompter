@@ -555,3 +555,120 @@ test('guide rejects install options and extra arguments', async () => {
     assert.match(stderr[0], /uso:/);
   }
 });
+
+// --- consulta del registro de instalación ---
+
+test('list answers that nothing is installed when there is no lock', async () => {
+  const { code, stdout } = await run(['list'], { cwd: tmp() });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, ['no hay paquetes instalados']);
+});
+
+test('list shows name, version, date and written resources of a package', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.equal(stdout[0], 'paquetes instalados:');
+  assert.match(stdout[1], /^ {2}p@1\.0\.0 — instalado \d{4}-\d{2}-\d{2}T/);
+  assert.equal(stdout[2], '    a.txt');
+});
+
+test('list shows one entry per installed package', async () => {
+  const dest = tmp();
+  for (const name of ['uno', 'dos']) {
+    const pkg = path.join(tmp(), name);
+    writePkg(pkg, validManifest(name), { 'a.txt': 'a' });
+    await run(['--path', pkg, dest]);
+  }
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}uno@1\.0\.0/);
+  assert.match(stdout.join('\n'), / {2}dos@1\.0\.0/);
+});
+
+test('list shows recorded targets without hashes or internal actions', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'contenido propio');
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest, '--force']);
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, / {4}a\.txt/);
+  assert.doesNotMatch(out, /[0-9a-f]{64}|sha256|overwrite|create|skip/);
+});
+
+test('list does not list resources recorded as skipped', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        installedAt: '2026-09-28T10:00:00Z',
+        files: [
+          { target: 'a.txt', action: 'create' },
+          { target: 'b.txt', action: 'skip' },
+        ],
+      },
+    },
+  }));
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, / {4}a\.txt/);
+  assert.doesNotMatch(out, /b\.txt/);
+});
+
+test('list shows an entry without installedAt without a date', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { p: { version: '1.0.0', files: [{ target: 'a.txt' }] } },
+  }));
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.0\.0\n {4}a\.txt/);
+  assert.doesNotMatch(stdout.join('\n'), /— instalado/);
+});
+
+test('list points to guide for a package with personalization', async () => {
+  const dest = tmp();
+  await run(['--path', guidePkg('con-guia', 'x'), dest]);
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}guía: teleprompter guide con-guia/);
+});
+
+test('list warns on a corrupt lock and answers nothing installed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
+  const { code, stdout, stderr } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /aviso:.*corrupto/);
+  assert.match(stdout.join('\n'), /no hay paquetes instalados/);
+  assert.deepEqual(stderr, []);
+});
+
+test('list reads the working directory lock whatever the install origin', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const spy = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}mi-paquete@1\.0\.0 — instalado /);
+});
+
+test('list rejects arguments and install options', async () => {
+  for (const argv of [
+    ['list', 'x'], ['list', 'a', 'b'], ['list', '--path', 'x'],
+    ['list', '--dry-run'], ['list', '--force'], ['list', '-x'],
+  ]) {
+    const { code, stderr } = await run(argv, { cwd: tmp() });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});

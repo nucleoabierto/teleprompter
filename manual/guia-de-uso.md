@@ -100,6 +100,18 @@ npx @nucleoabierto/teleprompter guide ciclo-tareas   # solo ese paquete
 Muestra el mismo contenido del archivo materializado —no reinstala ni
 descarga nada—. Véase la [referencia de `guide`](referencia-guide.md).
 
+## Listar los paquetes instalados
+
+Desde la raíz del repositorio destino, `list` muestra qué paquetes
+instaló Teleprompter —nombre, versión, fecha y recursos escritos—
+leyendo el registro:
+
+```sh
+npx @nucleoabierto/teleprompter list
+```
+
+Véase la [referencia de `list`](referencia-list.md).
+
 ## Inspeccionar sin instalar
 
 `--dry-run` ejecuta solo la verificación y el plan, y termina sin

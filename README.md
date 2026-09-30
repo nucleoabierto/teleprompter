@@ -84,7 +84,9 @@ del destino: qué recursos instaló Teleprompter, con qué acción y con
 qué hash. Si el paquete declara instrucciones de personalización, su
 contenido se entrega tal cual al final del resultado y queda
 consultable después —desde la raíz del destino— con
-`teleprompter guide [<paquete>]`.
+`teleprompter guide [<paquete>]`. El propio registro se consulta con
+`teleprompter list`, que muestra una entrada por paquete instalado:
+nombre, versión, fecha de instalación y recursos escritos.
 
 ### Códigos de salida
 
