@@ -15,6 +15,8 @@ colisiones con lo que ya existe y registra la instalación en
 - [Referencia de `install`](referencia-install.md) — la operación
   completa: fases, marcas del plan, resolución de colisiones, registro
   y códigos de salida.
+- [Referencia de `guide`](referencia-guide.md) — consultar las
+  instrucciones de personalización de los paquetes instalados.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
   y los escenarios que la suite de pruebas verifica.
 

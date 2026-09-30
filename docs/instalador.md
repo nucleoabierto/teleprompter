@@ -17,6 +17,7 @@ directorio local:
 teleprompter <user/repo[@ref]> [destino]     # origen remoto
 teleprompter --path <paquete> [destino]      # origen local
 teleprompter install …                       # alias de ambas formas
+teleprompter guide [<paquete>]               # consulta la guía instalada
 ```
 
 - `user/repo` descarga el tarball público del repositorio por HTTP
@@ -175,16 +176,32 @@ para sostenerlas: saber qué es propio y en qué versión quedó es su
 precondición (precedentes: estado de Terraform, base de dpkg,
 `.copier-answers.yml`, manifest de lash).
 
+## La consulta de la guía
+
+`teleprompter guide [<paquete>]` —ejecutado dentro del repositorio
+destino, sin argumento de destino— relee lo que el registro anotó:
+muestra el contenido de cada guía registrada en `personalization`,
+o solo la del paquete indicado, con el mismo bloque que la entrega
+de la instalación. Que no haya guía que mostrar —paquete no
+instalado, paquete sin declaración o ningún paquete con guía— es un
+error de invocación; la ruta registrada insegura —`..` o enlaces que
+salen del destino— o el archivo ausente o ilegible es un error de
+ejecución.
+
 ## Resultado y errores
 
 La ejecución informa el resultado con las mismas marcas del plan más
 `skip` y `overwrite` según lo realizado. Si el manifiesto declara
 `personalization`, el instalador copia el archivo de instrucciones a
 `.teleprompter/<paquete>/<archivo>` —espacio gestionado, reservado
-también a los `target` de `install`—, registra su ubicación en
-`teleprompter-lock.json` y la anuncia al final de la salida (la
-entrega del contenido es trabajo de la épica de personalización
-guiada; aquí basta la copia y el anuncio).
+también a los `target` de `install` y a las rutas de `requires`—,
+registra su ubicación en `teleprompter-lock.json` y entrega su
+contenido tal cual al final del resultado, bajo el encabezado
+`personalización (<ruta>):` —lo que se lee es la copia materializada
+en el destino, no el fuente del paquete (modelo «caveats» de
+Homebrew; véase `docs/research/2026-09-guia-postinstalacion.md`)—.
+Un paquete sin guía no añade salida; `--dry-run` y los abortos no la
+alcanzan.
 
 Los códigos de salida son:
 

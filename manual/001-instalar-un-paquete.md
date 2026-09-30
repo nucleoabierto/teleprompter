@@ -95,6 +95,21 @@ mecánica detallada, en la [referencia](referencia-install.md).
   aplicado.** — módulo `test/execute.test.js`, «a mid-execution error
   exits 3 and reports what was applied»
 - **Si el paquete declara personalización, la guía se copia a
-  `.teleprompter/<paquete>/` y la salida la anuncia.** — módulo
-  `test/execute.test.js`, «install materializes the personalization
-  guide in the managed namespace»
+  `.teleprompter/<paquete>/` y su contenido se entrega tal cual al
+  final del resultado.** — módulos `test/execute.test.js` («install
+  materializes the personalization guide in the managed namespace»)
+  y `test/cli.test.js` («install delivers the declared guide verbatim
+  after the result»)
+- **`--dry-run` no entrega la guía:** solo muestra el plan. — módulo
+  `test/cli.test.js`, «--dry-run shows the plan but never delivers
+  the guide»
+- **`teleprompter guide [<paquete>]` relee la guía instalada** desde
+  el directorio de trabajo, sin reinstalar ni redescargar. — módulo
+  `test/cli.test.js` («guide prints the installed guide from the
+  working directory», «guide \<paquete\> shows only that package's
+  guide», «guide without a package shows every installed guide»)
+- **La consulta distingue sus fallos:** sin guía que mostrar sale con
+  código 4; el archivo registrado ausente, con código 3. — módulo
+  `test/cli.test.js` («guide exits 4 without a lock, on unknown
+  packages, or without a guide», «guide exits 3 when the recorded
+  guide file is gone»)

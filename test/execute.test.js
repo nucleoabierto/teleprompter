@@ -174,8 +174,12 @@ test('install materializes the personalization guide in the managed namespace', 
   const target = '.teleprompter/con-guia/guia.md';
   assert.equal(fs.readFileSync(path.join(dest, target), 'utf8'), contenido);
   const out = stdout.join('\n');
-  assert.match(out, new RegExp(`personalización:.*${target.replace(/\./g, '\\.')}`));
-  // The managed copy is announced, not listed among the install resources.
+  assert.match(out, /personalización \(\.teleprompter\/con-guia\/guia\.md\):/);
+  // The guide is delivered verbatim at the end of the result.
+  assert.ok(stdout.includes('adapta docs/tasks/ a tu proyecto'));
+  assert.ok(stdout.includes('(línea arbitraria: ~!$%^*)'));
+  assert.ok(out.indexOf('personalización (') > out.indexOf('resultado:'));
+  // The managed copy is delivered, not listed among the install resources.
   assert.doesNotMatch(out, /create\s+\.teleprompter/);
   const lock = readLockFile(dest).packages['con-guia'];
   assert.equal(lock.personalization, target);

@@ -9,6 +9,7 @@ nav:
   - Inicio: index.md
   - Guía de uso: guia-de-uso.md
   - Referencia de install: referencia-install.md
+  - Referencia de guide: referencia-guide.md
   - Instalar un paquete: 001-instalar-un-paquete.md
 # README.md es el índice del directorio en el repositorio y en el
 # paquete npm; la portada del sitio es index.md.

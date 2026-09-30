@@ -4,7 +4,7 @@ import { verifyPackage } from './verify.js';
 import { readLock, writeLock } from './lock.js';
 import { buildPlan } from './plan.js';
 import { executePlan, installPersonalization } from './execute.js';
-import { resolvesUnder, personalizationTarget } from './paths.js';
+import { resolvesUnder, personalizationTarget, isSafeRelative } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 
 export const EXIT_OK = 0;
@@ -14,15 +14,22 @@ export const EXIT_EXECUTION = 3;
 export const EXIT_USAGE = 4;
 export const EXIT_FETCH = 5;
 
-const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run]';
+const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>]';
 const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
 const VALUE_OPTIONS = new Set(['--path', '--ref']);
 
 // Grammar: an optional "install" alias, then either --path <dir> or a
 // positional user/repo[@ref] spec, plus an optional positional OUT
 // (defaults to the working directory). --ref and @ref are mutually
-// exclusive; with --path no remote spec is processed at all.
+// exclusive; with --path no remote spec is processed at all. `guide`
+// is its own command: it consults the working directory's lock and
+// admits at most one package name — no options, no destination.
 function parseArgs(argv) {
+  if (argv[0] === 'guide') {
+    const rest = argv.slice(1);
+    if (rest.length > 1 || rest.some((a) => a.startsWith('-'))) return null;
+    return { command: 'guide', pkg: rest[0] };
+  }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
   const args = [];
   const flags = new Set();
@@ -44,20 +51,80 @@ function parseArgs(argv) {
   if (unknown !== undefined || (flags.has('--force') && flags.has('--skip'))) return null;
   if (options['--path'] !== undefined) {
     if (args.length > 1 || options['--ref'] !== undefined) return null;
-    return { source: { kind: 'path', dir: options['--path'] }, dest: args[0], flags };
+    return { command: 'install', source: { kind: 'path', dir: options['--path'] }, dest: args[0], flags };
   }
   if (args.length < 1 || args.length > 2) return null;
   const spec = parseRepoSpec(args[0]);
   if (spec === null || (spec.ref !== null && options['--ref'] !== undefined)) return null;
   if (options['--ref'] !== undefined && !isValidRef(options['--ref'])) return null;
   spec.ref = options['--ref'] ?? spec.ref;
-  return { source: { kind: 'repo', spec }, dest: args[1], flags };
+  return { command: 'install', source: { kind: 'repo', spec }, dest: args[1], flags };
 }
 
 function printPlan(plan, out) {
   out('plan de instalación:');
   for (const dir of plan.mkdirs) out(`  ${'mkdir'.padEnd(15)}${dir}`);
   for (const r of plan.resources) out(`  ${r.status.padEnd(15)}${r.target}`);
+}
+
+// The maintainer's guide is delivered verbatim under a heading that
+// names its managed location — the installer and the `guide` command
+// share this block so consulting later shows what installing showed.
+function printGuide(out, target, content) {
+  out(`personalización (${target}):`);
+  for (const line of content.replace(/\n$/, '').split('\n')) out(line);
+}
+
+// `guide` re-reads what the lock recorded: each installed package's
+// managed guide path, then the file itself. Resolution failures are
+// usage errors; a recorded file that is gone or unreadable is an
+// execution failure — the install drifted, not the invocation.
+function showGuide(io, out, err, pkgName) {
+  const destDir = io.cwd;
+  const lock = readLock(destDir);
+  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  if (pkgName !== undefined && lock.packages[pkgName] === undefined) {
+    err(`el paquete "${pkgName}" no está instalado`);
+    return EXIT_USAGE;
+  }
+  const withGuide = Object.entries(lock.packages)
+    .filter(([name, entry]) => (pkgName === undefined || name === pkgName)
+      && typeof entry.personalization === 'string');
+  if (withGuide.length === 0) {
+    err(pkgName === undefined
+      ? 'ningún paquete instalado declara instrucciones de personalización'
+      : `el paquete "${pkgName}" no declara instrucciones de personalización`);
+    return EXIT_USAGE;
+  }
+  // The lock is repository data, not trusted memory: its recorded
+  // paths are re-validated before reading, like any other untrusted
+  // input. The resolved real path — symlinks included, in the parent
+  // chain and in the file itself — must land inside the destination;
+  // otherwise the command would disclose arbitrary files. All guides
+  // are read before printing, so a failure never leaves half the
+  // output behind.
+  const guides = [];
+  const rootReal = fs.realpathSync(destDir);
+  for (const [, entry] of withGuide) {
+    const rel = entry.personalization;
+    if (!isSafeRelative(rel)) {
+      err(`la ruta de guía registrada no es segura: ${rel}`);
+      return EXIT_EXECUTION;
+    }
+    try {
+      const real = fs.realpathSync(path.join(destDir, rel));
+      if (real !== rootReal && !real.startsWith(`${rootReal}${path.sep}`)) {
+        err(`la ruta de guía registrada no es segura: ${rel}`);
+        return EXIT_EXECUTION;
+      }
+      guides.push({ target: rel, content: fs.readFileSync(real, 'utf8') });
+    } catch (error) {
+      err(`no se puede leer la guía registrada: ${rel}`);
+      return EXIT_EXECUTION;
+    }
+  }
+  for (const g of guides) printGuide(out, g.target, g.content);
+  return EXIT_OK;
 }
 
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
@@ -76,6 +143,7 @@ export async function main(argv, io = {}) {
     err(USAGE);
     return EXIT_USAGE;
   }
+  if (parsed.command === 'guide') return showGuide(io, out, err, parsed.pkg);
   const { source, dest, flags } = parsed;
   const destDir = dest ?? io.cwd;
   const badPaths = source.kind === 'path'
@@ -164,10 +232,17 @@ export async function main(argv, io = {}) {
 
     let actions;
     let guide;
+    let guideContent = null;
     try {
       actions = executePlan(pkgDir, destDir, plan);
       guide = installPersonalization(pkgDir, destDir, result.manifest);
       writeLock(destDir, lock, result.manifest, actions);
+      // Deliver what was installed, not the package source — the
+      // managed copy survives a remote fetch's cleanup and is the
+      // same content `guide` will show later.
+      if (guide !== null) {
+        guideContent = fs.readFileSync(path.join(destDir, guide.target), 'utf8');
+      }
     } catch (error) {
       for (const a of error.applied ?? actions) {
         out(`  ${a.action.padEnd(15)}${a.target}`);
@@ -178,7 +253,7 @@ export async function main(argv, io = {}) {
     out('resultado:');
     for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
     if (guide !== null) {
-      out(`personalización: instrucciones en "${guide.target}"`);
+      printGuide(out, guide.target, guideContent);
     }
     out(`instalado: ${result.manifest.name}@${result.manifest.version}`);
     return EXIT_OK;

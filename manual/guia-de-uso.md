@@ -72,12 +72,33 @@ resultado:
  create         .agents/skills/crear-tareas/
  create         .agents/skills/ejecutar-tareas/
  create         .agents/skills/commit/
+personalización (.teleprompter/ciclo-tareas/PERSONALIZE.md):
+# Personalización de ciclo-tareas
+…
 instalado: ciclo-tareas@1.0.0
 ```
 
    El archivo de registro está pensado para versionarse con el
    repositorio: es lo que permite a Teleprompter distinguir lo que él
    instaló de lo que ya existía.
+
+   Si el paquete declara instrucciones de personalización, su
+   contenido se entrega tal cual al final del resultado —el bloque
+   `personalización` anterior— y queda copiado en
+   `.teleprompter/<paquete>/` dentro del destino.
+
+## Consultar la guía de personalización
+
+Las instrucciones que la instalación entregó se releen después con
+`guide`, ejecutado desde la raíz del repositorio destino:
+
+```sh
+npx @nucleoabierto/teleprompter guide
+npx @nucleoabierto/teleprompter guide ciclo-tareas   # solo ese paquete
+```
+
+Muestra el mismo contenido del archivo materializado —no reinstala ni
+descarga nada—. Véase la [referencia de `guide`](referencia-guide.md).
 
 ## Inspeccionar sin instalar
 

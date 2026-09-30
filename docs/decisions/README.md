@@ -72,3 +72,9 @@ decisión antes de actuar.
   - Disparadores: `.teleprompter/`, `personalization`, guía de
     personalización, namespace gestionado, espacio reservado
   - Estado: Aceptada
+- [D011-subcomando-guide-de-consulta.md](D011-subcomando-guide-de-consulta.md)
+  — `teleprompter guide [<paquete>]` consulta las guías instaladas
+  operando solo sobre el directorio de trabajo.
+  - Disparadores: `guide`, subcomando, consulta, gramática del CLI,
+    `parseArgs`, guía de personalización
+  - Estado: Aceptada

@@ -59,7 +59,7 @@ dentro de `.teleprompter/`: son espacios reservados a la herramienta.
 | `license` | string | Identificador SPDX (`"MIT"`, `"Apache-2.0"`) o referencia a un archivo de licencia. |
 | `author` | object | `{ "name": "...", "email": "...", "url": "..." }`. Solo `name` es obligatorio dentro del objeto. |
 | `requires` | object | Precondiciones del repositorio destino, verificables antes de instalar. De momento solo la clave `paths`. |
-| `personalization` | string | Ruta dentro del paquete al archivo con las instrucciones de personalización. El archivo debe existir; su contenido es texto libre del mantenedor dirigido a un agente y nunca se valida ni se ejecuta. El instalador lo copia a `.teleprompter/<paquete>/<archivo>` en el destino, lo anuncia al final de la instalación y recuerda su ubicación en `teleprompter-lock.json`. |
+| `personalization` | string | Ruta dentro del paquete al archivo con las instrucciones de personalización. El archivo debe existir; su contenido es texto libre del mantenedor dirigido a un agente y nunca se valida ni se ejecuta. El instalador lo copia a `.teleprompter/<paquete>/<archivo>` en el destino, entrega su contenido tal cual al final de la instalación y recuerda su ubicación en `teleprompter-lock.json` —consultable después con `teleprompter guide`. |
 | `metadata` | object | Mapa libre clave→valor para datos del autor que el instalador no interpreta. |
 
 `requires.paths` es una lista de entradas `{ "path", "create"? }` sobre

@@ -377,3 +377,181 @@ test('--force resolves remote conflicts like a local origin', async () => {
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
 });
+
+test('a remote origin delivers the guide read from the destination', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const buf = await repoTarball('mi-paquete',
+    validManifest('mi-paquete', { personalization: 'guia.md' }),
+    { 'a.txt': 'a', 'guia.md': 'guía remota' });
+  const spy = spyFetch(okResponse(buf));
+  const { code, stdout } = await run(['o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'),
+    /personalización \(\.teleprompter\/mi-paquete\/guia\.md\):\nguía remota\ninstalado:/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+// --- entrega y consulta de la guía de personalización ---
+
+function guidePkg(name, contenido) {
+  const pkg = path.join(tmp(), name);
+  writePkg(pkg, validManifest(name, { personalization: 'guia.md' }), {
+    'a.txt': 'a',
+    'guia.md': contenido,
+  });
+  return pkg;
+}
+
+test('install delivers the declared guide verbatim after the result', async () => {
+  const dest = tmp();
+  const contenido = '# Guía\n\nhaz esto\ny aquello';
+  const pkg = guidePkg('con-guia', contenido);
+  const { code, stdout } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, /personalización \(\.teleprompter\/con-guia\/guia\.md\):\n# Guía\n\nhaz esto\ny aquello\ninstalado:/);
+});
+
+test('install without personalization adds no guide output', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'sin-guia');
+  writePkg(pkg, validManifest('sin-guia'), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_OK);
+  assert.doesNotMatch(stdout.join('\n'), /personalización/);
+});
+
+test('--dry-run shows the plan but never delivers the guide', async () => {
+  const dest = tmp();
+  const pkg = guidePkg('con-guia', 'instrucciones');
+  const { code, stdout } = await run(['--path', pkg, dest, '--dry-run']);
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, /fin del plan \(--dry-run\)/);
+  assert.doesNotMatch(out, /personalización/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('guide prints the installed guide from the working directory', async () => {
+  const dest = tmp();
+  const pkg = guidePkg('con-guia', 'línea uno\nlínea dos');
+  await run(['--path', pkg, dest]);
+  const { code, stdout } = await run(['guide'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, [
+    'personalización (.teleprompter/con-guia/guia.md):',
+    'línea uno',
+    'línea dos',
+  ]);
+});
+
+test('guide <paquete> shows only that package\'s guide', async () => {
+  const dest = tmp();
+  await run(['--path', guidePkg('guia-a', 'A'), dest]);
+  await run(['--path', guidePkg('guia-b', 'B'), dest]);
+  const { code, stdout } = await run(['guide', 'guia-b'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, [
+    'personalización (.teleprompter/guia-b/guia.md):',
+    'B',
+  ]);
+});
+
+test('guide without a package shows every installed guide', async () => {
+  const dest = tmp();
+  await run(['--path', guidePkg('guia-a', 'A'), dest]);
+  await run(['--path', guidePkg('guia-b', 'B'), dest]);
+  const { code, stdout } = await run(['guide'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, [
+    'personalización (.teleprompter/guia-a/guia.md):',
+    'A',
+    'personalización (.teleprompter/guia-b/guia.md):',
+    'B',
+  ]);
+});
+
+test('guide skips installed packages that declare no guide', async () => {
+  const dest = tmp();
+  const sin = path.join(tmp(), 'sin-guia');
+  writePkg(sin, validManifest('sin-guia'), { 'a.txt': 'a' });
+  await run(['--path', sin, dest]);
+  const { code, stderr } = await run(['guide'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /ningún paquete instalado/);
+});
+
+test('guide exits 4 without a lock, on unknown packages, or without a guide', async () => {
+  const dest = tmp();
+  assert.equal((await run(['guide'], { cwd: dest })).code, EXIT_USAGE);
+  await run(['--path', guidePkg('con-guia', 'x'), dest]);
+  assert.equal((await run(['guide', 'no-existe'], { cwd: dest })).code, EXIT_USAGE);
+  const sin = path.join(tmp(), 'sin-guia');
+  writePkg(sin, validManifest('sin-guia'), { 'a.txt': 'a' });
+  await run(['--path', sin, dest]);
+  const { code, stderr } = await run(['guide', 'sin-guia'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no declara/);
+});
+
+test('guide warns on a corrupt lock and reports no installed packages', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
+  const { code, stdout, stderr } = await run(['guide'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stdout.join('\n'), /aviso:.*corrupto/);
+  assert.match(stderr.join('\n'), /ningún paquete instalado/);
+});
+
+test('guide exits 3 when the recorded guide file is gone', async () => {
+  const dest = tmp();
+  await run(['--path', guidePkg('con-guia', 'x'), dest]);
+  fs.rmSync(path.join(dest, '.teleprompter/con-guia/guia.md'));
+  const { code, stderr } = await run(['guide'], { cwd: dest });
+  assert.equal(code, 3);
+  assert.match(stderr.join('\n'), /no se puede leer la guía registrada/);
+});
+
+test('guide refuses recorded paths that escape the destination', async () => {
+  const dest = tmp();
+  const writeLock = (personalization) => fs.writeFileSync(
+    path.join(dest, 'teleprompter-lock.json'),
+    JSON.stringify({ packages: { p: { version: '1.0.0', files: [], personalization } } }),
+  );
+
+  // A "../" path in the lock must not disclose files outside.
+  writeLock('../secreto.txt');
+  const escaped = await run(['guide'], { cwd: dest });
+  assert.equal(escaped.code, 3);
+  assert.match(escaped.stderr.join('\n'), /no es segura/);
+  assert.doesNotMatch(escaped.stdout.join('\n'), /personalización \(/);
+
+  // Nor must a symlinked managed namespace.
+  writeLock('.teleprompter/p/guia.md');
+  const outside = tmp();
+  fs.writeFileSync(path.join(outside, 'guia.md'), 'secreto externo');
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  const linked = await run(['guide'], { cwd: dest });
+  assert.equal(linked.code, 3);
+  assert.doesNotMatch(linked.stdout.join('\n'), /secreto externo/);
+
+  // Nor must the final component be a symlink to outside.
+  fs.unlinkSync(path.join(dest, '.teleprompter'));
+  fs.mkdirSync(path.join(dest, '.teleprompter/p'), { recursive: true });
+  fs.symlinkSync(path.join(outside, 'guia.md'), path.join(dest, '.teleprompter/p/guia.md'));
+  const linkedFile = await run(['guide'], { cwd: dest });
+  assert.equal(linkedFile.code, 3);
+  assert.doesNotMatch(linkedFile.stdout.join('\n'), /secreto externo/);
+});
+
+test('guide rejects install options and extra arguments', async () => {
+  for (const argv of [
+    ['guide', 'a', 'b'], ['guide', '--path', 'x'], ['guide', '--dry-run'],
+    ['guide', '--force'], ['guide', '-x'],
+  ]) {
+    const { code, stderr } = await run(argv, { cwd: tmp() });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});

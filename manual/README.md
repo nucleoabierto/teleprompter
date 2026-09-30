@@ -13,6 +13,8 @@ instalación, empezar por la guía de uso.
 - [Referencia de `install`](referencia-install.md) — la operación
   completa: fases, marcas del plan, resolución de colisiones, registro
   y códigos de salida.
+- [Referencia de `guide`](referencia-guide.md) — consultar las
+  instrucciones de personalización de los paquetes instalados.
 
 ## Funcionalidades
 

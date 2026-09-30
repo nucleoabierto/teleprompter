@@ -128,10 +128,16 @@ un aviso.
 Si el manifiesto declara `personalization`, el instalador copia el
 archivo de instrucciones a `.teleprompter/<paquete>/<archivo>` dentro
 del destino —un espacio gestionado por la herramienta, igual que el
-registro—, recuerda su ubicación en `teleprompter-lock.json` y la
-anuncia al final de la salida. El contenido del archivo es texto libre
-del mantenedor: nunca se valida ni se ejecuta. Ningún `target` de
-`install` puede apuntar dentro de `.teleprompter/`.
+registro—, recuerda su ubicación en `teleprompter-lock.json` y entrega
+su contenido tal cual al final del resultado, bajo el encabezado
+`personalización (<ruta>):`. El contenido es texto libre del
+mantenedor: nunca se valida ni se ejecuta. Ningún `target` de
+`install` ni ninguna ruta de `requires` puede apuntar dentro de
+`.teleprompter/`.
+
+El mismo contenido se consulta después con
+[`teleprompter guide`](referencia-guide.md), ejecutado dentro del
+repositorio destino.
 
 ## Códigos de salida
 

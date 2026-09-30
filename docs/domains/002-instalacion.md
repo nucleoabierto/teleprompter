@@ -97,11 +97,20 @@ instalado.
     guía gestionada se añade a `files` y al campo `personalization`
     sin figurar entre las acciones del plan.
     - Ancla: `writeLock` en `src/lock.js`
-  - Materializar la guía: `installPersonalization` copia el archivo
-    declarado a `.teleprompter/<paquete>/<archivo>` tras ejecutar el
-    plan; el anuncio final informa de su ubicación.
-    - Ancla: `installPersonalization` en `src/execute.js` y `main`
-      en `src/cli.js`
+  - Materializar y entregar la guía: `installPersonalization` copia
+    el archivo declarado a `.teleprompter/<paquete>/<archivo>` tras
+    ejecutar el plan, y el bloque final `personalización (<ruta>):`
+    entrega el contenido de la copia materializada —no el fuente,
+    que en origen remoto ya no existe—.
+    - Ancla: `installPersonalization` en `src/execute.js` y
+      `printGuide` en `src/cli.js`
+  - Consultar la guía: `teleprompter guide [<paquete>]` lee el campo
+    `personalization` del registro del directorio de trabajo y
+    muestra el mismo bloque; no hay destino ni opciones de
+    instalación. Sin guía que mostrar es código 4; la ruta
+    registrada insegura o el archivo ausente es código 3 —el lock
+    es dato versionado y se revalida antes de leer.
+    - Ancla: `showGuide` en `src/cli.js`; D011
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
@@ -129,6 +138,8 @@ instalado.
     `@nucleoabierto/teleprompter`.
   - `docs/decisions/D010` — `.teleprompter/` como ubicación gestionada
     de la guía de personalización.
+  - `docs/decisions/D011` — `guide` como subcomando de consulta sobre
+    el directorio de trabajo.
 
 ## Estado de salud
 

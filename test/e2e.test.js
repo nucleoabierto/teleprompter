@@ -74,7 +74,8 @@ test('the reference package installs end to end through the real binary', () => 
   const guideTarget = '.teleprompter/ciclo-tareas/PERSONALIZE.md';
   assert.equal(fs.readFileSync(path.join(dest, guideTarget), 'utf8'),
     fs.readFileSync(path.join(referencePkg, 'PERSONALIZE.md'), 'utf8'));
-  assert.match(skipped.stdout, /personalización:.*PERSONALIZE\.md/);
+  assert.match(skipped.stdout, /personalización \(\.teleprompter\/ciclo-tareas\/PERSONALIZE\.md\):/);
+  assert.match(skipped.stdout, /# Personalización de ciclo-tareas/);
   assert.equal(readLockFile(dest).packages['ciclo-tareas'].personalization, guideTarget);
 
   // --force overwrites the conflict; the lock records the new content.

@@ -81,7 +81,10 @@ escribir nada.
 
 Terminada la ejecución se escribe `teleprompter-lock.json` en la raíz
 del destino: qué recursos instaló Teleprompter, con qué acción y con
-qué hash.
+qué hash. Si el paquete declara instrucciones de personalización, su
+contenido se entrega tal cual al final del resultado y queda
+consultable después —desde la raíz del destino— con
+`teleprompter guide [<paquete>]`.
 
 ### Códigos de salida
 
