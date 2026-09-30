@@ -10,26 +10,24 @@ ciclo de vida —visible, contrastable, actualizable—.
 
 ## Now
 
-- 1. Hito «Ciclo de vida del paquete instalado» — primera pieza:
-  `docs/tasks/016-listar-paquetes-instalados.md` (propuesta 004
-  aprobada)
-  - Estado: pendiente de arrancar.
-  - Justificación: es la pieza mínima del ciclo de vida —convierte
-    el registro en superficie legible— y sus hermanas (deriva y
-    actualización, ideas 005 y 006) presuponen esa lectura.
+- 1. `docs/epics/004-ciclo-de-vida-paquete-instalado.md` — Ciclo de
+  vida del paquete instalado
+  - Estado: en curso — 1 de 5 piezas completa (016); pendientes 017
+    (verificación de deriva), 018 (origen en el registro), 019 (plan
+    de actualización) y 020 (comando `update`).
+  - Justificación: es el único trabajo comprometido y materializa la
+    dirección: el listado ya hizo el registro legible; la
+    verificación lo hace contrastable y habilita el plan de
+    actualización, que con el origen registrado converge en
+    `update`.
 
 ## Next
 
-- Las ideas 005 (detección de deriva) y 006 (actualización entre
-  versiones) completarían el hito cuando pasen por el flujo de idea
-  a tarea; `list` es su precondición.
+- Vacío: el ciclo de vida agota el trabajo validado. La siguiente
+  línea se decidirá entre las de Later cuando el hito avance.
 
 ## Later
 
-- **Ciclo de vida del paquete instalado** — las ideas
-  `005-deteccion-deriva` y `006-actualizacion-entre-versiones`
-  siguen pendientes de propuesta; la primera pieza (listado) ya está
-  comprometida en Now.
 - **Publicación a npm** — convertir `npx @nucleoabierto/teleprompter`
   en realidad; pendiente de decidir la cadena de release que D008
   aplazó.
@@ -54,3 +52,5 @@ ciclo de vida —visible, contrastable, actualizable—.
 ## Revisión
 
 - Usuario: 2026-09-29 — Aprueba
+- Usuario: 2026-09-30 — Aprueba (ideas 005 y 006 promovidas a la
+  épica 004; el hito queda en Now en curso y Later pierde la línea)
