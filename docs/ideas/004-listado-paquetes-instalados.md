@@ -5,6 +5,7 @@
 > **Orden sugerido:** 1 de 3 — es la más pequeña del conjunto y
 > convierte el registro en superficie de producto que sus hermanas
 > consumen.
+> **Procesada en:** docs/proposals/004-listado-paquetes-instalados/
 
 ## Problema
 

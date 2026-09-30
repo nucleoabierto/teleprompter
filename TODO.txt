@@ -31,3 +31,5 @@
 - [x] docs/tasks/015-entregar-personalizacion-al-instalar.md — Entregar las instrucciones al instalar y bajo demanda
 
 ## Propuestas en revisión
+
+- [p] docs/proposals/004-listado-paquetes-instalados/ — Listado de paquetes instalados (1 borrador)
