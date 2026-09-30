@@ -239,6 +239,39 @@ fallo: la consulta termina con código `0` haya o no deriva. Sin
 instalaciones responde «no hay paquetes instalados», y un registro
 corrupto añade el mismo aviso que el resto de lecturas del lock.
 
+## El plan de actualización
+
+Actualizar un paquete registrado con una versión distinta calcula un
+plan propio —completo antes de escribir, como el de instalación
+(D005)— que clasifica cada recurso por lo que la versión nueva trae y
+lo que el usuario hizo con lo instalado. La versión entrante igual a
+la registrada no produce plan: el paquete ya está en esa versión.
+
+- `create` — el destino no existe: recurso nuevo en la versión, o
+  registrado y borrado del destino —se vuelve a escribir en ambos
+  casos—.
+- `identical` — el destino ya contiene el contenido entrante.
+- `update` — la versión cambió el recurso (el contenido entrante
+  difiere del hash registrado) y el destino sigue intacto; la
+  sobrescritura es segura. Exige versión entrante ≥ registrada: un
+  downgrade degrada a `conflict` como en la instalación.
+- `conflict` — ninguna otra marca aplica: el destino difiere del
+  registrado —edición local o contenido ajeno—, o el destino sigue
+  intacto pero la versión entrante no puede gestionar la
+  sobrescritura —un downgrade—; requiere la misma decisión que una
+  colisión (`overwrite`/`skip`, D006).
+- `retire` — registrado en el lock pero ausente del manifiesto
+  entrante e intacto: la versión lo retira y el plan lo elimina.
+
+Los retirados siguen la política de propiedad (D015): intacto se
+elimina automáticamente —lo propio y sin tocar se gestiona—;
+modificado o no verificable degrada a `conflict` marcado como
+eliminación, donde `overwrite` significa quitar y `skip` conservar;
+ya ausente del disco desaparece del plan sin marca. Las entradas
+`skip` nunca se retiran —no se escribieron— ni el target de
+`personalization` —la guía gestionada se reescribe en cada
+instalación—.
+
 ## Resultado y errores
 
 La ejecución informa el resultado con las mismas marcas del plan más

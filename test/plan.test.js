@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   main, EXIT_OK, EXIT_PLAN,
 } from '../src/cli.js';
+import { buildUpdatePlan } from '../src/plan.js';
 import { hashPath } from '../src/hash.js';
 
 function tmp() {
@@ -287,4 +288,291 @@ test('an interactive console resolves each conflict per answer', async () => {
   assert.match(questions[0], /sobrescribir/);
   assert.match(stdout.join('\n'), /a\.txt → overwrite/);
   assert.match(stdout.join('\n'), /b\.txt → skip/);
+});
+
+// --- El plan de actualización --------------------------------------
+
+// Fixture: destination with a fabricated lock recording `version` and
+// per-target hashes — the state an earlier install would have left.
+function destWithLock(files, { version = '1.0.0', name = 'paquete', extra = [] } = {}) {
+  const dest = tmp();
+  writeTree(dest, files);
+  const lockFiles = [
+    ...Object.keys(files).map((target) => ({
+      target,
+      action: 'create',
+      sha256: hashPath(path.join(dest, target)),
+    })),
+    ...extra,
+  ];
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { [name]: { version, files: lockFiles } },
+  }));
+  return { dest, lock: { packages: { [name]: { version, files: lockFiles } } } };
+}
+
+test('update plan reports upToDate when the incoming version matches', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.upToDate, true);
+  assert.deepEqual(plan.resources, []);
+  assert.deepEqual(plan.conflicts, []);
+  assert.deepEqual(plan.retired, []);
+});
+
+test('update plan marks a resource new in the version as create', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a', 'nuevo.txt': 'n' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  const nuevo = plan.resources.find((r) => r.target === 'nuevo.txt');
+  assert.equal(nuevo.status, 'create');
+});
+
+test('update plan marks identical when the destination already holds the incoming content', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'identical');
+});
+
+test('update plan marks update when the version changed an intact resource', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'viejo' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'update');
+});
+
+test('update plan marks conflict when the version and the user both changed it', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const pkg = pkgWith('paquete', { 'a.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'conflict');
+  assert.equal(plan.conflicts.length, 1);
+});
+
+test('update plan marks conflict when only the user changed the resource', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const pkg = pkgWith('paquete', { 'a.txt': 'viejo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'conflict');
+});
+
+test('update plan retires an intact resource the version no longer ships', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a', 'viejo.txt': 'v' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [{ target: 'viejo.txt', status: 'retire' }]);
+  assert.equal(plan.conflicts.length, 0);
+});
+
+test('update plan turns a drifted retired resource into a removal conflict', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a', 'viejo.txt': 'v' });
+  fs.writeFileSync(path.join(dest, 'viejo.txt'), 'editado');
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  const removal = plan.conflicts.find((r) => r.target === 'viejo.txt');
+  assert.equal(removal.status, 'conflict');
+  assert.equal(removal.removal, true);
+});
+
+test('update plan treats an unverifiable retired resource as a removal conflict', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' }, {
+    extra: [{ target: 'sin-hash.txt', action: 'create' }],
+  });
+  writeTree(dest, { 'sin-hash.txt': 'x' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  const removal = plan.conflicts.find((r) => r.target === 'sin-hash.txt');
+  assert.equal(removal.status, 'conflict');
+  assert.equal(removal.removal, true);
+});
+
+test('update plan drops a retired target already missing on disk', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' }, {
+    extra: [{ target: 'borrado.txt', action: 'create', sha256: 'x'.repeat(64) }],
+  });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  assert.equal(plan.conflicts.find((r) => r.target === 'borrado.txt'), undefined);
+});
+
+test('update plan re-creates a recorded resource the user deleted', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' }, {
+    extra: [{ target: 'b.txt', action: 'create', sha256: 'x'.repeat(64) }],
+  });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a', 'b.txt': 'b' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  const b = plan.resources.find((r) => r.target === 'b.txt');
+  assert.equal(b.status, 'create');
+});
+
+test('update plan never marks an update on a downgrade', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'viejo' }, { version: '2.0.0' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '1.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'conflict');
+});
+
+test('update plan never retires skip entries nor the managed guide', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' }, {
+    extra: [
+      { target: 'omitido.txt', action: 'skip' },
+      { target: '.teleprompter/paquete/GUIA.md', action: 'create', sha256: 'x'.repeat(64) },
+    ],
+  });
+  lock.packages.paquete.personalization = '.teleprompter/paquete/GUIA.md';
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  assert.equal(plan.conflicts.length, 0);
+});
+
+test('update plan demotes an update to conflict when the parent chain escapes', () => {
+  const outside = tmp();
+  writeTree(outside, { 'a.txt': 'viejo' });
+  const dest = tmp();
+  fs.symlinkSync(outside, path.join(dest, 'link'));
+  const lock = {
+    packages: {
+      paquete: {
+        version: '1.0.0',
+        files: [{ target: 'link/a.txt', action: 'create', sha256: hashPath(path.join(outside, 'a.txt')) }],
+      },
+    },
+  };
+  const pkg = pkgWith('paquete', { 'b.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.install = [{ source: 'b.txt', target: 'link/a.txt' }];
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'conflict');
+});
+
+test('update plan on an unrecorded package classifies like a fresh install', () => {
+  const dest = tmp();
+  const pkg = pkgWith('otro', { 'a.txt': 'a', 'b.txt': 'b' });
+  writeTree(dest, { 'b.txt': 'ajeno' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], { packages: {} });
+  assert.equal(plan.upToDate, false);
+  const byTarget = Object.fromEntries(plan.resources.map((r) => [r.target, r.status]));
+  assert.equal(byTarget['a.txt'], 'create');
+  assert.equal(byTarget['b.txt'], 'conflict');
+});
+
+test('update plan demotes a create to conflict when the parent chain escapes', () => {
+  const outside = tmp();
+  const dest = tmp();
+  fs.symlinkSync(outside, path.join(dest, 'link'));
+  const pkg = pkgWith('paquete', { 'b.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.install = [{ source: 'b.txt', target: 'link/a.txt' }];
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], { packages: {} });
+  assert.equal(plan.resources[0].status, 'conflict');
+});
+
+test('update plan never retires a shipped target written differently', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'viejo' });
+  const pkg = pkgWith('paquete', { 'b.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.install = [{ source: 'b.txt', target: './a.txt' }];
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  assert.equal(plan.resources[0].status, 'update');
+});
+
+test('update plan keeps retire and conflict shapes on a mixed plan', () => {
+  const { dest, lock } = destWithLock({
+    'a.txt': 'a', 'viejo.txt': 'v', 'editado.txt': 'e',
+  });
+  fs.writeFileSync(path.join(dest, 'editado.txt'), 'editado por el usuario');
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [{ target: 'viejo.txt', status: 'retire' }]);
+  assert.deepEqual(
+    plan.conflicts.map((r) => [r.target, r.removal]),
+    [['editado.txt', true]],
+  );
+});
+
+test('upToDate plan carries no mkdirs nor resources', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  const plan = buildUpdatePlan(pkg, manifest, dest, ['d/'], lock);
+  assert.deepEqual(plan, {
+    upToDate: true, mkdirs: [], resources: [], conflicts: [], retired: [],
+  });
 });

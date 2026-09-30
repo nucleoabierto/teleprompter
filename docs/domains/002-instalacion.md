@@ -47,6 +47,15 @@ instalado.
     `no verificable`.
     - Ancla: `classifyResource` en `src/drift.js`; contrato en
       `docs/instalador.md` «La verificación del estado»
+  - **Plan de actualización:** el plan de una versión entrante
+    distinta de la registrada; además de las marcas de instalación
+    añade `update` (la versión cambió el recurso y el destino sigue
+    intacto) y `retire` (registrado, retirado por la versión e
+    intacto → eliminación), y marca los retirados con deriva como
+    `conflict` de eliminación —`overwrite` quita, `skip` conserva—.
+    Versión igual a la registrada → `upToDate`, sin plan.
+    - Ancla: `buildUpdatePlan` en `src/plan.js`; contrato en
+      `docs/instalador.md` «El plan de actualización»; D015
 - **Entidades / estado:**
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
@@ -54,6 +63,11 @@ instalado.
   - `Plan` — `{ mkdirs, resources, conflicts }`; cada recurso lleva
     `source`, `target`, `status` y, tras resolver, `resolution`.
     - Ancla: `buildPlan` en `src/plan.js`
+  - `UpdatePlan` — `{ upToDate, mkdirs, resources, conflicts,
+    retired }`; `resources` incluye las entradas del manifiesto y
+    los retirados con deriva marcados `removal`, `retired` solo las
+    marcas `retire`.
+    - Ancla: `buildUpdatePlan` en `src/plan.js`
   - Hash de recurso — SHA-256 sobre dominios separados (`file\n`,
     `link\n`, `dir\n`) para que tipos distintos nunca colisionen;
     los árboles ordenan sus entradas para que el digest sea
@@ -92,6 +106,10 @@ instalado.
   - Un recurso `identical` conserva su registro previo —el contenido
     sigue siendo propio— pero no crea registro si nunca se escribió.
     Ancla: `writeLock` en `src/lock.js`
+  - Un recurso retirado por la versión solo se elimina intacto —propio
+    y sin tocar—; modificado o no verificable exige decisión, y el
+    `target` de `personalization` y las entradas `skip` nunca se
+    retiran (D015). Ancla: `buildUpdatePlan` en `src/plan.js`
 - **Operaciones:**
   - `teleprompter [install] <user/repo[@ref]> [destino]` o
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
@@ -131,6 +149,11 @@ instalado.
     instalaciones responde «no hay paquetes instalados» con código
     0: es una respuesta, no un fallo.
     - Ancla: `showList` en `src/cli.js`; D012
+  - Calcular el plan de actualización: confronta la versión entrante
+    con el registro y el disco; devuelve `upToDate` si la versión es
+    la registrada, o el plan clasificado con los retirados según su
+    deriva —sin escribir nada—.
+    - Ancla: `buildUpdatePlan` en `src/plan.js`; D015
   - Verificar el estado de lo instalado: `teleprompter check`
     confronta el registro del directorio de trabajo con el disco
     —sin argumentos ni opciones— y muestra por paquete una marca de
@@ -172,6 +195,10 @@ instalado.
     registro sobre el directorio de trabajo.
   - `docs/decisions/D013` — `check` como subcomando de verificación
     del estado de los recursos instalados.
+  - `docs/decisions/D014` — `origin` en el registro: la procedencia
+    reobtenible de cada instalación.
+  - `docs/decisions/D015` — vocabulario del plan de actualización y
+    política de retirados.
 
 ## Estado de salud
 

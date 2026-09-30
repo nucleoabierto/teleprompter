@@ -30,7 +30,7 @@ tres operaciones.
   estado de los recursos instalados
 - [x] docs/tasks/018-registrar-origen-en-el-registro.md — Registrar
   el origen de la instalación en el registro
-- [ ] docs/tasks/019-plan-de-actualizacion.md — Plan de actualización
+- [x] docs/tasks/019-plan-de-actualizacion.md — Plan de actualización
   consciente de la deriva
 - [ ] docs/tasks/020-comando-update.md — El comando `update`
 

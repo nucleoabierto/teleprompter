@@ -97,3 +97,10 @@ decisión antes de actuar.
   - Disparadores: `origin`, origen, `teleprompter-lock.json`,
     registro, lock, `writeLock`, `update`, `--path`, `user/repo`
   - Estado: Aceptada
+- [D015-plan-de-actualizacion-y-retirados.md](D015-plan-de-actualizacion-y-retirados.md)
+  — el plan de actualización clasifica con `update` y `retire`, y
+  solo elimina retirados intactos; los que derivaron exigen decisión.
+  - Disparadores: `update`, `retire`, `upToDate`, `removal`, plan de
+    actualización, `buildUpdatePlan`, `src/plan.js`, retirado,
+    eliminación, deriva
+  - Estado: Aceptada
