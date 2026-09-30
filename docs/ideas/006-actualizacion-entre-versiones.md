@@ -2,6 +2,7 @@
 
 > **Tipo:** idea de flujo — conjunto (complejidad alta)
 > **Fecha:** 2026-09
+> **Procesada en:** docs/proposals/006-actualizacion-entre-versiones/
 > **Orden sugerido:** 3 de 3 — cierra el ciclo de vida del paquete y
 > presupone el registro legible y el diagnóstico de deriva.
 

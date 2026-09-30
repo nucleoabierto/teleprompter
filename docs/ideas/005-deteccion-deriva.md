@@ -2,6 +2,7 @@
 
 > **Tipo:** idea de funcionalidad — tamaño tarea (complejidad media)
 > **Fecha:** 2026-09
+> **Procesada en:** docs/proposals/005-deteccion-deriva/
 > **Orden sugerido:** 2 de 3 — presupone la lectura del registro y su
 > diagnóstico es la entrada natural de la actualización.
 
