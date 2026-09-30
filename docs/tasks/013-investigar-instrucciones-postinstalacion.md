@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -70,5 +70,9 @@ borrador 03.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-09-29 — Aprueba. Una mejora aplicada: RubyGems
+  reclasificado al modelo (b) —su gemspec persiste y el mensaje se
+  relee con `gem specification`—; añadido el caso npm a las
+  limitaciones y reconciliada la rec. 2 con la alternativa
+  descartada de la propuesta.
+- Usuario: 2026-09-29 — Aprueba
