@@ -91,3 +91,9 @@ decisión antes de actuar.
     de recursos, gramática del CLI, `parseArgs`, registro,
     `teleprompter-lock.json`, `src/drift.js`
   - Estado: Aceptada
+- [D014-campo-origin-del-registro.md](D014-campo-origin-del-registro.md)
+  — el registro guarda el `origin` de cada instalación: `github`
+  con `repo` y `ref` opcional, o `path` absoluta.
+  - Disparadores: `origin`, origen, `teleprompter-lock.json`,
+    registro, lock, `writeLock`, `update`, `--path`, `user/repo`
+  - Estado: Aceptada

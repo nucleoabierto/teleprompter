@@ -107,7 +107,8 @@ destino: un JSON pensado para versionarse con el repositorio:
           "action": "create",
           "sha256": "…"
         }
-      ]
+      ],
+      "origin": { "type": "github", "repo": "nucleoabierto/ciclo-tareas" }
     }
   }
 }
@@ -116,7 +117,11 @@ destino: un JSON pensado para versionarse con el repositorio:
 `packages` se indexa por el `name` del manifiesto y cada entrada
 contiene `version`, `installedAt` y `files`: una entrada por recurso
 con su `target`, la acción realizada (`create`, `overwrite`, `skip`) y
-el SHA-256 del contenido escrito —las entradas `skip` no llevan hash.
+el SHA-256 del contenido escrito —las entradas `skip` no llevan hash—.
+La entrada registra además el `origin` de la instalación: el
+repositorio `owner/name` con el ref usado —o sin él, si se obtuvo la
+rama por defecto— o la ruta absoluta de `--path`; los registros
+escritos antes de este campo carecen de él.
 Los registros de otros paquetes instalados en el mismo destino se
 conservan. Un registro ausente no bloquea la operación: se ignora en
 silencio y se trata como si no hubiera instalaciones previas; un

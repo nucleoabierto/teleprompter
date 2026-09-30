@@ -38,7 +38,21 @@ function isValidLock(data) {
     && Array.isArray(p.files)
     && p.files.every((f) => f !== null && typeof f === 'object'
       && typeof f.target === 'string'
-      && (f.sha256 === undefined || typeof f.sha256 === 'string')));
+      && (f.sha256 === undefined || typeof f.sha256 === 'string'))
+    && (p.origin === undefined || isValidOrigin(p.origin)));
+}
+
+// `origin` is optional — locks written before it existed stay
+// valid — but when present it must name the re-fetchable source:
+// a GitHub repo with its optional ref, or a local path.
+function isValidOrigin(o) {
+  if (o === null || typeof o !== 'object' || Array.isArray(o)) return false;
+  if (o.type === 'github') {
+    return typeof o.repo === 'string'
+      && (o.ref === undefined || typeof o.ref === 'string');
+  }
+  if (o.type === 'path') return typeof o.path === 'string';
+  return false;
 }
 
 // Merges the new install into the existing history: other packages'
@@ -47,8 +61,10 @@ function isValidLock(data) {
 // `identical` keeps any previous record — the content is still ours
 // and the recorded hash still matches — but creates none for a
 // resource we never wrote. `mkdir` actions are plan bookkeeping, not
-// installed files.
-export function writeLock(destDir, lock, manifest, actions) {
+// installed files. `origin` is the source the install came from, in
+// lock shape: a later operation can re-fetch the package without
+// asking for it again.
+export function writeLock(destDir, lock, manifest, actions, origin) {
   const previous = new Map(
     (lock.packages[manifest.name]?.files ?? []).map((f) => [f.target, f]),
   );
@@ -79,6 +95,7 @@ export function writeLock(destDir, lock, manifest, actions) {
         installedAt: new Date().toISOString(),
         files,
         ...(personalization === undefined ? {} : { personalization }),
+        origin,
       },
     },
   };

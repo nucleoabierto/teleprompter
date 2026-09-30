@@ -29,9 +29,13 @@ instalado.
     destino; por paquete guarda `version`, `installedAt` y `files`
     con `target`, acción y `sha256` —las entradas `skip` no llevan
     hash— y `personalization` con la ruta gestionada de la guía
-    cuando el manifiesto la declara. Es la memoria que distingue lo
-    propio de lo ajeno.
-    - Ancla: `readLock` y `isValidLock` en `src/lock.js`; D007
+    cuando el manifiesto la declara; `origin` registra de dónde vino
+    la instalación —`{type:'github',repo,ref?}` o
+    `{type:'path',path}` absoluta—, opcional en entradas escritas
+    antes del campo. Es la memoria que distingue lo propio de lo
+    ajeno.
+    - Ancla: `readLock`, `isValidLock` y `writeLock` en `src/lock.js`
+      y `originOf` en `src/cli.js`; D007, D014
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`

@@ -863,3 +863,79 @@ test('check rejects arguments and install options', async () => {
     assert.match(stderr[0], /uso:/);
   }
 });
+
+// --- origen de la instalación en el registro ---
+
+const readEntry = (dest, name) => JSON.parse(
+  fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'),
+).packages[name];
+
+test('a --path install records the local origin as an absolute path', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  assert.deepEqual(readEntry(dest, 'p').origin,
+    { type: 'path', path: path.resolve(pkg) });
+});
+
+test('a remote install records the repo and the used ref', async () => {
+  const dest = tmp();
+  const spy = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete@v2', dest], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
+    { type: 'github', repo: 'o/mi-paquete', ref: 'v2' });
+});
+
+test('a remote install without a ref records the repo alone', async () => {
+  const dest = tmp();
+  const spy = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete', dest], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
+    { type: 'github', repo: 'o/mi-paquete' });
+});
+
+test('each installed package keeps its own recorded origin', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'local');
+  writePkg(pkg, validManifest('local'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const spy = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete', dest], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.deepEqual(readEntry(dest, 'local').origin,
+    { type: 'path', path: path.resolve(pkg) });
+  assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
+    { type: 'github', repo: 'o/mi-paquete' });
+});
+
+test('a lock written before the origin field stays valid', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { p: { version: '1.0.0', files: [{ target: 'a.txt' }] } },
+  }));
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.0\.0/);
+});
+
+test('a lock with a malformed origin degrades to no history', async () => {
+  const malformed = [
+    'en-ningun-sitio',
+    null,
+    [],
+    { type: 'desconocido' },
+    { type: 'github' },
+    { type: 'github', repo: 'o/r', ref: 5 },
+    { type: 'path' },
+  ];
+  for (const origin of malformed) {
+    const dest = tmp();
+    fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+      packages: { p: { version: '1.0.0', files: [], origin } },
+    }));
+    const { code, stdout } = await run(['list'], { cwd: dest });
+    assert.equal(code, EXIT_OK, JSON.stringify(origin));
+    assert.match(stdout.join('\n'), /aviso:.*corrupto/, JSON.stringify(origin));
+    assert.match(stdout.join('\n'), /no hay paquetes instalados/);
+  }
+});

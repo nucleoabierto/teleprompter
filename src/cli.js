@@ -200,6 +200,21 @@ function showCheck(io, out) {
 
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
 
+// The installation's origin in lock shape: what a later operation
+// needs to fetch the package again without asking. A remote source
+// records owner/repo plus the ref the user gave —absent ref means
+// the remote's default branch at fetch time—; a local --path is
+// recorded absolute, because the relative form would die with the
+// working directory of that invocation.
+function originOf(source) {
+  if (source.kind === 'path') {
+    return { type: 'path', path: path.resolve(source.dir) };
+  }
+  const { owner, name, ref } = source.spec;
+  const repo = `${owner}/${name}`;
+  return ref === null ? { type: 'github', repo } : { type: 'github', repo, ref };
+}
+
 // Invocation layer only: parses arguments, delegates to src/ and maps
 // the result to output and exit codes. Keeping it thin is what lets
 // the test suite exercise the CLI without spawning processes.
@@ -309,7 +324,7 @@ export async function main(argv, io = {}) {
     try {
       actions = executePlan(pkgDir, destDir, plan);
       guide = installPersonalization(pkgDir, destDir, result.manifest);
-      writeLock(destDir, lock, result.manifest, actions);
+      writeLock(destDir, lock, result.manifest, actions, originOf(source));
       // Deliver what was installed, not the package source — the
       // managed copy survives a remote fetch's cleanup and is the
       // same content `guide` will show later.

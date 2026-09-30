@@ -154,7 +154,8 @@ pueden coexistir en el mismo destino—:
         { "target": ".agents/skills/ejecutar-tareas/SKILL.md",
           "action": "create",
           "sha256": "…" }
-      ]
+      ],
+      "origin": { "type": "github", "repo": "nucleoabierto/ciclo-tareas" }
     }
   }
 }
@@ -168,6 +169,14 @@ Cada entrada de paquete contiene:
   realizada (`create`, `overwrite`, `skip`), y el hash SHA-256 del
   contenido escrito. Las entradas `skip` registran la decisión sin
   hash.
+- `origin` — de dónde vino la instalación, para que una operación
+  posterior pueda reobtener el paquete sin pedir el origen de nuevo:
+  `{ "type": "github", "repo": "owner/name", "ref": "…" }` para un
+  origen remoto —`ref` solo cuando el usuario la indicó; ausente es
+  la rama por defecto en el momento de la obtención— o
+  `{ "type": "path", "path": "/abs" }` para un origen local, en forma
+  absoluta. Las entradas escritas antes de este campo carecen de él:
+  su origen es desconocido.
 
 El registro es la base de propiedad del sistema: permite distinguir lo
 instalado por la herramienta de lo preexistente (habilita
