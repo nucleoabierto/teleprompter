@@ -6,6 +6,7 @@ import { buildPlan } from './plan.js';
 import { executePlan, installPersonalization } from './execute.js';
 import { resolvesUnder, personalizationTarget, isSafeRelative } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
+import { classifyResource } from './drift.js';
 
 export const EXIT_OK = 0;
 export const EXIT_MANIFEST = 1;
@@ -14,25 +15,25 @@ export const EXIT_EXECUTION = 3;
 export const EXIT_USAGE = 4;
 export const EXIT_FETCH = 5;
 
-const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>] | list';
+const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>] | list | check';
 const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
 const VALUE_OPTIONS = new Set(['--path', '--ref']);
 
 // Grammar: an optional "install" alias, then either --path <dir> or a
 // positional user/repo[@ref] spec, plus an optional positional OUT
 // (defaults to the working directory). --ref and @ref are mutually
-// exclusive; with --path no remote spec is processed at all. `guide`
-// and `list` are their own commands: both consult the working
+// exclusive; with --path no remote spec is processed at all. `guide`,
+// `list` and `check` are their own commands: all consult the working
 // directory's lock — `guide` admits at most one package name, `list`
-// admits nothing — no options, no destination.
+// and `check` admit nothing — no options, no destination.
 function parseArgs(argv) {
   if (argv[0] === 'guide') {
     const rest = argv.slice(1);
     if (rest.length > 1 || rest.some((a) => a.startsWith('-'))) return null;
     return { command: 'guide', pkg: rest[0] };
   }
-  if (argv[0] === 'list') {
-    return argv.length === 1 ? { command: 'list' } : null;
+  if (argv[0] === 'list' || argv[0] === 'check') {
+    return argv.length === 1 ? { command: argv[0] } : null;
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
   const args = [];
@@ -162,6 +163,41 @@ function showList(io, out) {
   return EXIT_OK;
 }
 
+// Drift marks in product language: `check` reports the state of each
+// recorded resource without exposing the hashes it compared.
+const DRIFT_MARKS = {
+  intact: 'intacto',
+  modified: 'modificado',
+  missing: 'ausente',
+  unverifiable: 'no verificable',
+};
+
+// `check` confronts the registry with the disk: for each resource the
+// lock recorded, its drift mark — intact, modified, missing or
+// unverifiable when there is no reference or the read fails. `skip`
+// entries recorded a decision that wrote nothing, so they are not
+// reported; drift is information, not a failure, so the command
+// always exits 0.
+function showCheck(io, out) {
+  const lock = readLock(io.cwd);
+  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  const entries = Object.entries(lock.packages);
+  if (entries.length === 0) {
+    out('no hay paquetes instalados');
+    return EXIT_OK;
+  }
+  out('estado de los recursos:');
+  for (const [name, entry] of entries) {
+    out(`  ${name}@${entry.version}`);
+    for (const f of entry.files) {
+      if (f.action === 'skip') continue;
+      const mark = DRIFT_MARKS[classifyResource(io.cwd, f)];
+      out(`    ${mark.padEnd(15)}${f.target}`);
+    }
+  }
+  return EXIT_OK;
+}
+
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
 
 // Invocation layer only: parses arguments, delegates to src/ and maps
@@ -180,6 +216,7 @@ export async function main(argv, io = {}) {
   }
   if (parsed.command === 'guide') return showGuide(io, out, err, parsed.pkg);
   if (parsed.command === 'list') return showList(io, out);
+  if (parsed.command === 'check') return showCheck(io, out);
   const { source, dest, flags } = parsed;
   const destDir = dest ?? io.cwd;
   const badPaths = source.kind === 'path'

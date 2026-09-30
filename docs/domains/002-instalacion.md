@@ -35,6 +35,14 @@ instalado.
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
+  - **Deriva:** el estado de un recurso registrado al confrontarlo
+    con el disco —`intact` (el hash coincide), `modified` (difiere),
+    `missing` (la ruta ya no existe) o `unverifiable` (sin `sha256`
+    registrado, lectura fallida o ruta que escapa del destino); el
+    informe los presenta como `intacto`, `modificado`, `ausente` y
+    `no verificable`.
+    - Ancla: `classifyResource` en `src/drift.js`; contrato en
+      `docs/instalador.md` «La verificación del estado»
 - **Entidades / estado:**
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
@@ -119,6 +127,14 @@ instalado.
     instalaciones responde «no hay paquetes instalados» con código
     0: es una respuesta, no un fallo.
     - Ancla: `showList` en `src/cli.js`; D012
+  - Verificar el estado de lo instalado: `teleprompter check`
+    confronta el registro del directorio de trabajo con el disco
+    —sin argumentos ni opciones— y muestra por paquete una marca de
+    deriva por recurso registrado; las entradas `skip` no se
+    verifican y encontrar deriva no es un fallo —la consulta siempre
+    termina con código 0—.
+    - Ancla: `showCheck` en `src/cli.js` y `classifyResource` en
+      `src/drift.js`; D013
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
@@ -150,6 +166,8 @@ instalado.
     el directorio de trabajo.
   - `docs/decisions/D012` — `list` como subcomando de consulta del
     registro sobre el directorio de trabajo.
+  - `docs/decisions/D013` — `check` como subcomando de verificación
+    del estado de los recursos instalados.
 
 ## Estado de salud
 

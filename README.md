@@ -87,6 +87,9 @@ consultable después —desde la raíz del destino— con
 `teleprompter guide [<paquete>]`. El propio registro se consulta con
 `teleprompter list`, que muestra una entrada por paquete instalado:
 nombre, versión, fecha de instalación y recursos escritos.
+`teleprompter check` confronta el registro con el disco e informa por
+cada recurso si sigue intacto, fue modificado, ya no existe o no
+puede verificarse.
 
 ### Códigos de salida
 

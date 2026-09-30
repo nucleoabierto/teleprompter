@@ -17,6 +17,9 @@ instalación, empezar por la guía de uso.
   instrucciones de personalización de los paquetes instalados.
 - [Referencia de `list`](referencia-list.md) — listar los paquetes
   instalados con su versión, fecha y recursos.
+- [Referencia de `check`](referencia-check.md) — verificar el estado
+  de los recursos instalados: intactos, modificados, ausentes o no
+  verificables.
 
 ## Funcionalidades
 
@@ -24,6 +27,8 @@ instalación, empezar por la guía de uso.
   `install` y los escenarios que la suite de pruebas verifica.
 - [002 — Listar los paquetes instalados](002-listar-paquetes-instalados.md)
   — qué muestra `list` y los escenarios que la suite verifica.
+- [003 — Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
+  — qué informa `check` y los escenarios que la suite verifica.
 
 ## Documentos relacionados
 

@@ -112,6 +112,18 @@ npx @nucleoabierto/teleprompter list
 
 Véase la [referencia de `list`](referencia-list.md).
 
+## Verificar el estado de los recursos instalados
+
+Desde la raíz del repositorio destino, `check` confronta el registro
+con el disco y muestra por cada recurso instalado si sigue `intacto`,
+fue `modificado`, está `ausente` o es `no verificable`:
+
+```sh
+npx @nucleoabierto/teleprompter check
+```
+
+Véase la [referencia de `check`](referencia-check.md).
+
 ## Inspeccionar sin instalar
 
 `--dry-run` ejecuta solo la verificación y el plan, y termina sin

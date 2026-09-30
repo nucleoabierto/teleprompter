@@ -19,6 +19,7 @@ teleprompter --path <paquete> [destino]      # origen local
 teleprompter install …                       # alias de ambas formas
 teleprompter guide [<paquete>]               # consulta la guía instalada
 teleprompter list                            # lista los paquetes instalados
+teleprompter check                           # verifica el estado de los recursos instalados
 ```
 
 - `user/repo` descarga el tarball público del repositorio por HTTP
@@ -205,6 +206,29 @@ Sin instalaciones registradas —lock ausente, vacío o ilegible— la
 consulta responde «no hay paquetes instalados» con código `0`: es
 una respuesta, no un fallo; un registro corrupto añade el mismo
 aviso que el resto de lecturas del lock.
+
+## La verificación del estado
+
+`teleprompter check` —ejecutado dentro del repositorio destino, sin
+argumentos ni opciones— confronta el registro con el disco: por cada
+paquete instalado muestra `nombre@version` y una línea por recurso
+registrado con su marca de deriva:
+
+- `intacto` — el contenido actual coincide con el hash registrado.
+- `modificado` — el recurso existe pero difiere de lo anotado.
+- `ausente` — la ruta registrada ya no existe.
+- `no verificable` — la entrada no guardó `sha256` con el que
+  comparar, el recurso no se puede leer, o la ruta registrada no es
+  segura —un `..` o un enlace en su cadena de padres que sale del
+  destino—: el registro es dato versionado y se revalida antes de
+  leer, como en `guide`.
+
+Las entradas `skip` no se verifican: registran una omisión, no un
+recurso escrito. El informe es lenguaje de producto —no expone
+hashes ni acciones internas— y la deriva es información, no un
+fallo: la consulta termina con código `0` haya o no deriva. Sin
+instalaciones responde «no hay paquetes instalados», y un registro
+corrupto añade el mismo aviso que el resto de lecturas del lock.
 
 ## Resultado y errores
 

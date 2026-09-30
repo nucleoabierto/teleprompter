@@ -26,7 +26,7 @@ tres operaciones.
 
 - [x] docs/tasks/016-listar-paquetes-instalados.md — Listar los
   paquetes instalados
-- [ ] docs/tasks/017-verificar-recursos-instalados.md — Verificar el
+- [x] docs/tasks/017-verificar-recursos-instalados.md — Verificar el
   estado de los recursos instalados
 - [ ] docs/tasks/018-registrar-origen-en-el-registro.md — Registrar
   el origen de la instalación en el registro

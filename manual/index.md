@@ -19,10 +19,15 @@ colisiones con lo que ya existe y registra la instalación en
   instrucciones de personalización de los paquetes instalados.
 - [Referencia de `list`](referencia-list.md) — listar los paquetes
   instalados con su versión, fecha y recursos.
+- [Referencia de `check`](referencia-check.md) — verificar el estado
+  de los recursos instalados.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
   y los escenarios que la suite de pruebas verifica.
 - [Listar los paquetes instalados](002-listar-paquetes-instalados.md)
   — la consulta del registro y los escenarios que la suite verifica.
+- [Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
+  — la verificación de la instalación y los escenarios que la suite
+  verifica.
 
 ## En el repositorio
 

@@ -84,3 +84,10 @@ decisión antes de actuar.
   - Disparadores: `list`, subcomando, consulta, gramática del CLI,
     `parseArgs`, registro, `teleprompter-lock.json`
   - Estado: Aceptada
+- [D013-subcomando-check-de-verificacion.md](D013-subcomando-check-de-verificacion.md)
+  — `teleprompter check` verifica el estado de los recursos
+  instalados confrontando el registro con el disco.
+  - Disparadores: `check`, subcomando, verificación, deriva, deriva
+    de recursos, gramática del CLI, `parseArgs`, registro,
+    `teleprompter-lock.json`, `src/drift.js`
+  - Estado: Aceptada

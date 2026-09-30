@@ -672,3 +672,194 @@ test('list rejects arguments and install options', async () => {
     assert.match(stderr[0], /uso:/);
   }
 });
+
+// --- verificación del estado de los recursos instalados ---
+
+test('check answers that nothing is installed when there is no lock', async () => {
+  const { code, stdout } = await run(['check'], { cwd: tmp() });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, ['no hay paquetes instalados']);
+});
+
+test('check reports an installed resource as intact', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.equal(stdout[0], 'estado de los recursos:');
+  assert.match(stdout[1], /^ {2}p@1\.0\.0$/);
+  assert.match(stdout[2], /^ {4}intacto\s+a\.txt$/);
+});
+
+test('check reports an edited resource as modified', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}modificado\s+a\.txt/);
+});
+
+test('check reports a deleted resource as missing', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  fs.rmSync(path.join(dest, 'a.txt'));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}ausente\s+a\.txt/);
+});
+
+test('check reports each state across packages and resources', async () => {
+  const dest = tmp();
+  for (const name of ['uno', 'dos']) {
+    const pkg = path.join(tmp(), name);
+    writePkg(pkg, validManifest(name, {
+      install: [
+        { source: `${name}.txt`, target: `${name}.txt` },
+        { source: 'extra.txt', target: `${name}-extra.txt` },
+      ],
+    }), { [`${name}.txt`]: name, 'extra.txt': 'extra' });
+    await run(['--path', pkg, dest]);
+  }
+  fs.writeFileSync(path.join(dest, 'uno.txt'), 'editado');
+  fs.rmSync(path.join(dest, 'dos-extra.txt'));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, / {2}uno@1\.0\.0\n {4}modificado\s+uno\.txt\n {4}intacto\s+uno-extra\.txt/);
+  assert.match(out, / {2}dos@1\.0\.0\n {4}intacto\s+dos\.txt\n {4}ausente\s+dos-extra\.txt/);
+});
+
+test('check does not report resources recorded as skipped', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        installedAt: '2026-09-28T10:00:00Z',
+        files: [
+          { target: 'a.txt', action: 'skip' },
+          { target: 'b.txt', action: 'skip' },
+        ],
+      },
+    },
+  }));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, / {2}p@1\.0\.0/);
+  assert.doesNotMatch(out, /a\.txt|b\.txt/);
+});
+
+test('check reports a recorded entry without sha256 as unverifiable', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: { version: '1.0.0', files: [{ target: 'a.txt', action: 'create' }] },
+    },
+  }));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}no verificable\s+a\.txt/);
+});
+
+test('check marks recorded paths that escape the destination as unverifiable', async () => {
+  const dest = tmp();
+  const outside = tmp();
+  fs.writeFileSync(path.join(outside, 'a.txt'), 'ajeno');
+  fs.symlinkSync(outside, path.join(dest, 'enlace'));
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [
+          { target: '../a.txt', action: 'create', sha256: '0'.repeat(64) },
+          { target: 'enlace/a.txt', action: 'create', sha256: '0'.repeat(64) },
+        ],
+      },
+    },
+  }));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, / {4}no verificable\s+\.\.\/a\.txt/);
+  assert.match(out, / {4}no verificable\s+enlace\/a\.txt/);
+});
+
+test('check reports an unreadable resource as unverifiable', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const target = path.join(dest, 'a.txt');
+  fs.chmodSync(target, 0);
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  fs.chmodSync(target, 0o644);
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}no verificable\s+a\.txt/);
+});
+
+test('check reports a hand-written lock entry whose hash differs as modified', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [{ target: 'a.txt', action: 'create', sha256: '0'.repeat(64) }],
+      },
+    },
+  }));
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {4}modificado\s+a\.txt/);
+});
+
+test('check verifies the managed guide as a recorded resource', async () => {
+  const dest = tmp();
+  await run(['--path', guidePkg('con-guia', 'x'), dest]);
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'),
+    / {4}intacto\s+\.teleprompter\/con-guia\/guia\.md/);
+});
+
+test('check reports drift in product language, without hashes or actions', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.doesNotMatch(stdout.join('\n'),
+    /[0-9a-f]{64}|sha256|overwrite|create|skip/);
+});
+
+test('check warns on a corrupt lock and answers nothing installed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
+  const { code, stdout, stderr } = await run(['check'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /aviso:.*corrupto/);
+  assert.match(stdout.join('\n'), /no hay paquetes instalados/);
+  assert.deepEqual(stderr, []);
+});
+
+test('check rejects arguments and install options', async () => {
+  for (const argv of [
+    ['check', 'x'], ['check', 'a', 'b'], ['check', '--path', 'x'],
+    ['check', '--dry-run'], ['check', '--force'], ['check', '-x'],
+  ]) {
+    const { code, stderr } = await run(argv, { cwd: tmp() });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});
