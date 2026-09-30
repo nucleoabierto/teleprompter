@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { hashPath } from './hash.js';
+import { personalizationTarget } from './paths.js';
 
 const CORRUPT_WARNING = 'teleprompter-lock.json ilegible o corrupto: se ignora';
 const EMPTY = () => ({ packages: {}, warnings: [] });
@@ -57,6 +59,18 @@ export function writeLock(destDir, lock, manifest, actions) {
     }
     return [sha256 === undefined ? { target, action } : { target, action, sha256 }];
   });
+  // The managed guide never appears among the install actions — the
+  // manifest field already names it — but it is recorded like any
+  // other file the tool wrote.
+  let personalization;
+  if (manifest.personalization) {
+    personalization = personalizationTarget(manifest.name, manifest.personalization);
+    files.push({
+      target: personalization,
+      action: previous.has(personalization) ? 'overwrite' : 'create',
+      sha256: hashPath(path.join(destDir, personalization)),
+    });
+  }
   const data = {
     packages: {
       ...lock.packages,
@@ -64,6 +78,7 @@ export function writeLock(destDir, lock, manifest, actions) {
         version: manifest.version,
         installedAt: new Date().toISOString(),
         files,
+        ...(personalization === undefined ? {} : { personalization }),
       },
     },
   };

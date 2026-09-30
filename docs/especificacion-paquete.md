@@ -47,6 +47,8 @@ marcar directorios, no un requisito del formato.
 
 Ni `source` ni `target` admiten rutas absolutas ni `..`: el origen no
 puede salir del paquete y el destino no puede salir del repositorio.
+Además, ningún `target` puede ser `teleprompter-lock.json` ni caer
+dentro de `.teleprompter/`: son espacios reservados a la herramienta.
 
 ### Campos opcionales
 
@@ -57,12 +59,12 @@ puede salir del paquete y el destino no puede salir del repositorio.
 | `license` | string | Identificador SPDX (`"MIT"`, `"Apache-2.0"`) o referencia a un archivo de licencia. |
 | `author` | object | `{ "name": "...", "email": "...", "url": "..." }`. Solo `name` es obligatorio dentro del objeto. |
 | `requires` | object | Precondiciones del repositorio destino, verificables antes de instalar. De momento solo la clave `paths`. |
-| `personalization` | string | Ruta dentro del paquete al archivo o directorio con instrucciones de personalización. Solo declara que existe adaptación pendiente y dónde está documentada; no se instala salvo que también figure en `install`. |
+| `personalization` | string | Ruta dentro del paquete al archivo con las instrucciones de personalización. El archivo debe existir; su contenido es texto libre del mantenedor dirigido a un agente y nunca se valida ni se ejecuta. El instalador lo copia a `.teleprompter/<paquete>/<archivo>` en el destino, lo anuncia al final de la instalación y recuerda su ubicación en `teleprompter-lock.json`. |
 | `metadata` | object | Mapa libre clave→valor para datos del autor que el instalador no interpreta. |
 
 `requires.paths` es una lista de entradas `{ "path", "create"? }` sobre
 rutas relativas a la raíz del destino (`path` no admite rutas absolutas
-ni `..`):
+ni `..`, ni puede caer dentro de `.teleprompter/`):
 
 - Si la ruta no existe y `create` es `false` o está ausente, la
   instalación aborta.
@@ -114,6 +116,7 @@ Estructura de un paquete con tres recursos:
 ```text
 ciclo-tareas/
 ├── teleprompter.json
+├── PERSONALIZE.md
 └── skills/
     ├── crear-tareas/
     ├── ejecutar-tareas/
@@ -146,6 +149,7 @@ Su manifiesto:
   "requires": {
     "paths": [{ "path": ".agents/skills/", "create": true }]
   },
+  "personalization": "PERSONALIZE.md",
   "metadata": { "origin": "teleprompter" }
 }
 ```
@@ -159,9 +163,12 @@ Su manifiesto:
 4. `install` no vacío; cada entrada tiene solo `source` y `target`;
    cada `source` existe dentro del paquete; ninguna ruta es absoluta ni
    contiene `..`.
-5. `source` y `personalization` apuntan dentro del paquete; `target` y
-   `requires.paths[].path` son relativos a la raíz del destino; ninguna
-   de estas rutas es absoluta ni contiene `..`.
+5. `source` y `personalization` apuntan dentro del paquete —
+   `personalization` a un archivo existente cuyo enlace no resuelve
+   fuera del paquete—; `target` y `requires.paths[].path` son relativos
+   a la raíz del destino; ninguna de estas rutas es absoluta ni
+   contiene `..`, ningún `target` es `teleprompter-lock.json` y nada
+   cae dentro de `.teleprompter/`.
 6. Los campos opcionales presentes pertenecen al contrato; dentro de
    objetos conocidos no hay campos desconocidos (a nivel superior, un
    campo desconocido solo genera un aviso, no invalida el manifiesto).

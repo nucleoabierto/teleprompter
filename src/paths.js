@@ -1,6 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Reserved managed namespace: the tool, not the package, owns where
+// its own files land — same rule as teleprompter-lock.json. Install
+// targets may not point inside it; the personalization guide is
+// materialized under it as <name>/<basename of the declared file>.
+export const MANAGED_DIR = '.teleprompter';
+
+export function personalizationTarget(name, declaredPath) {
+  return `${MANAGED_DIR}/${name}/${path.basename(declaredPath)}`;
+}
+
 // "Exists" means a directory entry is present, whatever it points
 // at: existsSync follows links, so a dangling symlink would report
 // the path as free and a later write could escape through it.

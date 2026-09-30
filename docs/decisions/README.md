@@ -65,3 +65,10 @@ decisión antes de actuar.
   - Disparadores: `manual/`, `mkdocs.yml`, `index.md`, documentación de
     producto, MkDocs, `docs_dir`, `exclude_docs`, sitio
   - Estado: Aceptada
+- [D010-ubicacion-gestionada-guia-personalizacion.md](D010-ubicacion-gestionada-guia-personalizacion.md)
+  — la guía de personalización declarada se copia a
+  `.teleprompter/<paquete>/<archivo>` en el destino, un namespace
+  reservado a la herramienta como `teleprompter-lock.json`.
+  - Disparadores: `.teleprompter/`, `personalization`, guía de
+    personalización, namespace gestionado, espacio reservado
+  - Estado: Aceptada

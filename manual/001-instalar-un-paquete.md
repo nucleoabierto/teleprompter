@@ -94,6 +94,7 @@ mecánica detallada, en la [referencia](referencia-install.md).
 - **Un error a mitad de ejecución sale con código 3 e informa de lo ya
   aplicado.** — módulo `test/execute.test.js`, «a mid-execution error
   exits 3 and reports what was applied»
-- **Si el paquete declara personalización, la salida informa de dónde
-  están las instrucciones.** — módulo `test/execute.test.js`, «install
-  reports the personalization instructions location»
+- **Si el paquete declara personalización, la guía se copia a
+  `.teleprompter/<paquete>/` y la salida la anuncia.** — módulo
+  `test/execute.test.js`, «install materializes the personalization
+  guide in the managed namespace»

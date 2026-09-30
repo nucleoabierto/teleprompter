@@ -125,10 +125,13 @@ un aviso.
 
 ## Personalización
 
-Si el manifiesto declara `personalization`, la salida final informa de
-la ubicación de las instrucciones dentro del paquete. La instalación
-las entrega y presenta; no decide su contenido ni las instala salvo que
-también figuren en `install`.
+Si el manifiesto declara `personalization`, el instalador copia el
+archivo de instrucciones a `.teleprompter/<paquete>/<archivo>` dentro
+del destino —un espacio gestionado por la herramienta, igual que el
+registro—, recuerda su ubicación en `teleprompter-lock.json` y la
+anuncia al final de la salida. El contenido del archivo es texto libre
+del mantenedor: nunca se valida ni se ejecuta. Ningún `target` de
+`install` puede apuntar dentro de `.teleprompter/`.
 
 ## Códigos de salida
 

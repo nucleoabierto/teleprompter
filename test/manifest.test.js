@@ -134,8 +134,36 @@ test('loadManifest validates optional fields: author, description, license, pers
   assert.ok(errorsOf('l1', base('l1', { license: 1 })).some((e) => /license/.test(e)));
   assert.ok(errorsOf('p1', base('p1', { personalization: 1 })).some((e) => /personalization/.test(e)));
   assert.ok(errorsOf('p2', base('p2', { personalization: '/abs' })).some((e) => /no permitida/.test(e)));
-  assert.deepEqual(errorsOf('p3', base('p3', { personalization: 'docs/guia.md' })), []);
+  assert.deepEqual(errorsOf('p3', base('p3', { personalization: 'docs/guia.md' }), { 'a.txt': 'a', 'docs/guia.md': 'sigue esto' }), []);
   assert.ok(errorsOf('m1', base('m1', { metadata: 'x' })).some((e) => /metadata/.test(e)));
+});
+
+test('loadManifest requires personalization to point to an existing file in the package', () => {
+  assert.ok(errorsOf('g1', base('g1', { personalization: 'guia.md' }))
+    .some((e) => /no existe "guia\.md"/.test(e)));
+  assert.ok(errorsOf('g2', base('g2', { personalization: 'guia.md' }), { 'a.txt': 'a', 'guia.md/x.txt': 'x' })
+    .some((e) => /no es un archivo/.test(e)));
+  const dir = pkgWith('g3', base('g3', { personalization: 'guia.md' }));
+  fs.symlinkSync('no-existe', path.join(dir, 'guia.md'));
+  assert.ok(loadManifest(dir).errors.some((e) => /no es un archivo/.test(e)));
+});
+
+test('loadManifest rejects a personalization symlink resolving outside the package', () => {
+  const outside = tmp();
+  const real = path.join(outside, 'secreto.md');
+  fs.writeFileSync(real, 'contenido ajeno');
+  const dir = pkgWith('g4', base('g4', { personalization: 'guia.md' }));
+  fs.symlinkSync(real, path.join(dir, 'guia.md'));
+  assert.ok(loadManifest(dir).errors.some((e) => /apunta fuera del paquete/.test(e)));
+});
+
+test('loadManifest reserves the .teleprompter/ managed namespace', () => {
+  assert.ok(errorsOf('t1', base('t1', { install: [{ source: 'a.txt', target: '.teleprompter/guia.md' }] }))
+    .some((e) => /prefijo reservado/.test(e)));
+  assert.ok(errorsOf('t2', base('t2', { install: [{ source: 'a.txt', target: '.teleprompter' }] }))
+    .some((e) => /prefijo reservado/.test(e)));
+  assert.ok(errorsOf('t3', base('t3', { requires: { paths: [{ path: '.teleprompter/x', create: true }] } }))
+    .some((e) => /prefijo reservado/.test(e)));
 });
 
 test('isSafeRelative rejects absolute, dot-dot, and Windows-style paths', () => {

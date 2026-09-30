@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { isSafeRelative, hasEntry } from './paths.js';
+import { isSafeRelative, hasEntry, MANAGED_DIR } from './paths.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -63,7 +63,11 @@ function checkRequiresEntry(entry, index, errors) {
     return;
   }
   checkKeys(entry, OBJECT_KEYS.requiresPath, where, errors);
-  checkRelativePath(entry.path, `${where}.path`, errors);
+  if (!checkRelativePath(entry.path, `${where}.path`, errors)) return;
+  const t = path.normalize(entry.path);
+  if (t === MANAGED_DIR || t.startsWith(`${MANAGED_DIR}/`)) {
+    errors.push(`${where}.path: "${MANAGED_DIR}/" es un prefijo reservado`);
+  }
   if (entry.create !== undefined && typeof entry.create !== 'boolean') {
     errors.push(`${where}.create: debe ser booleano`);
   }
@@ -121,6 +125,8 @@ const VALIDATORS = [
     for (const t of targets) {
       if (t === 'teleprompter-lock.json') {
         errors.push('install: "teleprompter-lock.json" es un target reservado');
+      } else if (t === MANAGED_DIR || t.startsWith(`${MANAGED_DIR}/`)) {
+        errors.push(`install: "${MANAGED_DIR}/" es un prefijo reservado`);
       } else if (seen.has(t)) {
         errors.push(`install: target duplicado "${t}"`);
       } else if (seen.has([...seen].find((o) => t.startsWith(`${o}/`)))) {
@@ -154,9 +160,30 @@ const VALIDATORS = [
       errors.push('author.name: obligatorio dentro de author');
     }
   },
-  function checkPersonalization(manifest, _ctx, errors) {
+  function checkPersonalization(manifest, { pkgDir }, errors) {
     if (manifest.personalization === undefined) return;
-    checkRelativePath(manifest.personalization, 'personalization', errors);
+    if (!checkRelativePath(manifest.personalization, 'personalization', errors)) return;
+    const full = path.join(pkgDir, manifest.personalization);
+    if (!hasEntry(full)) {
+      errors.push(`personalization: no existe "${manifest.personalization}" dentro del paquete`);
+      return;
+    }
+    // A guide must be a file: directories cannot be displayed, and a
+    // dangling symlink resolves to nothing. statSync follows links.
+    let isFile = false;
+    try {
+      isFile = fs.statSync(full).isFile();
+    } catch { /* dangling link or unreadable entry */ }
+    if (!isFile) {
+      errors.push(`personalization: "${manifest.personalization}" no es un archivo`);
+      return;
+    }
+    // A symlink inside the package is fine, but its target must stay
+    // inside: materializing the guide copies real content.
+    const pkgReal = fs.realpathSync(pkgDir);
+    if (!fs.realpathSync(full).startsWith(`${pkgReal}${path.sep}`)) {
+      errors.push(`personalization: "${manifest.personalization}" apunta fuera del paquete`);
+    }
   },
   function checkMetadata(manifest, _ctx, errors) {
     if (manifest.metadata !== undefined && !isPlainObject(manifest.metadata)) {

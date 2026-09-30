@@ -179,9 +179,12 @@ precondición (precedentes: estado de Terraform, base de dpkg,
 
 La ejecución informa el resultado con las mismas marcas del plan más
 `skip` y `overwrite` según lo realizado. Si el manifiesto declara
-`personalization`, la salida final informa de la ubicación de las
-instrucciones —la instalación las entrega y presenta, sin decidir su
-contenido (propuesta 002)—.
+`personalization`, el instalador copia el archivo de instrucciones a
+`.teleprompter/<paquete>/<archivo>` —espacio gestionado, reservado
+también a los `target` de `install`—, registra su ubicación en
+`teleprompter-lock.json` y la anuncia al final de la salida (la
+entrega del contenido es trabajo de la épica de personalización
+guiada; aquí basta la copia y el anuncio).
 
 Los códigos de salida son:
 

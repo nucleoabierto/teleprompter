@@ -54,6 +54,7 @@ test('the reference package installs end to end through the real binary', () => 
   assert.equal(fs.readFileSync(localEdit, 'utf8'), '# versión local retocada a mano\n');
   assert.equal(fs.existsSync(path.join(dest, 'teleprompter-lock.json')), false);
   assert.equal(fs.existsSync(path.join(dest, '.agents/skills/crear-tareas')), false);
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter')), false);
 
   // --skip installs the free resources and leaves the conflicted one
   // untouched; the lock records the decision without a hash.
@@ -65,10 +66,16 @@ test('the reference package installs end to end through the real binary', () => 
     assert.ok(fs.existsSync(path.join(dest, '.agents/skills', skill, 'SKILL.md')));
   }
   let files = readLockFile(dest).packages['ciclo-tareas'].files;
-  assert.equal(files.length, 3);
+  assert.equal(files.length, 4);
   const skippedEntry = files.find((f) => f.target.includes('ejecutar-tareas'));
   assert.deepEqual(Object.keys(skippedEntry).sort(), ['action', 'target']);
   assert.equal(skippedEntry.action, 'skip');
+  // The declared guide lands in the managed namespace and is recorded.
+  const guideTarget = '.teleprompter/ciclo-tareas/PERSONALIZE.md';
+  assert.equal(fs.readFileSync(path.join(dest, guideTarget), 'utf8'),
+    fs.readFileSync(path.join(referencePkg, 'PERSONALIZE.md'), 'utf8'));
+  assert.match(skipped.stdout, /personalización:.*PERSONALIZE\.md/);
+  assert.equal(readLockFile(dest).packages['ciclo-tareas'].personalization, guideTarget);
 
   // --force overwrites the conflict; the lock records the new content.
   const forced = install(dest, ['--force']);

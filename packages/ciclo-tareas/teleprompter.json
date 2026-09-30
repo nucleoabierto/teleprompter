@@ -21,5 +21,6 @@
   "requires": {
     "paths": [{ "path": ".agents/skills/", "create": true }]
   },
+  "personalization": "PERSONALIZE.md",
   "metadata": { "origin": "teleprompter" }
 }

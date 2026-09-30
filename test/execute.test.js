@@ -163,14 +163,67 @@ test('writeLock preserves records belonging to other packages', async () => {
   assert.equal(lock.packages['segundo'].files.length, 1);
 });
 
-test('install reports the personalization instructions location', async () => {
+test('install materializes the personalization guide in the managed namespace', async () => {
   const dest = tmp();
-  const pkg = pkgWith('con-guia', { 'a.txt': 'a', 'guia.md': 'sigue esto' }, {
+  const contenido = 'adapta docs/tasks/ a tu proyecto\n(línea arbitraria: ~!$%^*)';
+  const pkg = pkgWith('con-guia', { 'a.txt': 'a', 'guia.md': contenido }, {
     personalization: 'guia.md',
   });
   const { code, stdout } = await run(['--path', pkg, dest]);
   assert.equal(code, EXIT_OK);
-  assert.match(stdout.join('\n'), /personalización:.*guia\.md/);
+  const target = '.teleprompter/con-guia/guia.md';
+  assert.equal(fs.readFileSync(path.join(dest, target), 'utf8'), contenido);
+  const out = stdout.join('\n');
+  assert.match(out, new RegExp(`personalización:.*${target.replace(/\./g, '\\.')}`));
+  // The managed copy is announced, not listed among the install resources.
+  assert.doesNotMatch(out, /create\s+\.teleprompter/);
+  const lock = readLockFile(dest).packages['con-guia'];
+  assert.equal(lock.personalization, target);
+  assert.ok(lock.files.some((f) => f.target === target && f.action === 'create'));
+
+  // A reinstall overwrites the managed copy and records it as such.
+  assert.equal((await run(['--path', pkg, dest])).code, EXIT_OK);
+  const guideEntry = readLockFile(dest).packages['con-guia'].files
+    .find((f) => f.target === target);
+  assert.equal(guideEntry.action, 'overwrite');
+});
+
+test('a managed guide under a symlinked .teleprompter aborts the plan before writing', async () => {
+  const dest = tmp();
+  const outside = tmp();
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  const pkg = pkgWith('guia-fuera', { 'a.txt': 'a', 'guia.md': 'x' }, {
+    personalization: 'guia.md',
+  });
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'guia-fuera')), false);
+  // Plan not executable: nothing was written, not even the safe resources.
+  assert.equal(fs.existsSync(path.join(dest, 'a.txt')), false);
+  assert.equal(fs.existsSync(path.join(dest, 'teleprompter-lock.json')), false);
+});
+
+test('installPersonalization keeps its own escape guard as an API', async () => {
+  const { installPersonalization } = await import('../src/execute.js');
+  const dest = tmp();
+  const outside = tmp();
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  const pkg = pkgWith('guarda', { 'guia.md': 'x' });
+  assert.throws(
+    () => installPersonalization(pkg, dest, { name: 'guarda', personalization: 'guia.md' }),
+    /escapa de la raíz/,
+  );
+});
+
+test('install without personalization leaves the lock without the field', async () => {
+  const dest = tmp();
+  const pkg = pkgWith('sin-guia', { 'a.txt': 'a' });
+  const { code } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_OK);
+  const lock = readLockFile(dest).packages['sin-guia'];
+  assert.equal(lock.personalization, undefined);
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter')), false);
 });
 
 test('a mid-execution error exits 3 and reports what was applied', async () => {

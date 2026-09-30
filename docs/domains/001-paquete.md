@@ -33,6 +33,12 @@ destino— para que una instalación sea inspectable y repetible.
   - **Ruta segura:** ruta relativa sin segmentos `..`, ni absoluta
     POSIX, ni absoluta Windows (`C:\`) ni UNC (`\\`).
     - Ancla: `isSafeRelative` en `src/paths.js`
+  - **Guía de personalización:** el archivo que `personalization`
+    declara —debe existir dentro del paquete y ser un archivo—; su
+    contenido es texto libre del mantenedor dirigido a un agente,
+    nunca validado ni ejecutado.
+    - Ancla: `checkPersonalization` en `src/manifest.js`; origen:
+      épica `docs/epics/003-personalizacion-guiada.md`
 - **Entidades / estado:**
   - El paquete es inmutable y sin estado: existe como directorio con
     archivos más su manifiesto. La versión es semver explícita `x.y.z`
@@ -48,6 +54,9 @@ destino— para que una instalación sea inspectable y repetible.
     `source` existe. Ancla: `checkInstall` en `src/manifest.js`
   - `format`, si está presente, vale `teleprompter-package@1`.
     Ancla: `KNOWN_FORMAT` en `src/manifest.js`
+  - Ningún `target` es `teleprompter-lock.json` ni cae dentro de
+    `.teleprompter/`: son espacios reservados a la herramienta.
+    Ancla: `checkInstall` en `src/manifest.js`; D010
 - **Operaciones:**
   - Cargar y validar el manifiesto de un directorio de paquete:
     `loadManifest` en `src/manifest.js` —devuelve errores, avisos y el
@@ -66,8 +75,10 @@ destino— para que una instalación sea inspectable y repetible.
 - **Decisiones relevantes:**
   - `docs/decisions/D001–D004` — manifiesto JSON puro, cardinalidad,
     semver explícita, mapa `install`.
+  - `docs/decisions/D010` — `.teleprompter/` como namespace gestionado
+    para la guía de personalización.
 
 ## Estado de salud
 
-- Última revisión: 2026-09-28
+- Última revisión: 2026-09-29
 - Divergencias conocidas: Ninguna

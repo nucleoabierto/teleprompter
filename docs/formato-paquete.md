@@ -34,8 +34,7 @@ mi-paquete/
 No hay disposición fija para los recursos: el paquete es un directorio
 arbitrario cuyos contenidos se instalan donde el mapa de instalación
 indique. Las instrucciones de personalización, si existen, son un archivo
-o directorio más del paquete; el manifiesto declara su ubicación (rec. 6
-y 7).
+más del paquete; el manifiesto declara su ubicación (rec. 6 y 7).
 
 ## Contrato del manifiesto
 
@@ -56,9 +55,11 @@ manifiesto de colección con su propio contrato (véase más abajo).
   todo su contenido— y `target` es la ruta relativa a la raíz del
   repositorio destino donde se instala. Ni `source` ni `target` admiten
   rutas absolutas ni `..`: el primero no puede salir del paquete y el
-  segundo no puede salir del repositorio destino. Un paquete sin
-  `install` o con la lista vacía es inválido: un paquete que no instala
-  nada no es un paquete (rec. 6).
+  segundo no puede salir del repositorio destino. Además, ningún
+  `target` puede ser `teleprompter-lock.json` ni caer dentro de
+  `.teleprompter/`: son espacios reservados a la herramienta. Un
+  paquete sin `install` o con la lista vacía es inválido: un paquete
+  que no instala nada no es un paquete (rec. 6).
 
 ### Campos opcionales
 
@@ -72,15 +73,20 @@ manifiesto de colección con su propio contrato (véase más abajo).
 - `requires` — precondiciones del repositorio destino, verificables antes
   de instalar (rec. 5). De momento solo `paths`: una lista de entradas
   `{ "path": "...", "create"?: bool }` sobre rutas relativas a la raíz del
-  destino (`path` no admite rutas absolutas ni `..`). Semántica por
+  destino (`path` no admite rutas absolutas ni `..`, ni puede caer dentro
+  de `.teleprompter/`). Semántica por
   entrada: si la ruta no existe y `create` es
   `false` o está ausente, la instalación aborta; si `create` es `true`,
   el instalador la crea antes de instalar.
-- `personalization` — ruta, dentro del paquete, al archivo o directorio
-  con las instrucciones de personalización (rec. 7). Declara que existe
-  adaptación pendiente sin definir su contenido. Las instrucciones son
-  documentación del paquete: no se instalan salvo que también figuren
-  en `install`.
+- `personalization` — ruta, dentro del paquete, al archivo con las
+  instrucciones de personalización (rec. 7). El archivo debe existir y
+  ser un archivo —no un directorio—; su contenido es texto libre del
+  mantenedor dirigido a un agente: nunca se valida ni se ejecuta. La
+  guía no figura en `install`: el instalador la copia a
+  `.teleprompter/<paquete>/<archivo>` en el destino —espacio gestionado
+  por la herramienta—, la anuncia al final de la instalación y recuerda
+  su ubicación en `teleprompter-lock.json`, de modo que queda
+  consultable sin el paquete original.
 - `metadata` — mapa libre clave → valor para datos del autor que el
   instalador no interpreta (rec. 9).
 - `format` — identificador de versión del formato

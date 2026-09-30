@@ -1,8 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { verifyPackage } from './verify.js';
 import { readLock, writeLock } from './lock.js';
 import { buildPlan } from './plan.js';
-import { executePlan } from './execute.js';
+import { executePlan, installPersonalization } from './execute.js';
+import { resolvesUnder, personalizationTarget } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 
 export const EXIT_OK = 0;
@@ -141,14 +143,30 @@ export async function main(argv, io = {}) {
       for (const r of plan.conflicts) out(`  ${r.target} → ${r.resolution}`);
     }
 
+    // The managed guide writes outside the plan's resources, but its
+    // destination is still provable before anything is written — an
+    // escaping .teleprompter/ makes the plan non-executable, not a
+    // mid-execution surprise (D005).
+    if (result.manifest.personalization) {
+      const guideDest = path.join(destDir,
+        personalizationTarget(result.manifest.name, result.manifest.personalization));
+      if (!resolvesUnder(destDir, path.dirname(guideDest))) {
+        err(`la ruta destino escapa de la raíz: ${guideDest}`);
+        err('plan no ejecutable');
+        return EXIT_PLAN;
+      }
+    }
+
     if (flags.has('--dry-run')) {
       out('fin del plan (--dry-run): nada se escribió');
       return EXIT_OK;
     }
 
     let actions;
+    let guide;
     try {
       actions = executePlan(pkgDir, destDir, plan);
+      guide = installPersonalization(pkgDir, destDir, result.manifest);
       writeLock(destDir, lock, result.manifest, actions);
     } catch (error) {
       for (const a of error.applied ?? actions) {
@@ -159,8 +177,8 @@ export async function main(argv, io = {}) {
     }
     out('resultado:');
     for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
-    if (result.manifest.personalization) {
-      out(`personalización: instrucciones en "${result.manifest.personalization}" del paquete`);
+    if (guide !== null) {
+      out(`personalización: instrucciones en "${guide.target}"`);
     }
     out(`instalado: ${result.manifest.name}@${result.manifest.version}`);
     return EXIT_OK;

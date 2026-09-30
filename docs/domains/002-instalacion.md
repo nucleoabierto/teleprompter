@@ -28,7 +28,9 @@ instalado.
   - **Registro (lock):** `teleprompter-lock.json` en la raíz del
     destino; por paquete guarda `version`, `installedAt` y `files`
     con `target`, acción y `sha256` —las entradas `skip` no llevan
-    hash. Es la memoria que distingue lo propio de lo ajeno.
+    hash— y `personalization` con la ruta gestionada de la guía
+    cuando el manifiesto la declara. Es la memoria que distingue lo
+    propio de lo ajeno.
     - Ancla: `readLock` y `isValidLock` en `src/lock.js`; D007
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
@@ -69,6 +71,12 @@ instalado.
     ejecución. Ancla: `resolvesUnder` en `src/paths.js`
   - Dos entradas `install` no pueden compartir `target`: el plan sería
     ambiguo. Ancla: `checkInstall` en `src/manifest.js`
+  - `.teleprompter/` es propiedad de la herramienta, igual que el lock:
+    la guía declarada se copia ahí fuera del plan y sin detección de
+    colisiones, pero su destino se verifica escribible **antes** de
+    escribir nada —un escape hace el plan no ejecutable (D005)—.
+    Ancla: `installPersonalization` en `src/execute.js` y la
+    pre-verificación en `src/cli.js`; D010
   - Un recurso `identical` conserva su registro previo —el contenido
     sigue siendo propio— pero no crea registro si nunca se escribió.
     Ancla: `writeLock` en `src/lock.js`
@@ -85,8 +93,15 @@ instalado.
     enlaces.
     - Ancla: `executePlan` en `src/execute.js`
   - Registrar la instalación: fusiona el lock preservando otros
-    paquetes; `identical` no se registra y `skip` va sin hash.
+    paquetes; `identical` no se registra y `skip` va sin hash; la
+    guía gestionada se añade a `files` y al campo `personalization`
+    sin figurar entre las acciones del plan.
     - Ancla: `writeLock` en `src/lock.js`
+  - Materializar la guía: `installPersonalization` copia el archivo
+    declarado a `.teleprompter/<paquete>/<archivo>` tras ejecutar el
+    plan; el anuncio final informa de su ubicación.
+    - Ancla: `installPersonalization` en `src/execute.js` y `main`
+      en `src/cli.js`
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
@@ -112,10 +127,12 @@ instalado.
     propiedad.
   - `docs/decisions/D008` — implementación JavaScript vía `npx` como
     `@nucleoabierto/teleprompter`.
+  - `docs/decisions/D010` — `.teleprompter/` como ubicación gestionada
+    de la guía de personalización.
 
 ## Estado de salud
 
-- Última revisión: 2026-09-28
+- Última revisión: 2026-09-29
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

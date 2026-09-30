@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { hashPath } from './hash.js';
-import { resolvesUnder } from './paths.js';
+import { resolvesUnder, personalizationTarget } from './paths.js';
 
 const ACTION = {
   create: 'create',
@@ -71,4 +71,24 @@ export function executePlan(pkgDir, destDir, plan) {
     throw error;
   }
   return applied;
+}
+
+// Materializes the declared personalization guide into the managed
+// namespace — not through the plan: the field already names the file,
+// and .teleprompter/ belongs to the tool, so the write is
+// unconditional apart from the same symlink-escape guard every write
+// gets. Returns the target it wrote, or null when the manifest
+// declares no guide.
+export function installPersonalization(pkgDir, destDir, manifest) {
+  if (!manifest.personalization) return null;
+  const target = personalizationTarget(manifest.name, manifest.personalization);
+  const dest = path.join(destDir, target);
+  if (!resolvesUnder(destDir, path.dirname(dest))) {
+    throw new Error(`la ruta destino escapa de la raíz: ${dest}`);
+  }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  // rm first: copyFileSync would write through a symlink destination.
+  fs.rmSync(dest, { force: true, recursive: true });
+  fs.copyFileSync(path.join(pkgDir, manifest.personalization), dest);
+  return { target };
 }
