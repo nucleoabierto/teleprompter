@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada
+[x] Completada
 
 ## Objetivo
 
@@ -24,13 +24,13 @@ resultado, con consulta posterior sobre el destino instalado.
 
 ## Piezas
 
-- [ ] docs/tasks/013-investigar-instrucciones-postinstalacion.md —
+- [x] docs/tasks/013-investigar-instrucciones-postinstalacion.md —
   Investigar la entrega de guía post-instalación en herramientas
   comparables
-- [ ] docs/tasks/014-declarar-personalizacion-en-el-formato.md —
+- [x] docs/tasks/014-declarar-personalizacion-en-el-formato.md —
   Declarar las instrucciones de personalización en el formato de
   paquete
-- [ ] docs/tasks/015-entregar-personalizacion-al-instalar.md —
+- [x] docs/tasks/015-entregar-personalizacion-al-instalar.md —
   Entregar las instrucciones al instalar y bajo demanda
 
 ## Plan técnico

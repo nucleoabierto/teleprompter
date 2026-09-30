@@ -10,13 +10,8 @@ ciclo de vida —visible, contrastable, actualizable—.
 
 ## Now
 
-- 1. docs/epics/003-personalizacion-guiada.md — Personalización
-  guiada
-  - Estado: pendiente de arrancar.
-  - Justificación: es la única línea comprometida tras cerrar el
-    motor y la distribución remota, y completa el canal
-    mantenedor→destino: la entrega de la guía de adaptación es lo
-    que diferencia al producto de un copiador de archivos.
+- Ninguna línea comprometida: la épica 003 cerró con la entrega de
+  la guía al instalar y el subcomando `guide`.
 
 ## Next
 
