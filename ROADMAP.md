@@ -10,18 +10,19 @@ ciclo de vida —visible, contrastable, actualizable—.
 
 ## Now
 
-- Ninguna línea comprometida: la épica 002 y la tarea 012 cerraron
-  el trabajo ejecutable; la propuesta `003-personalizacion-guiada`
-  está en revisión y no es línea del roadmap hasta que se apruebe y
-  planifique.
+- 1. docs/epics/003-personalizacion-guiada.md — Personalización
+  guiada
+  - Estado: pendiente de arrancar.
+  - Justificación: es la única línea comprometida tras cerrar el
+    motor y la distribución remota, y completa el canal
+    mantenedor→destino: la entrega de la guía de adaptación es lo
+    que diferencia al producto de un copiador de archivos.
 
 ## Next
 
-- Ninguna línea validada todavía. La primera candidata es la
-  propuesta de personalización guiada si se aprueba: es la única
-  pieza con problema y forma de solución validados, y la entrega de
-  la guía es lo que diferencia al producto de un copiador de
-  archivos.
+- Ninguna línea validada todavía. Las siguientes candidatas son las
+  ideas del ciclo de vida del paquete (`Later`), que entran al
+  índice cuando pasen por el flujo de idea a tarea.
 
 ## Later
 
