@@ -2,7 +2,7 @@
 
 ## Estado
 
-[p] Pendiente de revisión | [a] Aprobada | [d] Descartada
+[p] Pendiente de revisión
 
 ## Problema
 
@@ -53,16 +53,18 @@ que entrega el criterio de adaptación.
 
 ## Solución
 
-El formato de paquete declara las instrucciones de personalización
-como contenido distinguido del manifiesto —con la forma concreta que
-fije la primera tarea: campo declarado, convención de archivo o una
-combinación—, y la especificación para mantenedores lo documenta.
+El manifiesto gana un campo específico que apunta al archivo con las
+instrucciones de personalización dentro del paquete. El contenido de
+ese archivo es de formato libre —el mantenedor escribe en la forma
+que elija— y se entiende como texto dirigido a un agente, no como
+instrucciones ejecutables por código; la especificación para
+mantenedores documenta la declaración sin imponer formato.
 
 El instalador lee la declaración tras la verificación y, al terminar
 la instalación con éxito, presenta las instrucciones como parte del
-resultado; el mismo contenido queda accesible en el destino para
-consulta posterior, de modo que la entrega no dependa de leer el
-mensaje en el momento de instalar.
+resultado; el archivo queda accesible en el destino para consulta
+posterior, de modo que la entrega no dependa de leer el mensaje en el
+momento de instalar.
 
 ## Alternativas consideradas
 
@@ -85,6 +87,8 @@ mensaje en el momento de instalar.
 
 - Que el instalador aplique la personalización: entrega la guía; la
   adaptación la ejecuta el agente del repositorio destino.
+- Definir o validar el formato del archivo de instrucciones: es
+  texto libre del mantenedor, no instrucciones ejecutables.
 - Mecanismos de plantillas o sustitución de variables dentro de los
   recursos.
 - Validar la calidad o completitud de las instrucciones del
@@ -94,9 +98,9 @@ mensaje en el momento de instalar.
 
 ## Investigaciones de apoyo
 
-- `01-investigar-instrucciones-postinstalacion.md` — el primer
-  borrador es una investigación sobre cómo entregan guía
-  post-instalación las herramientas comparables.
+- Ninguna aún: el borrador `01` produce una investigación en
+  `docs/research/` sobre la entrega de guía post-instalación en
+  herramientas comparables.
 
 ## Borradores
 
@@ -104,10 +108,12 @@ mensaje en el momento de instalar.
   entrega de guía post-instalación en herramientas comparables
 - `02-declarar-personalizacion-en-el-formato.md` — Declarar las
   instrucciones de personalización en el formato de paquete
-  (depende de 01)
 - `03-entregar-personalizacion-al-instalar.md` — Entregar las
-  instrucciones al instalar y bajo demanda (depende de 02)
+  instrucciones al instalar y bajo demanda (depende de 01 y 02)
 
 ## Revisión
 
-- Pendiente de decisión del usuario.
+- Usuario: 2026-09-29 — Solicita cambios: la declaración es un campo
+  específico que apunta al archivo de instrucciones; su formato es
+  libre, no forzado ni validado, y se entiende como texto para un
+  agente, no como código ejecutable.

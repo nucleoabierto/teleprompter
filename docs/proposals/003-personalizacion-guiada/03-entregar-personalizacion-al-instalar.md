@@ -14,11 +14,12 @@ con `--path`.
 
 ## Dependencias
 
-- Borrador 02 — fija la forma de la declaración que el instalador
-  consume.
+- Borrador 01 — su recomendación informa la forma de la entrega.
+- Borrador 02 — fija la declaración que el instalador consume.
 
 ## Entrada
 
+- La investigación del Borrador 01 en `docs/research/`.
 - La declaración del formato implementada por el Borrador 02.
 - El flujo del instalador en `src/cli.js` —la entrega es un paso al
   final del resultado de instalación— y el contrato de
@@ -28,8 +29,10 @@ con `--path`.
 ## Resultado esperado
 
 - Una instalación con éxito de un paquete que declara instrucciones
-  las presenta al final del resultado, tras el registro; un paquete
-  sin declaración no añade ruido a la salida.
+  presenta su contenido tal cual al final del resultado, tras el
+  registro —sin interpretar ni transformar el texto libre del
+  mantenedor—; un paquete sin declaración no añade ruido a la
+  salida.
 - Las instrucciones quedan consultables sobre el destino instalado
   sin reinstalar ni volver a descargar el paquete.
 - `--dry-run` no entrega instrucciones como si la instalación se
