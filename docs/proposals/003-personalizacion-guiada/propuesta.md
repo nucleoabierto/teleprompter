@@ -2,7 +2,7 @@
 
 ## Estado
 
-[p] Pendiente de revisión
+[a] Aprobada
 
 ## Problema
 
@@ -104,12 +104,15 @@ momento de instalar.
 
 ## Borradores
 
-- `01-investigar-instrucciones-postinstalacion.md` — Investigar la
-  entrega de guía post-instalación en herramientas comparables
-- `02-declarar-personalizacion-en-el-formato.md` — Declarar las
-  instrucciones de personalización en el formato de paquete
-- `03-entregar-personalizacion-al-instalar.md` — Entregar las
-  instrucciones al instalar y bajo demanda (depende de 01 y 02)
+- `docs/tasks/013-investigar-instrucciones-postinstalacion.md` —
+  Investigar la entrega de guía post-instalación en herramientas
+  comparables
+- `docs/tasks/014-declarar-personalizacion-en-el-formato.md` —
+  Declarar las instrucciones de personalización en el formato de
+  paquete
+- `docs/tasks/015-entregar-personalizacion-al-instalar.md` —
+  Entregar las instrucciones al instalar y bajo demanda (depende de
+  013 y 014)
 
 ## Revisión
 
@@ -117,3 +120,4 @@ momento de instalar.
   específico que apunta al archivo de instrucciones; su formato es
   libre, no forzado ni validado, y se entiende como texto para un
   agente, no como código ejecutable.
+- Usuario: 2026-09-29 — Aprueba

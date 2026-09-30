@@ -1,5 +1,9 @@
 # Declarar las instrucciones de personalización en el formato de paquete
 
+## Estado
+
+[ ] Pendiente
+
 ## Tipo
 
 desarrollo
@@ -16,7 +20,7 @@ paquete de referencia.
 ## Dependencias
 
 - Ninguna: la forma de la declaración está fijada por la propuesta
-  y no necesita la investigación del Borrador 01, que solo alimenta
+  y no necesita la investigación de la tarea 013, que solo alimenta
   la entrega.
 
 ## Entrada
@@ -67,3 +71,8 @@ paquete de referencia.
   poder consultarse tras la instalación —el origen remoto es
   temporal—: cómo —recurso instalado, referencia en el registro u
   otra— es parte de lo que esta tarea fija junto a la declaración.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario: [fecha] — [Aprueba | Solicita cambios]

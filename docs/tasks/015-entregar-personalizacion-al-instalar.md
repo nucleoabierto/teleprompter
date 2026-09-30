@@ -1,5 +1,9 @@
 # Entregar las instrucciones al instalar y bajo demanda
 
+## Estado
+
+[ ] Pendiente
+
 ## Tipo
 
 desarrollo
@@ -14,13 +18,13 @@ con `--path`.
 
 ## Dependencias
 
-- Borrador 01 — su recomendación informa la forma de la entrega.
-- Borrador 02 — fija la declaración que el instalador consume.
+- 013 — su recomendación informa la forma de la entrega.
+- 014 — fija la declaración que el instalador consume.
 
 ## Entrada
 
-- La investigación del Borrador 01 en `docs/research/`.
-- La declaración del formato implementada por el Borrador 02.
+- La investigación de la tarea 013 en `docs/research/`.
+- La declaración del formato implementada por la tarea 014.
 - El flujo del instalador en `src/cli.js` —la entrega es un paso al
   final del resultado de instalación— y el contrato de
   `docs/instalador.md`.
@@ -64,7 +68,12 @@ con `--path`.
 
 ## Notas
 
-- La consulta posterior consume lo que el Borrador 02 dejó
+- La consulta posterior consume lo que la tarea 014 dejó
   materializado en el destino; esta tarea decide su invocación
   concreta —subcomando, opción o convención— dentro de la gramática
   del CLI.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario: [fecha] — [Aprueba | Solicita cambios]

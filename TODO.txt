@@ -23,6 +23,11 @@
 - [x] docs/tasks/010-ejecucion-y-registro.md — Ejecución del plan y registro de instalación
 - [x] docs/tasks/007-instalar-paquete-referencia.md — Instalar el paquete de referencia sobre un destino real
 
-## Propuestas en revisión
+## Hito 3: Personalización guiada
+<!-- épica: docs/epics/003-personalizacion-guiada.md -->
 
-- [p] docs/proposals/003-personalizacion-guiada/ — Personalización guiada: el paquete declara cómo adaptarse (3 borradores)
+- [ ] docs/tasks/013-investigar-instrucciones-postinstalacion.md — Investigar la entrega de guía post-instalación en herramientas comparables
+- [ ] docs/tasks/014-declarar-personalizacion-en-el-formato.md — Declarar las instrucciones de personalización en el formato de paquete
+- [ ] docs/tasks/015-entregar-personalizacion-al-instalar.md — Entregar las instrucciones al instalar y bajo demanda
+
+## Propuestas en revisión

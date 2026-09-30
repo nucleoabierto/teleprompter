@@ -1,5 +1,9 @@
 # Investigar la entrega de guía post-instalación en herramientas comparables
 
+## Estado
+
+[ ] Pendiente
+
 ## Tipo
 
 investigación
@@ -63,3 +67,8 @@ borrador 03.
 - El formato del archivo de instrucciones es libre por decisión del
   usuario: texto dirigido a un agente, sin formato impuesto ni
   contenido ejecutable; la investigación no reabre esa cuestión.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario: [fecha] — [Aprueba | Solicita cambios]
