@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { create as tarCreate } from 'tar';
 import {
-  main, EXIT_OK, EXIT_MANIFEST, EXIT_PLAN, EXIT_USAGE, EXIT_FETCH,
+  main, EXIT_OK, EXIT_MANIFEST, EXIT_PLAN, EXIT_USAGE, EXIT_FETCH, EXIT_EXECUTION,
 } from '../src/cli.js';
 
 const repoRoot = path.dirname(fileURLToPath(new URL('.', import.meta.url)));
@@ -938,4 +938,376 @@ test('a lock with a malformed origin degrades to no history', async () => {
     assert.match(stdout.join('\n'), /aviso:.*corrupto/, JSON.stringify(origin));
     assert.match(stdout.join('\n'), /no hay paquetes instalados/);
   }
+});
+
+// --- update: llevar un paquete a la versión que publica su origen ---
+
+// Installs `pkgV1` into a fresh destination, then hands the destination
+// over so the test can drive `update` against it.
+async function installed(manifest, files) {
+  const dest = tmp();
+  const pkg = path.join(tmp(), manifest.name);
+  writePkg(pkg, manifest, files);
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  return { dest, pkg };
+}
+
+function lockOf(dest) {
+  return JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+}
+
+test('update re-fetches from the recorded --path origin and applies the plan', async () => {
+  const { dest, pkg } = await installed(validManifest('up', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'viejo', 'b.txt': 'b' });
+  writePkg(pkg, validManifest('up', {
+    version: '2.0.0',
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'c.txt', target: 'c.txt' }],
+  }), { 'a.txt': 'nuevo', 'c.txt': 'c' });
+  const { code, stdout, stderr } = await run(['update', 'up'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /plan de actualización:/);
+  assert.match(out, /update\s+a\.txt/);
+  assert.match(out, /retire\s+b\.txt/);
+  assert.match(out, /create\s+c\.txt/);
+  assert.match(out, /actualizado: up@2\.0\.0/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.equal(fs.readFileSync(path.join(dest, 'c.txt'), 'utf8'), 'c');
+  assert.ok(!fs.existsSync(path.join(dest, 'b.txt')));
+  const lock = lockOf(dest);
+  assert.equal(lock.packages.up.version, '2.0.0');
+  assert.deepEqual(lock.packages.up.origin, { type: 'path', path: pkg });
+  assert.deepEqual(
+    lock.packages.up.files.map((f) => f.target).sort(), ['a.txt', 'c.txt'],
+  );
+});
+
+test('update reports already at that version when nothing changed', async () => {
+  const { dest } = await installed(validManifest('igual'), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['update', 'igual'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /igual@1\.0\.0 ya está en esa versión/);
+});
+
+test('update exits 4 when the package is not installed', async () => {
+  const { code, stderr } = await run(['update', 'fantasma'], { cwd: tmp() });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no está instalado/);
+});
+
+test('update exits 4 when the package records no origin', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { viejo: { version: '1.0.0', files: [] } },
+  }));
+  const { code, stderr } = await run(['update', 'viejo'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no registra un origen/);
+});
+
+test('update --path overrides the recorded origin and persists it', async () => {
+  const { dest } = await installed(validManifest('movido'), { 'a.txt': 'viejo' });
+  const nuevo = path.join(tmp(), 'movido');
+  writePkg(nuevo, validManifest('movido', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'movido', '--path', nuevo], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.deepEqual(lockOf(dest).packages.movido.origin, { type: 'path', path: nuevo });
+});
+
+test('update uses the recorded github ref, and --ref overrides it', async () => {
+  const dest = tmp();
+  const spy1 = spyFetch(okResponse(await remotePkg()));
+  assert.equal(
+    (await run(['o/mi-paquete@v1', dest], { fetch: spy1.fetch })).code, EXIT_OK,
+  );
+  const spy2 = spyFetch(okResponse(
+    await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'b' }),
+  ));
+  const { code, stdout, stderr } = await run(
+    ['update', 'mi-paquete'], { cwd: dest, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /obteniendo: o\/mi-paquete@v1/);
+  assert.match(spy2.urls[0], /tar\.gz\/v1/);
+
+  const spy3 = spyFetch(okResponse(
+    await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '3.0.0' }), { 'a.txt': 'c' }),
+  ));
+  const { code: code2 } = await run(
+    ['update', 'mi-paquete', '--ref', 'v3'], { cwd: dest, fetch: spy3.fetch },
+  );
+  assert.equal(code2, EXIT_OK);
+  assert.match(spy3.urls[0], /tar\.gz\/v3/);
+});
+
+test('update refetches the default branch when no ref was recorded', async () => {
+  const dest = tmp();
+  const spy1 = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete', dest], { fetch: spy1.fetch });
+  const spy2 = spyFetch(okResponse(
+    await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'b' }),
+  ));
+  const { code } = await run(['update', 'mi-paquete'], { cwd: dest, fetch: spy2.fetch });
+  assert.equal(code, EXIT_OK);
+  assert.match(spy2.urls[0], /tar\.gz\/HEAD/);
+});
+
+test('update with a positional repo spec overrides the recorded origin', async () => {
+  const { dest } = await installed(validManifest('mi-paquete'), { 'a.txt': 'viejo' });
+  const spy = spyFetch(okResponse(
+    await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'n' }),
+  ));
+  const { code, stderr } = await run(
+    ['update', 'mi-paquete', 'otro/mi-paquete@v2'], { cwd: dest, fetch: spy.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(spy.urls[0], /otro\/mi-paquete.*tar\.gz\/v2/);
+  assert.deepEqual(lockOf(dest).packages['mi-paquete'].origin, {
+    type: 'github', repo: 'otro/mi-paquete', ref: 'v2',
+  });
+});
+
+test('update aborts with pending conflicts and no console, writing nothing', async () => {
+  const { dest, pkg } = await installed(validManifest('conf'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  writePkg(pkg, validManifest('conf', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'conf'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /conflicto sin resolver: a\.txt/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.equal(lockOf(dest).packages.conf.version, '1.0.0');
+});
+
+test('update asks per resource, and a removal asks about removing', async () => {
+  const { dest, pkg } = await installed(validManifest('inter', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), {
+    'a.txt': 'viejo', 'b.txt': 'b',
+  });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado también');
+  writePkg(pkg, validManifest('inter', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const answers = [true, false];
+  const questions = [];
+  const { code, stderr } = await run(['update', 'inter'], {
+    cwd: dest,
+    interactive: true,
+    createAsker: () => ({
+      ask: async (q) => { questions.push(q); return answers.shift(); },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(questions[0], /sobrescribir/);
+  assert.match(questions[1], /¿quitar\?/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'editado también');
+});
+
+test('update --force overwrites local edits and removes drifted retirements', async () => {
+  const { dest, pkg } = await installed(validManifest('forzado', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), {
+    'a.txt': 'viejo', 'b.txt': 'b',
+  });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado');
+  writePkg(pkg, validManifest('forzado', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'forzado', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.ok(!fs.existsSync(path.join(dest, 'b.txt')));
+});
+
+test('update --skip keeps local edits and drifted retirements', async () => {
+  const { dest, pkg } = await installed(validManifest('omite', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), {
+    'a.txt': 'viejo', 'b.txt': 'b',
+  });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado');
+  writePkg(pkg, validManifest('omite', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stdout, stderr } = await run(['update', 'omite', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /b\.txt → keep/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'editado');
+  // The kept file preserves its previous record: it was not written.
+  const kept = lockOf(dest).packages.omite.files.find((f) => f.target === 'b.txt');
+  assert.notEqual(kept.action, 'keep');
+});
+
+test('update --dry-run prints the plan and writes nothing', async () => {
+  const { dest, pkg } = await installed(validManifest('seco'), { 'a.txt': 'viejo' });
+  writePkg(pkg, validManifest('seco', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stdout } = await run(['update', 'seco', '--dry-run'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /plan de actualización:/);
+  assert.match(stdout.join('\n'), /fin del plan \(--dry-run\)/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo');
+});
+
+test('update exits 4 when the origin publishes a different package', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  const otro = path.join(tmp(), 'otro-nombre');
+  writePkg(otro, validManifest('otro-nombre', { version: '2.0.0' }), { 'a.txt': 'b' });
+  const { code, stderr } = await run(['update', 'p', '--path', otro], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /publica "otro-nombre", no "p"/);
+});
+
+test('update rejects malformed invocations with code 4', async () => {
+  const dest = tmp();
+  for (const argv of [
+    ['update'],
+    ['update', 'p', 'a/b', 'extra'],
+    ['update', 'p', '--path', 'x', '--ref', 'v1'],
+    ['update', 'p', '--wat'],
+    ['update', 'p', 'no-es-spec!'],
+    ['update', 'p', '--ref', 'mal ref'],
+  ]) {
+    const { code } = await run(argv, { cwd: dest });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+  }
+});
+
+test('update rejects --ref against a recorded local origin', async () => {
+  const { dest } = await installed(validManifest('local'), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['update', 'local', '--ref', 'v2'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /--ref no aplica a un origen local/);
+});
+
+test('update exits 4 when the recorded local origin no longer exists', async () => {
+  const { dest, pkg } = await installed(validManifest('ido'), { 'a.txt': 'a' });
+  fs.rmSync(pkg, { recursive: true });
+  const { code, stderr } = await run(['update', 'ido'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no es un directorio/);
+});
+
+test('update exits 5 when the recorded remote origin is unreachable', async () => {
+  const dest = tmp();
+  const spy1 = spyFetch(okResponse(await remotePkg()));
+  await run(['o/mi-paquete', dest], { fetch: spy1.fetch });
+  const spy2 = spyFetch(() => Promise.reject(new Error('ENOTFOUND')));
+  const { code, stderr } = await run(
+    ['update', 'mi-paquete'], { cwd: dest, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_FETCH);
+  assert.match(stderr.join('\n'), /error de obtención/);
+});
+
+test('update exits 1 when the incoming manifest is invalid', async () => {
+  const { dest, pkg } = await installed(validManifest('roto'), { 'a.txt': 'a' });
+  fs.writeFileSync(path.join(pkg, 'teleprompter.json'), 'no es json');
+  const { code } = await run(['update', 'roto'], { cwd: dest });
+  assert.equal(code, EXIT_MANIFEST);
+});
+
+test('update exits 2 when the new version adds an unmet precondition', async () => {
+  const { dest, pkg } = await installed(validManifest('pide'), { 'a.txt': 'a' });
+  writePkg(pkg, validManifest('pide', {
+    version: '2.0.0',
+    requires: { paths: [{ path: 'falta/' }] },
+  }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['update', 'pide'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /precondición incumplida/);
+});
+
+test('update aborts when the managed guide destination escapes the root', async () => {
+  const { dest, pkg } = await installed(validManifest('guia', {
+    personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía' });
+  const outside = tmp();
+  fs.rmSync(path.join(dest, '.teleprompter'), { recursive: true });
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  writePkg(pkg, validManifest('guia', {
+    version: '2.0.0', personalization: 'GUIA.md',
+  }), { 'a.txt': 'b', 'GUIA.md': 'guía' });
+  const { code, stderr } = await run(['update', 'guia'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+});
+
+test('update exits 3 when the destination turns unwritable mid-execution', async () => {
+  const { dest, pkg } = await installed(validManifest('falla'), { 'a.txt': 'viejo' });
+  writePkg(pkg, validManifest('falla', {
+    version: '2.0.0',
+    install: [{ source: 'n.txt', target: 'n.txt' }, { source: 'a.txt', target: 'a.txt' }],
+  }), { 'n.txt': 'n', 'a.txt': 'nuevo' });
+  fs.chmodSync(dest, 0o555);
+  const { code, stdout, stderr } = await run(['update', 'falla'], { cwd: dest });
+  fs.chmodSync(dest, 0o755);
+  assert.equal(code, EXIT_EXECUTION);
+  assert.match(stderr.join('\n'), /error de ejecución/);
+  assert.match(stdout.join('\n'), /create\s+n\.txt/);
+});
+
+test('update re-delivers the managed guide of the new version', async () => {
+  const { dest, pkg } = await installed(validManifest('conguia', {
+    personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía vieja' });
+  writePkg(pkg, validManifest('conguia', {
+    version: '2.0.0', personalization: 'GUIA.md',
+  }), { 'a.txt': 'b', 'GUIA.md': 'guía nueva' });
+  const { code, stdout, stderr } = await run(['update', 'conguia'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /personalización \(/);
+  assert.match(stdout.join('\n'), /guía nueva/);
+});
+
+test('update warns on a corrupt lock and reports the package as not installed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{"packages": 42}');
+  const { code, stdout, stderr } = await run(['update', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stdout.join('\n'), /aviso: .*corrupto/);
+  assert.match(stderr.join('\n'), /no está instalado/);
+});
+
+test('update surfaces verification warnings and required creates', async () => {
+  const { dest, pkg } = await installed(validManifest('avisa'), { 'a.txt': 'a' });
+  writePkg(pkg, validManifest('avisa', {
+    version: '2.0.0',
+    campo_raro: 'x',
+    requires: { paths: [{ path: 'nuevodir/', create: true }] },
+  }), { 'a.txt': 'b' });
+  const { code, stdout, stderr } = await run(['update', 'avisa'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /aviso: campo desconocido ignorado: "campo_raro"/);
+  assert.match(stdout.join('\n'), /mkdir\s+nuevodir\//);
+  assert.ok(fs.statSync(path.join(dest, 'nuevodir')).isDirectory());
+});
+
+test('update reports applied actions when the lock write fails', async () => {
+  const { dest, pkg } = await installed(validManifest('sinlock'), { 'a.txt': 'viejo' });
+  writePkg(pkg, validManifest('sinlock', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  fs.chmodSync(path.join(dest, 'teleprompter-lock.json'), 0o444);
+  const { code, stdout, stderr } = await run(['update', 'sinlock'], { cwd: dest });
+  fs.chmodSync(path.join(dest, 'teleprompter-lock.json'), 0o644);
+  assert.equal(code, EXIT_EXECUTION);
+  assert.match(stdout.join('\n'), /overwrite\s+a\.txt/);
+  assert.match(stderr.join('\n'), /error de ejecución/);
+});
+
+test('update exits 4 when the recorded repo origin is malformed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      raro: {
+        version: '1.0.0',
+        files: [],
+        origin: { type: 'github', repo: 'garbage' },
+      },
+    },
+  }));
+  const { code, stderr } = await run(['update', 'raro'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no es un repositorio válido/);
 });

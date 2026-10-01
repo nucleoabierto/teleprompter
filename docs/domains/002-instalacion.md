@@ -154,6 +154,14 @@ instalado.
     la registrada, o el plan clasificado con los retirados según su
     deriva —sin escribir nada—.
     - Ancla: `buildUpdatePlan` en `src/plan.js`; D015
+  - Actualizar: `teleprompter update <paquete> [<origen>]` opera
+    sobre el directorio de trabajo —sin destino—; resuelve la fuente
+    del `origin` registrado salvo que la invocación lo sobrescriba
+    (`--path`, `user/repo[@ref]` o `--ref`), y luego ejecuta el flujo
+    de instalación con el plan de actualización. Los conflicts
+    `removal` preguntan por quitar y resuelven `remove`/`keep`; el
+    registro queda a la versión nueva con el origen efectivo.
+    - Ancla: `runUpdate` en `src/cli.js`; D016
   - Verificar el estado de lo instalado: `teleprompter check`
     confronta el registro del directorio de trabajo con el disco
     —sin argumentos ni opciones— y muestra por paquete una marca de
@@ -199,6 +207,8 @@ instalado.
     reobtenible de cada instalación.
   - `docs/decisions/D015` — vocabulario del plan de actualización y
     política de retirados.
+  - `docs/decisions/D016` — `update` como subcomando: resolución del
+    origen y acciones `remove`/`keep`.
 
 ## Estado de salud
 

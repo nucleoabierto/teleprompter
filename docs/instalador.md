@@ -20,6 +20,7 @@ teleprompter install …                       # alias de ambas formas
 teleprompter guide [<paquete>]               # consulta la guía instalada
 teleprompter list                            # lista los paquetes instalados
 teleprompter check                           # verifica el estado de los recursos instalados
+teleprompter update <paquete> [<origen>]     # actualiza un paquete instalado
 ```
 
 - `user/repo` descarga el tarball público del repositorio por HTTP
@@ -269,8 +270,47 @@ modificado o no verificable degrada a `conflict` marcado como
 eliminación, donde `overwrite` significa quitar y `skip` conservar;
 ya ausente del disco desaparece del plan sin marca. Las entradas
 `skip` nunca se retiran —no se escribieron— ni el target de
-`personalization` —la guía gestionada se reescribe en cada
-instalación—.
+`personalization` mientras el manifiesto la siga declarando —la guía
+gestionada se reescribe en cada instalación—; si la versión nueva
+deja de declararla, la guía anterior entra en los retirados como
+cualquier recurso propio.
+
+## La actualización
+
+`teleprompter update <paquete>` —ejecutado dentro del repositorio
+destino, como las consultas— lleva un paquete instalado a la versión
+que publica su origen. El paquete se nombra por el `name` del
+registro; no estar instalado es un error de invocación. El origen se
+resuelve en este orden (D016):
+
+1. Un origen explícito de la invocación —un posicional
+   `user/repo[@ref]` o `--path <dir>`— sobrescribe el registrado y
+   queda como `origin` en el registro, como toda instalación.
+2. El `origin` registrado (D014): `github` reobtiene `repo` con su
+   `ref` grabado —o la rama por defecto si no lo hay—; `path` usa el
+   directorio registrado. `--ref` sobrescribe el ref de un origen
+   github; con un origen `path` es un error de invocación.
+3. Sin origen registrado ni explícito, la operación termina con un
+   error de invocación que pide indicarlo.
+
+Obtenido el origen, el flujo replica el de la instalación:
+verificación, plan de actualización, resolución, ejecución y
+registro. Si el manifiesto obtenido declara un `name` distinto del
+paquete pedido, la operación es un error de invocación —el origen no
+publica ese paquete—. Si la versión entrante es la registrada, la
+respuesta es «ya está en esa versión» con código `0` sin escribir
+nada.
+
+Los `conflict` del plan se resuelven con la misma política que las
+colisiones (D006): interactiva en consola, `--force`/`--skip`
+excluyentes, aborto sin consola. La diferencia es la pregunta: un
+conflicto marcado `removal` —un retirado con deriva— pregunta por
+quitar, y su resolución se traduce a `remove`/`keep` en lugar de
+`overwrite`/`skip`. Las acciones `remove` borran el recurso con la
+misma guarda de rutas que toda escritura; `keep` conserva el
+registro previo —el recurso sigue en disco con lo que el lock
+anotó—. El registro post-actualización refleja la versión nueva, el
+origen efectivo y exactamente los recursos que quedaron escritos.
 
 ## Resultado y errores
 

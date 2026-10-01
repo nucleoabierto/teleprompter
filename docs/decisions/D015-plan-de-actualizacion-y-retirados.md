@@ -42,9 +42,11 @@ degrada a decisión del usuario, igual que una edición local degrada un
 `managed-update`. Reinstalar lo que el usuario borró (`create`) es el
 comportamiento simétrico: el manifiesto manda. Las entradas `skip`
 nunca se retiran porque nunca se escribieron, y el `target` de
-`personalization` tampoco porque la guía gestionada se reescribe en
-cada instalación. Consecuencias: `conflict` para un retirado reutiliza
-la maquinaria de resolución existente (D006) con `overwrite` =
+`personalization` tampoco mientras el manifiesto entrante la siga
+declarando —la guía gestionada se reescribe en cada instalación—; si
+la versión nueva abandona el campo, la guía anterior se retira como
+cualquier recurso propio. Consecuencias: `conflict` para un retirado
+reutiliza la maquinaria de resolución existente (D006) con `overwrite` =
 eliminar, sin introducir resoluciones nuevas; la marca `removal` en la
 entrada distingue la eliminación pendiente de una sobrescritura, y
 `retired` en el plan lista solo las eliminaciones automáticas.

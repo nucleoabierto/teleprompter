@@ -104,3 +104,10 @@ decisión antes de actuar.
     actualización, `buildUpdatePlan`, `src/plan.js`, retirado,
     eliminación, deriva
   - Estado: Aceptada
+- [D016-subcomando-update.md](D016-subcomando-update.md) —
+  `teleprompter update <paquete> [<origen>]` opera sobre el
+  directorio de trabajo, resuelve la fuente del `origin` registrado y
+  ejecuta con las acciones `remove`/`keep`.
+  - Disparadores: `update`, subcomando, gramática del CLI, `parseArgs`,
+    origen, `origin`, `remove`, `keep`, `--ref`, `--path`
+  - Estado: Aceptada

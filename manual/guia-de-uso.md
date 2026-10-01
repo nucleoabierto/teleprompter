@@ -124,6 +124,27 @@ npx @nucleoabierto/teleprompter check
 
 Véase la [referencia de `check`](referencia-check.md).
 
+## Actualizar un paquete
+
+Desde la raíz del repositorio destino, `update` lleva un paquete
+instalado a la versión que publica su origen —el registrado al
+instalarlo, salvo que se indique otro—:
+
+```sh
+npx @nucleoabierto/teleprompter update ciclo-tareas
+npx @nucleoabierto/teleprompter update ciclo-tareas --ref v2.0.0
+npx @nucleoabierto/teleprompter update ciclo-tareas otra/repo@main
+```
+
+El plan de actualización decide recurso a recurso: lo intacto que la
+versión cambió se sobrescribe (`update`), lo nuevo se crea, lo que la
+versión ya no trae se retira si sigue intacto (`retire`), y las
+ediciones locales se resuelven como las colisiones de `install` —
+interactiva, `--force`, `--skip` o aborto sin consola—. Si la versión
+ya es la registrada, responde que ya está en esa versión.
+
+Véase la [referencia de `update`](referencia-update.md).
+
 ## Inspeccionar sin instalar
 
 `--dry-run` ejecuta solo la verificación y el plan, y termina sin

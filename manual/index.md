@@ -21,6 +21,8 @@ colisiones con lo que ya existe y registra la instalación en
   instalados con su versión, fecha y recursos.
 - [Referencia de `check`](referencia-check.md) — verificar el estado
   de los recursos instalados.
+- [Referencia de `update`](referencia-update.md) — actualizar un
+  paquete instalado a la versión que publica su origen.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
   y los escenarios que la suite de pruebas verifica.
 - [Listar los paquetes instalados](002-listar-paquetes-instalados.md)
@@ -28,6 +30,9 @@ colisiones con lo que ya existe y registra la instalación en
 - [Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
   — la verificación de la instalación y los escenarios que la suite
   verifica.
+- [Actualizar un paquete](004-actualizar-un-paquete.md) — la
+  actualización consciente de la deriva y los escenarios que la
+  suite verifica.
 
 ## En el repositorio
 

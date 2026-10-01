@@ -32,7 +32,7 @@ tres operaciones.
   el origen de la instalación en el registro
 - [x] docs/tasks/019-plan-de-actualizacion.md — Plan de actualización
   consciente de la deriva
-- [ ] docs/tasks/020-comando-update.md — El comando `update`
+- [x] docs/tasks/020-comando-update.md — El comando `update`
 
 ## Plan técnico
 

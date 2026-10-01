@@ -89,7 +89,12 @@ resultado y queda consultable después —desde la raíz del destino— con
 nombre, versión, fecha de instalación y recursos escritos.
 `teleprompter check` confronta el registro con el disco e informa por
 cada recurso si sigue intacto, fue modificado, ya no existe o no
-puede verificarse.
+puede verificarse. Y `teleprompter update <paquete>` lleva un paquete
+instalado a la versión que publica su origen —el registrado en la
+instalación, o uno explícito con `--path`/`user/repo[@ref]`—:
+calcula el plan de actualización recurso a recurso, sobrescribe lo
+intacto, pregunta por lo editado y retira lo que la versión nueva ya
+no trae.
 
 ### Códigos de salida
 

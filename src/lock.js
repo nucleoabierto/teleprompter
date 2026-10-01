@@ -69,7 +69,8 @@ export function writeLock(destDir, lock, manifest, actions, origin) {
     (lock.packages[manifest.name]?.files ?? []).map((f) => [f.target, f]),
   );
   const files = actions.flatMap(({ target, action, sha256 }) => {
-    if (action === 'identical' || action === 'mkdir') {
+    if (action === 'remove') return [];
+    if (action === 'identical' || action === 'mkdir' || action === 'keep') {
       const prev = previous.get(target);
       return prev === undefined ? [] : [prev];
     }

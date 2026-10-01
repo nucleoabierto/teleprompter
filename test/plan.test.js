@@ -467,10 +467,33 @@ test('update plan never marks an update on a downgrade', () => {
 
 test('update plan never retires skip entries nor the managed guide', () => {
   const { dest, lock } = destWithLock({ 'a.txt': 'a' }, {
-    extra: [
-      { target: 'omitido.txt', action: 'skip' },
-      { target: '.teleprompter/paquete/GUIA.md', action: 'create', sha256: 'x'.repeat(64) },
-    ],
+    extra: [{ target: 'omitido.txt', action: 'skip' }],
+  });
+  writeTree(dest, { '.teleprompter/paquete': { 'GUIA.md': 'guía' } });
+  lock.packages.paquete.files.push({
+    target: '.teleprompter/paquete/GUIA.md',
+    action: 'create',
+    sha256: hashPath(path.join(dest, '.teleprompter/paquete/GUIA.md')),
+  });
+  lock.packages.paquete.personalization = '.teleprompter/paquete/GUIA.md';
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.personalization = 'GUIA.md';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  assert.equal(plan.conflicts.length, 0);
+});
+
+test('update plan retires the old guide when the version drops personalization', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  writeTree(dest, { '.teleprompter/paquete': { 'GUIA.md': 'guía' } });
+  lock.packages.paquete.files.push({
+    target: '.teleprompter/paquete/GUIA.md',
+    action: 'create',
+    sha256: hashPath(path.join(dest, '.teleprompter/paquete/GUIA.md')),
   });
   lock.packages.paquete.personalization = '.teleprompter/paquete/GUIA.md';
   const pkg = pkgWith('paquete', { 'a.txt': 'a' });
@@ -479,8 +502,22 @@ test('update plan never retires skip entries nor the managed guide', () => {
   );
   manifest.version = '2.0.0';
   const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [
+    { target: '.teleprompter/paquete/GUIA.md', status: 'retire' },
+  ]);
+});
+
+test('update plan treats a manifest-declared guide without a recorded one', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.personalization = 'GUIA.md';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
   assert.deepEqual(plan.retired, []);
-  assert.equal(plan.conflicts.length, 0);
+  assert.equal(plan.upToDate, false);
 });
 
 test('update plan demotes an update to conflict when the parent chain escapes', () => {
@@ -575,4 +612,25 @@ test('upToDate plan carries no mkdirs nor resources', () => {
   assert.deepEqual(plan, {
     upToDate: true, mkdirs: [], resources: [], conflicts: [], retired: [],
   });
+});
+
+test('update plan retires the old guide when the version renames it', () => {
+  const { dest, lock } = destWithLock({ 'a.txt': 'a' });
+  writeTree(dest, { '.teleprompter/paquete': { 'GUIA.md': 'guía' } });
+  lock.packages.paquete.files.push({
+    target: '.teleprompter/paquete/GUIA.md',
+    action: 'create',
+    sha256: hashPath(path.join(dest, '.teleprompter/paquete/GUIA.md')),
+  });
+  lock.packages.paquete.personalization = '.teleprompter/paquete/GUIA.md';
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  manifest.personalization = 'NUEVA.md';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [
+    { target: '.teleprompter/paquete/GUIA.md', status: 'retire' },
+  ]);
 });

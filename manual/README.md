@@ -20,6 +20,8 @@ instalación, empezar por la guía de uso.
 - [Referencia de `check`](referencia-check.md) — verificar el estado
   de los recursos instalados: intactos, modificados, ausentes o no
   verificables.
+- [Referencia de `update`](referencia-update.md) — actualizar un
+  paquete instalado a la versión que publica su origen.
 
 ## Funcionalidades
 
@@ -29,6 +31,8 @@ instalación, empezar por la guía de uso.
   — qué muestra `list` y los escenarios que la suite verifica.
 - [003 — Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
   — qué informa `check` y los escenarios que la suite verifica.
+- [004 — Actualizar un paquete](004-actualizar-un-paquete.md) — qué
+  hace `update` y los escenarios que la suite verifica.
 
 ## Documentos relacionados
 

@@ -7,8 +7,14 @@ const ACTION = {
   create: 'create',
   identical: 'identical',
   'managed-update': 'overwrite',
+  update: 'overwrite',
+  retire: 'remove',
   conflict: null, // taken from the resource's resolution
 };
+
+// A conflict marked `removal` resolves to remove or keep instead of
+// overwrite or skip — there is no incoming resource to write.
+const REMOVAL_RESOLUTION = { overwrite: 'remove', skip: 'keep' };
 
 function copyResource(source, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -43,13 +49,21 @@ export function executePlan(pkgDir, destDir, plan) {
       fs.mkdirSync(dest, { recursive: true });
       applied.push({ target: dir, action: 'mkdir' });
     }
-    for (const r of plan.resources) {
-      const action = ACTION[r.status] ?? r.resolution;
+    for (const r of [...plan.resources, ...(plan.retired ?? [])]) {
+      const action = r.removal === true
+        ? REMOVAL_RESOLUTION[r.resolution]
+        : ACTION[r.status] ?? r.resolution;
       if (action === undefined) {
         throw new Error(`plan sin resolver: ${r.target}`);
       }
       const dest = path.join(destDir, r.target);
-      if (action === 'create' || action === 'overwrite') {
+      if (action === 'remove') {
+        if (!resolvesUnder(destDir, path.dirname(dest))) {
+          throw new Error(`la ruta destino escapa de la raíz: ${dest}`);
+        }
+        fs.rmSync(dest, { recursive: true, force: true });
+        applied.push({ target: r.target, action });
+      } else if (action === 'create' || action === 'overwrite') {
         if (!resolvesUnder(destDir, path.dirname(dest))) {
           throw new Error(`la ruta destino escapa de la raíz: ${dest}`);
         }

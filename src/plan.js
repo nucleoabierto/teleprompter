@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { hashPath } from './hash.js';
 import { classifyResource } from './drift.js';
-import { hasEntry, resolvesUnder } from './paths.js';
+import { hasEntry, personalizationTarget, resolvesUnder } from './paths.js';
 
 // Classifies each install entry by comparing the destination with the
 // package resource and the recorded history:
@@ -100,9 +100,13 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
     return { source, target, status };
   });
   const shipped = new Set(manifest.install.map(({ target }) => path.normalize(target)));
-  const guideTarget = record?.personalization === undefined
+  // The managed guide is excluded from retirements only while the
+  // incoming manifest still declares it — the incoming target is the
+  // one that gets rewritten; when the version drops the field —or
+  // renames the file— the old guide retires like any other file.
+  const guideTarget = manifest.personalization === undefined
     ? undefined
-    : path.normalize(record.personalization);
+    : path.normalize(personalizationTarget(manifest.name, manifest.personalization));
   const retired = [];
   const removals = (record?.files ?? [])
     .filter((f) => f.action !== 'skip' && path.normalize(f.target) !== guideTarget
