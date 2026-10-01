@@ -107,9 +107,12 @@ instalado.
     sigue siendo propio— pero no crea registro si nunca se escribió.
     Ancla: `writeLock` en `src/lock.js`
   - Un recurso retirado por la versión solo se elimina intacto —propio
-    y sin tocar—; modificado o no verificable exige decisión, y el
-    `target` de `personalization` y las entradas `skip` nunca se
-    retiran (D015). Ancla: `buildUpdatePlan` en `src/plan.js`
+    y sin tocar—; modificado o no verificable exige decisión. Quedan
+    excluidos las entradas `skip` y el target de `personalization`
+    que el manifiesto **entrante** siga declarando: si la versión
+    renombra la guía o abandona el campo, la guía registrada se retira
+    como cualquier otro recurso (D015). Ancla: `buildUpdatePlan` en
+    `src/plan.js`
 - **Operaciones:**
   - `teleprompter [install] <user/repo[@ref]> [destino]` o
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
@@ -212,7 +215,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-09-30
+- Última revisión: 2026-10-01 (revisión de arquitectura
+  `docs/architecture-reviews/002-instalacion-tras-el-ciclo-de-vida.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

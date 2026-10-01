@@ -111,3 +111,9 @@ decisión antes de actuar.
   - Disparadores: `update`, subcomando, gramática del CLI, `parseArgs`,
     origen, `origin`, `remove`, `keep`, `--ref`, `--path`
   - Estado: Aceptada
+- [D017-semver-inmutable-como-axioma.md](D017-semver-inmutable-como-axioma.md)
+  — la versión identifica el contenido: «misma versión, otro
+  contenido» es incumplimiento del mantenedor, no estado detectable.
+  - Disparadores: `upToDate`, `update`, versión, semver, plan de
+    actualización, `buildUpdatePlan`, mismo número
+  - Estado: Aceptada
