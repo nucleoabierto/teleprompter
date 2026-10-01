@@ -4,11 +4,6 @@
 
 - [x] docs/tasks/011-documentacion-publica.md — Generar la documentación pública del producto
 - [x] docs/tasks/012-origen-remoto-github.md — Origen remoto `user/repo` y opción `--path`
-- [ ] docs/tasks/021-extraer-pipeline-compartido.md — Extraer el pipeline compartido y la resolución de conflictos
-- [ ] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro
-- [ ] docs/tasks/023-higiene-idiomatica.md — Higiene idiomática: error de ejecución tipado y nits
-- [ ] docs/tasks/024-unificar-defensa-de-rutas-registradas.md — Unificar la defensa de rutas registradas
-- [ ] docs/tasks/025-guia-conservada-tras-retiro.md — Comportamiento de `guide` sobre una guía conservada tras retiro
 
 ## Hito 1: Formato de paquete
 <!-- épica: docs/epics/001-formato-paquete.md -->
@@ -43,5 +38,14 @@
 - [x] docs/tasks/018-registrar-origen-en-el-registro.md — Registrar el origen de la instalación en el registro
 - [x] docs/tasks/019-plan-de-actualizacion.md — Plan de actualización consciente de la deriva
 - [x] docs/tasks/020-comando-update.md — El comando `update`
+
+## Hito 5: Saneamiento de arquitectura
+<!-- origen: docs/architecture-reviews/002-instalacion-tras-el-ciclo-de-vida.md -->
+
+- [ ] docs/tasks/021-extraer-pipeline-compartido.md — Extraer el pipeline compartido y la resolución de conflictos
+- [ ] docs/tasks/024-unificar-defensa-de-rutas-registradas.md — Unificar la defensa de rutas registradas
+- [ ] docs/tasks/023-higiene-idiomatica.md — Higiene idiomática: error de ejecución tipado y nits
+- [ ] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro
+- [ ] docs/tasks/025-guia-conservada-tras-retiro.md — Comportamiento de `guide` sobre una guía conservada tras retiro
 
 ## Propuestas en revisión
