@@ -12,9 +12,8 @@ real.
 
 ## Now
 
-- Vacío: la épica `docs/epics/004-ciclo-de-vida-paquete-instalado.md`
-  cerró con el comando `update` (020). No hay trabajo en vuelo; la
-  siguiente línea arranca desde Next.
+- Vacío: no hay trabajo en vuelo; la siguiente línea arranca desde
+  Next.
 
 ## Next
 
@@ -63,3 +62,8 @@ real.
 - Usuario: 2026-10-01 — Aprueba (épica 004 cerrada; Now queda vacío y
   las tres líneas de Later pasan a Next, con colecciones en primera
   posición por su impacto sobre la superficie del formato)
+- Usuario: 2026-10-01 — Aprueba (hito 5 cerrado: el saneamiento de la
+  revisión 002 queda materializado —pipeline compartido, defensa de
+  rutas registradas, error de ejecución tipado, escritura atómica del
+  registro y guía retirada—; la base endurecida refuerza la línea
+  «Endurecimiento de la obtención remota», que sigue segunda en Next)
