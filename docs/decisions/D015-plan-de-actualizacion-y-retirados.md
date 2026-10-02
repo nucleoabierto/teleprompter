@@ -45,7 +45,10 @@ nunca se retiran porque nunca se escribieron, y el `target` de
 `personalization` tampoco mientras el manifiesto entrante la siga
 declarando —la guía gestionada se reescribe en cada instalación—; si
 la versión nueva abandona el campo, la guía anterior se retira como
-cualquier recurso propio. Consecuencias: `conflict` para un retirado
+cualquier recurso propio —con una excepción ulterior (tarea 025): si
+la versión entrante declara su propia guía, la registrada se retira
+incluso modificada, porque deja de ser la guía del paquete y un
+`keep` la dejaría huérfana para `guide`—. Consecuencias: `conflict` para un retirado
 reutiliza la maquinaria de resolución existente (D006) con `overwrite` =
 eliminar, sin introducir resoluciones nuevas; la marca `removal` en la
 entrada distingue la eliminación pendiente de una sobrescritura, y

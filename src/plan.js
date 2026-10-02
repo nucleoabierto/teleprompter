@@ -66,7 +66,13 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
 // — the executor must check `removal` before any copy. A retired
 // target already gone leaves the plan silently. Entries never
 // written (`skip`) and the managed guide — rewritten on every
-// install — never retire.
+// install — never retire. One exception to removal conflicts: a
+// recorded guide the incoming version replaces — it declares its
+// own personalization — retires even with drift, because it stops
+// being the guide and keeping it would leave a file `guide` can
+// never show; an unverifiable one stays a conflict, since forcing
+// removal of an unsafe path would turn a resolvable decision into
+// an execution error.
 export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const record = lockEntry(lock, manifest.name);
   if (record !== undefined && record.version === manifest.version) {
@@ -108,6 +114,11 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const guideTarget = manifest.personalization === undefined
     ? undefined
     : path.normalize(personalizationTarget(manifest.name, manifest.personalization));
+  // The lock is untrusted data: a hand-edited `personalization` that
+  // is not a string must not crash the plan.
+  const replacedGuide = guideTarget === undefined || typeof record?.personalization !== 'string'
+    ? undefined
+    : path.normalize(record.personalization);
   const retired = [];
   const removals = (record?.files ?? [])
     .filter((f) => f.action !== 'skip' && path.normalize(f.target) !== guideTarget
@@ -116,6 +127,9 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
       const drift = classifyResource(destDir, f);
       if (drift === 'intact') return [{ target: f.target, status: 'retire' }];
       if (drift === 'missing') return [];
+      if (drift === 'modified' && path.normalize(f.target) === replacedGuide) {
+        return [{ target: f.target, status: 'retire' }];
+      }
       return [{ target: f.target, status: 'conflict', removal: true }];
     });
   for (const entry of removals) {

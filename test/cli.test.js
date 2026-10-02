@@ -1273,6 +1273,80 @@ test('update re-delivers the managed guide of the new version', async () => {
   assert.match(stdout.join('\n'), /guía nueva/);
 });
 
+test('update retires a drifted guide the new version replaces, without asking', async () => {
+  const { dest, pkg } = await installed(validManifest('guia', {
+    personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía vieja' });
+  fs.writeFileSync(path.join(dest, '.teleprompter/guia/GUIA.md'), 'editada');
+  writePkg(pkg, validManifest('guia', {
+    version: '2.0.0', personalization: 'NUEVA.md',
+  }), { 'a.txt': 'b', 'NUEVA.md': 'guía nueva' });
+  const questions = [];
+  const { code, stderr } = await run(['update', 'guia'], {
+    cwd: dest,
+    interactive: true,
+    createAsker: () => ({
+      ask: async (q) => { questions.push(q); return true; },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.deepEqual(questions, []);
+  assert.ok(!fs.existsSync(path.join(dest, '.teleprompter/guia/GUIA.md')));
+  assert.equal(
+    fs.readFileSync(path.join(dest, '.teleprompter/guia/NUEVA.md'), 'utf8'),
+    'guía nueva',
+  );
+  assert.equal(lockOf(dest).packages.guia.personalization, '.teleprompter/guia/NUEVA.md');
+});
+
+test('update still asks about a drifted guide the new version drops', async () => {
+  const { dest, pkg } = await installed(validManifest('guia', {
+    personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía vieja' });
+  fs.writeFileSync(path.join(dest, '.teleprompter/guia/GUIA.md'), 'editada');
+  writePkg(pkg, validManifest('guia', { version: '2.0.0' }), { 'a.txt': 'b' });
+  const questions = [];
+  const { code, stderr } = await run(['update', 'guia'], {
+    cwd: dest,
+    interactive: true,
+    createAsker: () => ({
+      ask: async (q) => { questions.push(q); return false; },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(questions[0], /¿quitar\?/);
+  assert.equal(
+    fs.readFileSync(path.join(dest, '.teleprompter/guia/GUIA.md'), 'utf8'),
+    'editada',
+  );
+  // Kept as recorded content, but no longer the package's guide.
+  const lock = lockOf(dest);
+  assert.equal(lock.packages.guia.personalization, undefined);
+  assert.ok(lock.packages.guia.files
+    .some((f) => f.target === '.teleprompter/guia/GUIA.md'));
+});
+
+test('update tolerates a non-string personalization in the lock', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { p: {
+      version: '1.0.0',
+      files: [{ target: 'a.txt', action: 'create' }],
+      personalization: 42,
+    } },
+  }));
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p', {
+    version: '2.0.0', personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía' });
+  const { code, stderr } = await run(['update', 'p', '--path', pkg], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(lockOf(dest).packages.p.personalization, '.teleprompter/p/GUIA.md');
+});
+
 test('update warns on a corrupt lock and reports the package as not installed', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{"packages": 42}');

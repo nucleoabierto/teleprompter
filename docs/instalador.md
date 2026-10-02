@@ -271,9 +271,12 @@ eliminación, donde `overwrite` significa quitar y `skip` conservar;
 ya ausente del disco desaparece del plan sin marca. Las entradas
 `skip` nunca se retiran —no se escribieron— ni el target de
 `personalization` mientras el manifiesto la siga declarando —la guía
-gestionada se reescribe en cada instalación—; si la versión nueva
-deja de declararla, la guía anterior entra en los retirados como
-cualquier recurso propio.
+gestionada se reescribe en cada instalación—. Cuando la versión
+nueva declara otra guía, la registrada se retira incluso modificada:
+deja de ser la guía del paquete y conservarla dejaría un archivo
+que `guide` no puede mostrar; cuando la versión nueva abandona la
+guía por completo, la anterior entra en los retirados como cualquier
+recurso propio y su deriva se decide con `remove`/`keep`.
 
 ## La actualización
 

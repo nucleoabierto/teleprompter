@@ -115,10 +115,13 @@ instalado.
   - Un recurso retirado por la versión solo se elimina intacto —propio
     y sin tocar—; modificado o no verificable exige decisión. Quedan
     excluidos las entradas `skip` y el target de `personalization`
-    que el manifiesto **entrante** siga declarando: si la versión
-    renombra la guía o abandona el campo, la guía registrada se retira
-    como cualquier otro recurso (D015). Ancla: `buildUpdatePlan` en
-    `src/plan.js`
+    que el manifiesto **entrante** siga declarando. Si la versión
+    declara otra guía, la registrada se retira incluso modificada
+    —deja de ser la guía y un `keep` la dejaría huérfana para
+    `guide`; solo un `unverifiable` —ruta insegura— sigue siendo
+    decisión—; si la versión abandona el campo, la guía registrada se
+    retira como cualquier otro recurso (D015). Ancla:
+    `buildUpdatePlan` en `src/plan.js`
 - **Operaciones:**
   - `teleprompter [install] <user/repo[@ref]> [destino]` o
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
