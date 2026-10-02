@@ -136,7 +136,10 @@ instalado.
   - Registrar la instalación: fusiona el lock preservando otros
     paquetes; `identical` no se registra y `skip` va sin hash; la
     guía gestionada se añade a `files` y al campo `personalization`
-    sin figurar entre las acciones del plan.
+    sin figurar entre las acciones del plan. La escritura es
+    atómica —temporal en el mismo directorio + `rename`—, así que un
+    corte a mitad deja el lock anterior o el nuevo, nunca uno
+    truncado.
     - Ancla: `writeLock` en `src/lock.js`
   - Materializar y entregar la guía: `installPersonalization` copia
     el archivo declarado a `.teleprompter/<paquete>/<archivo>` tras

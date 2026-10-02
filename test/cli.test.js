@@ -1299,9 +1299,9 @@ test('update surfaces verification warnings and required creates', async () => {
 test('update reports applied actions when the lock write fails', async () => {
   const { dest, pkg } = await installed(validManifest('sinlock'), { 'a.txt': 'viejo' });
   writePkg(pkg, validManifest('sinlock', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
-  fs.chmodSync(path.join(dest, 'teleprompter-lock.json'), 0o444);
+  // A directory squatting on the temp name makes the lock write fail.
+  fs.mkdirSync(path.join(dest, `teleprompter-lock.json.${process.pid}.tmp`));
   const { code, stdout, stderr } = await run(['update', 'sinlock'], { cwd: dest });
-  fs.chmodSync(path.join(dest, 'teleprompter-lock.json'), 0o644);
   assert.equal(code, EXIT_EXECUTION);
   assert.match(stdout.join('\n'), /overwrite\s+a\.txt/);
   assert.match(stderr.join('\n'), /error de ejecución/);

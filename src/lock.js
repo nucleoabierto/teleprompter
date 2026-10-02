@@ -111,8 +111,18 @@ export function writeLock(destDir, lock, manifest, actions, origin) {
       },
     },
   };
-  fs.writeFileSync(
-    path.join(destDir, 'teleprompter-lock.json'),
-    `${JSON.stringify(data, null, 2)}\n`,
-  );
+  // Atomic write: the serialized lock goes to a temp file in the
+  // same directory — rename is only atomic within one filesystem —
+  // and is then renamed over the real name, so a crash mid-write
+  // leaves the old lock or the new one, never a truncated file. The
+  // pid suffix keeps the temp name unique across concurrent runs;
+  // the finally removes it whether the write or the rename failed.
+  const lockPath = path.join(destDir, 'teleprompter-lock.json');
+  const tmpPath = `${lockPath}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(tmpPath, `${JSON.stringify(data, null, 2)}\n`);
+    fs.renameSync(tmpPath, lockPath);
+  } finally {
+    fs.rmSync(tmpPath, { force: true, recursive: true });
+  }
 }

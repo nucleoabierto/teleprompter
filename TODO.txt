@@ -45,7 +45,7 @@
 - [x] docs/tasks/021-extraer-pipeline-compartido.md — Extraer el pipeline compartido y la resolución de conflictos
 - [x] docs/tasks/024-unificar-defensa-de-rutas-registradas.md — Unificar la defensa de rutas registradas
 - [x] docs/tasks/023-higiene-idiomatica.md — Higiene idiomática: error de ejecución tipado y nits
-- [ ] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro
+- [x] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro
 - [ ] docs/tasks/025-guia-conservada-tras-retiro.md — Comportamiento de `guide` sobre una guía conservada tras retiro
 
 ## Propuestas en revisión
