@@ -2,13 +2,13 @@
 name: documentar-dominio
 description: >
   Mantiene la documentación viva de los dominios del proyecto
-  bajo docs/domains/: tras una tarea de desarrollo evalúa si el
-  diff altera conceptos, invariantes o fronteras del dominio y
-  solo entonces actualiza; si detecta divergencia estructural,
-  recomienda una revisión de arquitectura.
-  Usar al cerrar una tarea de tipo desarrollo, cuando el usuario
-  pida documentar un dominio, o cuando haya que crear el
-  documento de un dominio nuevo.
+  bajo docs/domains/: tras una tarea del sub-flujo de desarrollo
+  evalúa si el cambio altera conceptos, invariantes o fronteras
+  del dominio y solo entonces actualiza; si detecta divergencia
+  estructural, recomienda una revisión de arquitectura.
+  Usar al cerrar una tarea del sub-flujo de desarrollo, cuando
+  el usuario pida documentar un dominio, o cuando haya que crear
+  el documento de un dominio nuevo.
   Sinónimos: documentar dominio, documentación de dominio,
   dominio vivo, glosario del dominio, actualizar dominio.
 ---
@@ -19,7 +19,7 @@ Instrucciones para que un agente mantenga la documentación viva de los dominios
 
 ## Cuándo usar
 
-- Al cerrar una tarea de tipo `desarrollo` en el ciclo de `ejecutar-tareas`, con el diff de la tarea como entrada.
+- Al cerrar una tarea enrutada al sub-flujo de desarrollo —tipo `desarrollo` o `mantenimiento (refactoring)`— en el ciclo de `ejecutar-tareas`, con la ubicación de sus cambios como entrada.
 - Cuando el usuario pida documentar o redocumentar un dominio.
 - Cuando un dominio nuevo aparece y no tiene documento en `docs/domains/`.
 
@@ -31,7 +31,7 @@ Instrucciones para que un agente mantenga la documentación viva de los dominios
 
 ## Entrada
 
-- El diff de los cambios de la tarea (o el código del dominio, si se documenta por primera vez).
+- La ubicación de los cambios de la tarea —árbol de trabajo sin commitear o rango de commits—: el skill reconstruye el diff con git a partir de ella, no lo recibe ya materializado (o el código del dominio, si se documenta por primera vez).
 - `docs/domains/` como documentación existente: `README.md` (índice) y los documentos `NNN-slug.md`.
 - `assets/domain.txt` como plantilla del documento de dominio.
 
@@ -51,7 +51,7 @@ Instrucciones para que un agente mantenga la documentación viva de los dominios
 
 ## Procedimiento
 
-1. **Delimitar el dominio afectado.** A partir del diff, identificar a qué dominio pertenece el cambio y si existe ya su documento en `docs/domains/`. Si el proyecto tiene varios dominios, trabajar solo los tocados.
+1. **Delimitar el dominio afectado.** Reconstruir el diff con git a partir de la ubicación indicada —`git status` y `git diff` en el árbol de trabajo, o el rango de commits por sus hashes— e identificar a qué dominio pertenece el cambio y si existe ya su documento en `docs/domains/`. Si el proyecto tiene varios dominios, trabajar solo los tocados.
 2. **Evaluar el impacto.** Contrastar el diff con el documento del dominio: ¿introduce o renombra conceptos del lenguaje ubicuo?, ¿cambia entidades o invariantes del modelo?, ¿mueve responsabilidades entre fronteras?, ¿crea un dominio nuevo? La lista de preguntas es orientativa, abierta y extensible —cualquier cambio que altere lo que el documento afirma cuenta como impacto—. Si ninguna aplica, emitir «sin impacto» y terminar.
 3. **Crear o actualizar el documento.** Si el dominio no tiene documento, asignar el siguiente número disponible en `docs/domains/` (serie propia de dominios: `001`, `002`, …) y crearlo con `assets/domain.txt` documentando el estado actual. Si existe, actualizar las secciones afectadas, manteniendo los anclas a elementos de código.
 4. **Actualizar el índice** `docs/domains/README.md` con el documento nuevo o los cambios de estado.

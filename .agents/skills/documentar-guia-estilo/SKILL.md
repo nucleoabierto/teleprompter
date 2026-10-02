@@ -21,7 +21,7 @@ Instrucciones para que un agente mantenga la guía de estilo de diseño de un pr
 
 - Cuando un proyecto tiene frontend pero no tiene guía de estilo, y hay que crearla —sea extrayéndola del código o definiéndola en diálogo con el usuario—.
 - Cuando el usuario quiera definir, discutir o revisar decisiones de diseño interactivamente, antes de que toquen el código.
-- Al cerrar una tarea que modificó frontend (CSS, HTML con estilos, componentes visuales), con el diff como entrada.
+- Al cerrar una tarea que modificó frontend (CSS, HTML con estilos, componentes visuales), con la ubicación de sus cambios como entrada.
 - Cuando el usuario pida documentar o actualizar la guía de estilo, o una decisión de diseño nueva necesite incorporarse.
 
 ## Cuándo no usar
@@ -32,7 +32,7 @@ Instrucciones para que un agente mantenga la guía de estilo de diseño de un pr
 
 ## Entrada
 
-- El código visual del proyecto evaluado (CSS, HTML, componentes) si se crea la guía por extracción, el diff de la tarea si se mantiene en modo sensor, o la dirección que el usuario traiga si se trabaja en modo interactivo —en este caso el código sirve de punto de partida, no de límite—.
+- El código visual del proyecto evaluado (CSS, HTML, componentes) si se crea la guía por extracción, la ubicación de los cambios de la tarea si se mantiene en modo sensor —árbol de trabajo sin commitear o rango de commits, desde la que el skill reconstruye el diff con git—, o la dirección que el usuario traiga si se trabaja en modo interactivo —en este caso el código sirve de punto de partida, no de límite—.
 - `DESIGN.md` existente en la raíz del proyecto evaluado, si lo hay.
 - `references/formato-design-md.md` como plantilla de la guía: estructura de secciones y reglas de redacción del contrato.
 
@@ -70,9 +70,9 @@ Usar cuando el usuario quiere decidir el diseño conversando —una guía nueva 
 3. **Materializar.** Escribir el `DESIGN.md` con `references/formato-design-md.md` y declarar las custom properties en `:root` del archivo de estilos principal, sustituyendo los literales por `var(--…)` en los usos.
 4. **Informar** de la guía creada y de los valores que cambiaron al normalizarse.
 
-### Mantenimiento sensor (existe `DESIGN.md`, entrada por diff)
+### Mantenimiento sensor (existe `DESIGN.md`, entrada por ubicación de cambios)
 
-5. **Evaluar el impacto del diff.** Contrastar el diff con la guía: ¿introduce valores visuales nuevos (color, tamaño, espaciado, radio, sombra) no cubiertos por un token?, ¿añade un componente o estado que la guía no describe?, ¿modifica valores de tokens existentes? La lista es orientativa, abierta y extensible. Si ninguna aplica, emitir «sin impacto» y terminar.
+5. **Evaluar el impacto del diff.** Reconstruir el diff con git a partir de la ubicación indicada —`git status` y `git diff` en el árbol de trabajo, o el rango de commits por sus hashes— y contrastarlo con la guía: ¿introduce valores visuales nuevos (color, tamaño, espaciado, radio, sombra) no cubiertos por un token?, ¿añade un componente o estado que la guía no describe?, ¿modifica valores de tokens existentes? La lista es orientativa, abierta y extensible. Si ninguna aplica, emitir «sin impacto» y terminar.
 6. **Clasificar el impacto:**
    - **Decisión nueva aprobada** (la tarea incorpora un cambio de diseño acordado): actualizar el `DESIGN.md` y propagar a los tokens y usos afectados en el mismo cambio.
    - **Deriva** (el código diverge de la guía sin decisión que lo justifique): no corregir; redactar el informe de deriva con las discrepancias concretas y elevarlo al usuario. El usuario puede resolverla en modo interactivo: o la deriva se corrige en el código, o la guía se actualiza para reflejar la decisión.

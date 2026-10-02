@@ -31,7 +31,7 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 ## Entrada
 
 - El archivo de la tarea de desarrollo a planear (`docs/tasks/NNN-slug.md`), con su objetivo y criterios de calidad.
-- La sección `## Contexto` de la tarea, recopilada por `recopilar-contexto`: archivos similares, patrones vigentes y lecciones y decisiones aplicables. Si la tarea no la tiene, invocar `recopilar-contexto` antes de empezar.
+- La sección `## Contexto` de la tarea, recopilada por `recopilar-contexto`. Si la tarea no la tiene, invocar `recopilar-contexto` antes de empezar.
 - El plan técnico de la épica que agrupa la tarea, si existe, como guía de arquitectura.
 - El código base del subsistema afectado.
 
@@ -63,7 +63,7 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 
 1. **Leer el archivo de la tarea** para fijar objetivo, alcance y criterios de calidad.
 2. **Leer el plan técnico de la épica**, si la tarea figura bajo un encabezado con comentario `<!-- épica: ... -->` en `TODO.txt` o referencia una épica; esa guía de arquitectura es el marco del plan.
-3. **Apoyarse en la sección `## Contexto` de la tarea:** los archivos similares, los patrones vigentes y las lecciones y decisiones aplicables ya recopilados son el punto de partida. Completar la exploración solo donde el contexto tenga vacíos respecto a lo que el plan necesita —una pieza del subsistema no cubierta, un patrón dudoso—, sin repetir desde cero lo ya recopilado.
+3. **Apoyarse en la sección `## Contexto` de la tarea:** lo ya recopilado por `recopilar-contexto` es el punto de partida. Completar la exploración solo donde el contexto tenga vacíos respecto a lo que el plan necesita —una pieza del subsistema no cubierta, un patrón dudoso—, sin repetir desde cero lo ya recopilado.
 4. **Redactar el resumen del subsistema** en dos o tres frases: qué hace, qué patrón sigue y dónde encaja el cambio. Si la lectura revela un malentendido en la propia tarea, plantearlo al usuario antes de seguir.
 
 ### 2. Redactar el plan técnico

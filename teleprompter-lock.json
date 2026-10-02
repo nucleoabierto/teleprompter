@@ -1,0 +1,25 @@
+{
+  "packages": {
+    "factory": {
+      "version": "0.1.0",
+      "installedAt": "2026-10-02T20:06:44.439Z",
+      "files": [
+        {
+          "target": ".agents/skills/",
+          "action": "overwrite",
+          "sha256": "fcfb7cd920138430dd37e85f4721c92f884cf2e4318e3f8dfba0409eb4a0930c"
+        },
+        {
+          "target": ".teleprompter/factory/PERSONALIZE.md",
+          "action": "create",
+          "sha256": "e1c87f1396cf4b02d3650bc9003090981b22e638e7d2e40f48b9c79acab32275"
+        }
+      ],
+      "personalization": ".teleprompter/factory/PERSONALIZE.md",
+      "origin": {
+        "type": "github",
+        "repo": "nucleoabierto/factory"
+      }
+    }
+  }
+}

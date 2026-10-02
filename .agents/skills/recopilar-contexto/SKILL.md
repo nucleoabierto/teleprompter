@@ -2,10 +2,10 @@
 name: recopilar-contexto
 description: >
   Reúne el contexto que una tarea de desarrollo necesita para
-  planearse y ejecutarse con coherencia —archivos similares,
-  patrones vigentes del codebase, lecciones y decisiones
-  aplicables— y lo registra en la sección Contexto del archivo
-  de la tarea.
+  planearse y ejecutarse con coherencia con el proyecto —el
+  terreno del codebase y lo que la documentación y la memoria
+  del proyecto ya declaran— y lo registra en el archivo de la
+  tarea.
   Usar como paso previo a la planeación en el sub-flujo de
   desarrollo, o cuando el usuario pida preparar el contexto de
   una tarea concreta.
@@ -33,17 +33,18 @@ Instrucciones para que un agente reúna el contexto que una tarea de desarrollo 
 - El archivo de la tarea (`docs/tasks/NNN-slug.md`), con su objetivo, entrada y resultado esperado.
 - El plan técnico de la épica que agrupa la tarea, si existe.
 - Las capacidades de recuperación `consultar-lecciones` y `consultar-decisiones`.
+- La documentación viva del proyecto evaluado: `docs/domains/` para el modelo del dominio y el directorio de documentación de producto para el comportamiento observable, si existen.
 
 ## Salida
 
-- Una sección `## Contexto` agregada al archivo de la tarea, antes de la sección Revisión, con cuatro fuentes: archivos similares identificados, patrones vigentes a seguir, lecciones aplicables y decisiones aplicables.
+- Una sección `## Contexto` agregada al archivo de la tarea, antes de la sección Revisión. Las fuentes habituales son seis —archivos similares identificados, patrones vigentes a seguir, documentación de dominio aplicable, documentación de producto aplicable, lecciones aplicables y decisiones aplicables— y la lista es abierta: otra fuente pertinente al trabajo se añade como bullet propio.
 
 ## Principios rectores
 
 1. **Recopilar, no planear:** el contexto describe el terreno —qué hay, qué patrones siguen, qué ya se decidió— sin decidir cómo actuar; las decisiones de implementación pertenecen a la planeación.
 2. **Un solo artefacto por tarea:** el contexto vive en el archivo de la tarea, no en documentos paralelos.
-3. **Las cuatro fuentes:** el contexto cubre archivos similares, patrones, lecciones y decisiones; si una fuente no aporta nada, se declara en lugar de forzar contenido.
-4. **Sin repetir lo indexado:** lecciones y decisiones se citan por su nombre o identificador con una frase de por qué aplican; su contenido completo vive en sus archivos.
+3. **Las fuentes son guía, no corsé:** la lista —archivos similares, patrones, documentación de dominio, documentación de producto, lecciones y decisiones— es abierta y extensible; una fuente pertinente al trabajo que no figure se recopila igual. Si una fuente no aporta nada, se declara en lugar de forzar contenido.
+4. **Sin repetir lo indexado:** documentos, lecciones y decisiones se citan por su ruta, nombre o identificador con una frase de por qué aplican; su contenido completo vive en sus archivos.
 5. **Recolección idempotente:** si la tarea ya tiene `## Contexto`, no se rehace desde cero; se revisa y se enriquece solo donde falte.
 
 ## Procedimiento
@@ -51,18 +52,21 @@ Instrucciones para que un agente reúna el contexto que una tarea de desarrollo 
 1. **Leer el archivo de la tarea** para fijar qué se va a construir o cambiar y qué archivos previsiblemente tocará.
 2. **Localizar los archivos del subsistema:** los que la tarea tocará y los archivos hermanos o de funcionalidad similar que sirven de modelo.
 3. **Resumir los patrones vigentes** observados en esos archivos: estructura, convenciones y puntos de extensión que la tarea debe seguir.
-4. **Recuperar lecciones y decisiones** invocando `consultar-lecciones` y `consultar-decisiones` con la descripción del trabajo —archivos a tocar, tipo de acción, palabras clave.
-5. **Escribir la sección `## Contexto`** en el archivo de la tarea, con un bullet por fuente y sub-bullets para sus elementos:
+4. **Localizar la documentación aplicable** partiendo de los índices de cada directorio: los documentos de `docs/domains/` —con su `README.md` como índice— que describen el dominio que la tarea toca y los del directorio de documentación de producto —funcionalidades, guías, referencia— que describen el comportamiento afectado. Si el proyecto no tiene esos directorios, la fuente correspondiente se declara sin aportación.
+5. **Recuperar lecciones y decisiones** invocando `consultar-lecciones` y `consultar-decisiones` con la descripción del trabajo —archivos a tocar, tipo de acción, palabras clave.
+6. **Escribir la sección `## Contexto`** en el archivo de la tarea, con un bullet por fuente y sub-bullets para sus elementos:
    - `Archivos similares:` rutas de los archivos hermanos que sirven de modelo, con una frase de qué aportan.
    - `Patrones:` las convenciones vigentes que la implementación debe seguir.
+   - `Dominio:` los documentos de `docs/domains/` aplicables, citados por ruta, con el concepto, invariante o frontera que rige el cambio.
+   - `Producto:` los documentos de producto aplicables, citados por ruta, con la funcionalidad, flujo o referencia de uso que el cambio afecta.
    - `Lecciones:` las notas aplicables, citadas por su nombre, con la regla concreta que aplicar.
    - `Decisiones:` las decisiones vigentes que rigen el cambio, citadas por su identificador, con lo que declaran.
-   Las fuentes sin aportaciones se declaran («ninguna aplica») en lugar de omitirse.
-6. **Informar al usuario** del contexto recopilado y de cualquier vacío detectado —archivos que no existen, patrones contradictorios— que pueda afectar a la planeación.
+   Las fuentes sin aportaciones se declaran («ninguna aplica») en lugar de omitirse, y una fuente pertinente no listada se añade como bullet propio.
+7. **Informar al usuario** del contexto recopilado y de cualquier vacío detectado —archivos que no existen, patrones contradictorios, documentación desfasada— que pueda afectar a la planeación.
 
 ## Finalización
 
 El skill ha terminado cuando:
 
-- El archivo de la tarea contiene la sección `## Contexto` con las cuatro fuentes cubiertas o declaradas sin aportación.
+- El archivo de la tarea contiene la sección `## Contexto` con las fuentes cubiertas o declaradas sin aportación.
 - Los vacíos detectados se comunicaron al usuario.
