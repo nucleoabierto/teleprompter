@@ -42,7 +42,7 @@
 ## Hito 5: Saneamiento de arquitectura
 <!-- origen: docs/architecture-reviews/002-instalacion-tras-el-ciclo-de-vida.md -->
 
-- [ ] docs/tasks/021-extraer-pipeline-compartido.md — Extraer el pipeline compartido y la resolución de conflictos
+- [x] docs/tasks/021-extraer-pipeline-compartido.md — Extraer el pipeline compartido y la resolución de conflictos
 - [ ] docs/tasks/024-unificar-defensa-de-rutas-registradas.md — Unificar la defensa de rutas registradas
 - [ ] docs/tasks/023-higiene-idiomatica.md — Higiene idiomática: error de ejecución tipado y nits
 - [ ] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro

@@ -23,6 +23,17 @@ export function readLock(destDir) {
   return { packages: data.packages ?? {}, warnings: [] };
 }
 
+// The lock is the module that owns the registry's shape: readers ask
+// for an entry by name or walk the entries, never `lock.packages`
+// directly, so the internal structure can change in one place.
+export function lockEntry(lock, name) {
+  return lock.packages[name];
+}
+
+export function lockEntries(lock) {
+  return Object.entries(lock.packages);
+}
+
 // A lock is only trustworthy if every package entry holds a files
 // array of {target, sha256?} records — anything else is corrupt even
 // when it parses as JSON.
@@ -66,7 +77,7 @@ function isValidOrigin(o) {
 // asking for it again.
 export function writeLock(destDir, lock, manifest, actions, origin) {
   const previous = new Map(
-    (lock.packages[manifest.name]?.files ?? []).map((f) => [f.target, f]),
+    (lockEntry(lock, manifest.name)?.files ?? []).map((f) => [f.target, f]),
   );
   const files = actions.flatMap(({ target, action, sha256 }) => {
     if (action === 'remove') return [];

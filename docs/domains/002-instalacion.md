@@ -23,8 +23,9 @@ instalado.
     - Ancla: `buildPlan` en `src/plan.js`
   - **Resolución:** la decisión sobre un `conflict` —`overwrite` o
     `skip`— por flag, por respuesta interactiva o por aborto.
-    - Ancla: `src/cli.js` (bucle de resolución) y `createAsker` en
-      `src/prompt.js`
+    - Ancla: `resolveConflicts` en `src/plan.js` (la asignación es
+      operación del plan), `settleConflicts` en `src/cli.js` (la
+      política) y `createAsker` en `src/prompt.js`
   - **Registro (lock):** `teleprompter-lock.json` en la raíz del
     destino; por paquete guarda `version`, `installedAt` y `files`
     con `target`, acción y `sha256` —las entradas `skip` no llevan
@@ -34,8 +35,10 @@ instalado.
     `{type:'path',path}` absoluta—, opcional en entradas escritas
     antes del campo. Es la memoria que distingue lo propio de lo
     ajeno.
-    - Ancla: `readLock`, `isValidLock` y `writeLock` en `src/lock.js`
-      y `originOf` en `src/cli.js`; D007, D014
+    - Ancla: `readLock`, `isValidLock`, `writeLock`, `lockEntry` y
+      `lockEntries` en `src/lock.js` —la forma del registro solo se
+      navega desde ese módulo— y `originOf` en `src/cli.js`;
+      D007, D014
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
@@ -62,7 +65,7 @@ instalado.
     - Ancla: `verifyPackage` en `src/verify.js`
   - `Plan` — `{ mkdirs, resources, conflicts }`; cada recurso lleva
     `source`, `target`, `status` y, tras resolver, `resolution`.
-    - Ancla: `buildPlan` en `src/plan.js`
+    - Ancla: `buildPlan` y `resolveConflicts` en `src/plan.js`
   - `UpdatePlan` — `{ upToDate, mkdirs, resources, conflicts,
     retired }`; `resources` incluye las entradas del manifiesto y
     los retirados con deriva marcados `removal`, `retired` solo las
@@ -76,7 +79,8 @@ instalado.
 - **Invariantes:**
   - El plan completo se calcula antes de escribir; un plan no
     ejecutable aborta sin escribir nada —ni recursos ni registro
-    (D005). Ancla: `main` en `src/cli.js`
+    (D005). Ancla: `runInstall`/`runUpdate` y las fases
+    `settleConflicts`/`checkGuideDestination` en `src/cli.js`
   - «Existe» significa «hay una entrada en el directorio», sin seguir
     enlaces: un enlace colgado ocupa su ruta.
     Ancla: `hasEntry` en `src/paths.js`

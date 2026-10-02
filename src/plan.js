@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { hashPath } from './hash.js';
 import { classifyResource } from './drift.js';
+import { lockEntry } from './lock.js';
 import { hasEntry, personalizationTarget, resolvesUnder } from './paths.js';
 
 // Classifies each install entry by comparing the destination with the
@@ -12,7 +13,7 @@ import { hasEntry, personalizationTarget, resolvesUnder } from './paths.js';
 //                    later version, so overwriting it is safe
 //   conflict       - different content not owned by the tool
 export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
-  const record = lock.packages[manifest.name];
+  const record = lockEntry(lock, manifest.name);
   const recorded = new Map(
     (record?.files ?? []).map((f) => [path.normalize(f.target), f.sha256]),
   );
@@ -67,7 +68,7 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
 // written (`skip`) and the managed guide — rewritten on every
 // install — never retire.
 export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
-  const record = lock.packages[manifest.name];
+  const record = lockEntry(lock, manifest.name);
   if (record !== undefined && record.version === manifest.version) {
     return {
       upToDate: true, mkdirs: [], resources: [], conflicts: [], retired: [],
@@ -127,6 +128,15 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
     conflicts: resources.filter((r) => r.status === 'conflict'),
     retired,
   };
+}
+
+// Resolving is the plan's own operation: a conflict admits exactly
+// `overwrite` or `skip` and the assignment lives here so callers
+// decide per conflict — flag, prompt, whatever asks — without
+// touching the entries. `decide` answers one conflict at a time, in
+// plan order, and may return a promise.
+export async function resolveConflicts(plan, decide) {
+  for (const r of plan.conflicts) r.resolution = await decide(r);
 }
 
 // Downgrades are not managed updates: writing older content over a

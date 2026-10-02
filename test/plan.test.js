@@ -6,7 +6,7 @@ import path from 'node:path';
 import {
   main, EXIT_OK, EXIT_PLAN,
 } from '../src/cli.js';
-import { buildUpdatePlan } from '../src/plan.js';
+import { buildUpdatePlan, resolveConflicts } from '../src/plan.js';
 import { hashPath } from '../src/hash.js';
 
 function tmp() {
@@ -633,4 +633,40 @@ test('update plan retires the old guide when the version renames it', () => {
   assert.deepEqual(plan.retired, [
     { target: '.teleprompter/paquete/GUIA.md', status: 'retire' },
   ]);
+});
+
+// --- resolveConflicts: la resolución como operación del plan ---
+
+test('resolveConflicts leaves a plan without conflicts untouched', async () => {
+  const plan = { conflicts: [] };
+  let calls = 0;
+  await resolveConflicts(plan, () => {
+    calls += 1;
+    return 'overwrite';
+  });
+  assert.equal(calls, 0);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('resolveConflicts assigns the decision to the conflict', async () => {
+  const plan = { conflicts: [{ target: 'a.txt' }] };
+  await resolveConflicts(plan, () => 'skip');
+  assert.equal(plan.conflicts[0].resolution, 'skip');
+});
+
+test('resolveConflicts decides each conflict in plan order', async () => {
+  const plan = { conflicts: [{ target: 'a.txt' }, { target: 'b.txt' }] };
+  const asked = [];
+  await resolveConflicts(plan, (r) => {
+    asked.push(r.target);
+    return r.target === 'a.txt' ? 'overwrite' : 'skip';
+  });
+  assert.deepEqual(asked, ['a.txt', 'b.txt']);
+  assert.deepEqual(plan.conflicts.map((r) => r.resolution), ['overwrite', 'skip']);
+});
+
+test('resolveConflicts awaits a promised decision', async () => {
+  const plan = { conflicts: [{ target: 'a.txt' }] };
+  await resolveConflicts(plan, async () => 'overwrite');
+  assert.equal(plan.conflicts[0].resolution, 'overwrite');
 });
