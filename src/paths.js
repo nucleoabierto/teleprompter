@@ -55,3 +55,34 @@ export function resolvesUnder(root, dir) {
     return false;
   }
 }
+
+// A recorded path is the lock's data, not trusted input: it is
+// re-validated before use at the level the operation needs. The
+// chain level suffices when the leaf is treated atomically — lstat,
+// rm, hashing a link as a link — so only the parent chain must stay
+// inside the root.
+export function recordedChainSafe(root, rel) {
+  return isSafeRelative(rel)
+    && resolvesUnder(root, path.dirname(path.join(root, rel)));
+}
+
+// The leaf level of the recorded-path defense: for reads that follow
+// the leaf itself a parent-chain proof is not enough — a recorded
+// symlink pointing outside must not disclose its target, so the whole
+// path is resolved and the result must land inside the root. The
+// discriminated result keeps "unsafe" apart from "unreadable" because
+// callers report them differently.
+export function resolveRecordedPath(root, rel) {
+  if (!isSafeRelative(rel)) return { ok: false, reason: 'unsafe' };
+  let real;
+  try {
+    real = fs.realpathSync(path.join(root, rel));
+    const rootReal = fs.realpathSync(root);
+    if (real !== rootReal && !real.startsWith(`${rootReal}${path.sep}`)) {
+      return { ok: false, reason: 'unsafe' };
+    }
+  } catch {
+    return { ok: false, reason: 'unreadable' };
+  }
+  return { ok: true, real };
+}

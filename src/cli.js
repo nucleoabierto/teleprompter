@@ -4,7 +4,9 @@ import { verifyPackage } from './verify.js';
 import { readLock, writeLock, lockEntry, lockEntries } from './lock.js';
 import { buildPlan, buildUpdatePlan, resolveConflicts } from './plan.js';
 import { executePlan, installPersonalization } from './execute.js';
-import { resolvesUnder, personalizationTarget, isSafeRelative } from './paths.js';
+import {
+  resolvesUnder, personalizationTarget, resolveRecordedPath,
+} from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 import { classifyResource } from './drift.js';
 
@@ -143,26 +145,23 @@ function showGuide(io, out, err, pkgName) {
   }
   // The lock is repository data, not trusted memory: its recorded
   // paths are re-validated before reading, like any other untrusted
-  // input. The resolved real path — symlinks included, in the parent
-  // chain and in the file itself — must land inside the destination;
-  // otherwise the command would disclose arbitrary files. All guides
-  // are read before printing, so a failure never leaves half the
-  // output behind.
+  // input — the leaf level of the recorded-path defense, because the
+  // command reads through the leaf and a recorded symlink pointing
+  // outside would disclose arbitrary files. All guides are read
+  // before printing, so a failure never leaves half the output
+  // behind.
   const guides = [];
-  const rootReal = fs.realpathSync(destDir);
   for (const [, entry] of withGuide) {
     const rel = entry.personalization;
-    if (!isSafeRelative(rel)) {
-      err(`la ruta de guía registrada no es segura: ${rel}`);
+    const resolved = resolveRecordedPath(destDir, rel);
+    if (!resolved.ok) {
+      err(resolved.reason === 'unsafe'
+        ? `la ruta de guía registrada no es segura: ${rel}`
+        : `no se puede leer la guía registrada: ${rel}`);
       return EXIT_EXECUTION;
     }
     try {
-      const real = fs.realpathSync(path.join(destDir, rel));
-      if (real !== rootReal && !real.startsWith(`${rootReal}${path.sep}`)) {
-        err(`la ruta de guía registrada no es segura: ${rel}`);
-        return EXIT_EXECUTION;
-      }
-      guides.push({ target: rel, content: fs.readFileSync(real, 'utf8') });
+      guides.push({ target: rel, content: fs.readFileSync(resolved.real, 'utf8') });
     } catch (error) {
       err(`no se puede leer la guía registrada: ${rel}`);
       return EXIT_EXECUTION;

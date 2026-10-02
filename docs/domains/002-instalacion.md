@@ -48,7 +48,9 @@ instalado.
     registrado, lectura fallida o ruta que escapa del destino); el
     informe los presenta como `intacto`, `modificado`, `ausente` y
     `no verificable`.
-    - Ancla: `classifyResource` en `src/drift.js`; contrato en
+    - Ancla: `classifyResource` en `src/drift.js`, que aplica el
+      nivel cadena de la defensa de rutas registradas
+      (`recordedChainSafe` en `src/paths.js`); contrato en
       `docs/instalador.md` «La verificación del estado»
   - **Plan de actualización:** el plan de una versión entrante
     distinta de la registrada; además de las marcas de instalación
@@ -147,7 +149,9 @@ instalado.
     instalación. Sin guía que mostrar es código 4; la ruta
     registrada insegura o el archivo ausente es código 3 —el lock
     es dato versionado y se revalida antes de leer.
-    - Ancla: `showGuide` en `src/cli.js`; D011
+    - Ancla: `showGuide` en `src/cli.js`, que aplica el nivel hoja de
+      la defensa de rutas registradas (`resolveRecordedPath` en
+      `src/paths.js`); D011
   - Consultar el registro: `teleprompter list` lee el registro del
     directorio de trabajo —sin argumentos ni opciones— y muestra una
     entrada por paquete con `nombre@version`, `installedAt` y los

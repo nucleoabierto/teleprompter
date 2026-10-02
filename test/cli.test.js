@@ -513,6 +513,17 @@ test('guide exits 3 when the recorded guide file is gone', async () => {
   assert.match(stderr.join('\n'), /no se puede leer la guía registrada/);
 });
 
+test('guide exits 3 when the recorded guide path is not a file', async () => {
+  const dest = tmp();
+  fs.mkdirSync(path.join(dest, '.teleprompter/p/guia.md'), { recursive: true });
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { p: { version: '1.0.0', files: [], personalization: '.teleprompter/p/guia.md' } },
+  }));
+  const { code, stderr } = await run(['guide'], { cwd: dest });
+  assert.equal(code, 3);
+  assert.match(stderr.join('\n'), /no se puede leer la guía registrada/);
+});
+
 test('guide refuses recorded paths that escape the destination', async () => {
   const dest = tmp();
   const writeLock = (personalization) => fs.writeFileSync(
