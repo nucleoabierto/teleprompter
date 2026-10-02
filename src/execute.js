@@ -3,6 +3,18 @@ import path from 'node:path';
 import { hashPath } from './hash.js';
 import { resolvesUnder, personalizationTarget } from './paths.js';
 
+// A failed execution reports what it already did: the thrown error
+// is a declared type carrying the applied actions and the original
+// error as `cause`, instead of mutating whatever the try happened
+// to catch.
+export class ExecutionError extends Error {
+  constructor(applied, cause) {
+    super(cause.message, { cause });
+    this.name = 'ExecutionError';
+    this.applied = applied;
+  }
+}
+
 const ACTION = {
   create: 'create',
   identical: 'identical',
@@ -36,8 +48,8 @@ function copyResource(source, dest) {
 // write —including the rm that precedes an overwrite— first proves the
 // parent chain resolves under the destination root, so a symlinked
 // directory can never redirect a write outside it.
-// If a copy throws midway, the error carries `applied` — the actions
-// already performed — so the caller can report them.
+// If anything throws midway, the ExecutionError carries `applied` —
+// the actions already performed — so the caller can report them.
 export function executePlan(pkgDir, destDir, plan) {
   const applied = [];
   try {
@@ -81,8 +93,7 @@ export function executePlan(pkgDir, destDir, plan) {
       }
     }
   } catch (error) {
-    error.applied = applied;
-    throw error;
+    throw new ExecutionError(applied, error);
   }
   return applied;
 }

@@ -330,3 +330,24 @@ test('executePlan refuses a conflict left without resolution', async () => {
     /plan sin resolver: a\.txt/,
   );
 });
+
+test('a failed execution throws an ExecutionError carrying applied and cause', async () => {
+  const { executePlan, ExecutionError } = await import('../src/execute.js');
+  const dest = tmp();
+  const pkg = pkgWith('fallo-tipado', { 'a.txt': 'a', 'b.txt': 'b' });
+  const plan = {
+    mkdirs: [],
+    resources: [
+      { source: 'a.txt', target: 'a.txt', status: 'create' },
+      { source: 'b.txt', target: 'b.txt', status: 'conflict' },
+    ],
+  };
+  assert.throws(
+    () => executePlan(pkg, dest, plan),
+    (error) => error instanceof ExecutionError
+      && error.applied.length === 1
+      && error.applied[0].target === 'a.txt'
+      && error.cause instanceof Error
+      && error.message === error.cause.message,
+  );
+});

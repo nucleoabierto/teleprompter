@@ -129,7 +129,7 @@ const VALIDATORS = [
         errors.push(`install: "${MANAGED_DIR}/" es un prefijo reservado`);
       } else if (seen.has(t)) {
         errors.push(`install: target duplicado "${t}"`);
-      } else if (seen.has([...seen].find((o) => t.startsWith(`${o}/`)))) {
+      } else if ([...seen].some((o) => t.startsWith(`${o}/`))) {
         errors.push(`install: target "${t}" queda dentro de otro target`);
       }
       seen.add(t);

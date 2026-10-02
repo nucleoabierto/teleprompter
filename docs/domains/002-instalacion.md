@@ -129,8 +129,10 @@ instalado.
   - Ejecutar el plan resuelto: `mkdirs` primero, luego cada recurso
     según su acción; `overwrite` elimina el destino antes de escribir
     —nunca a través de un enlace— y los enlaces se copian como
-    enlaces.
-    - Ancla: `executePlan` en `src/execute.js`
+    enlaces. Un fallo a mitad lanza `ExecutionError`, que transporta
+    las acciones ya aplicadas y el error original como `cause`, para
+    que el informe muestre el estado parcial.
+    - Ancla: `executePlan` y `ExecutionError` en `src/execute.js`
   - Registrar la instalación: fusiona el lock preservando otros
     paquetes; `identical` no se registra y `skip` va sin hash; la
     guía gestionada se añade a `files` y al campo `personalization`

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { verifyPackage } from './verify.js';
 import { readLock, writeLock, lockEntry, lockEntries } from './lock.js';
 import { buildPlan, buildUpdatePlan, resolveConflicts } from './plan.js';
-import { executePlan, installPersonalization } from './execute.js';
+import { executePlan, installPersonalization, ExecutionError } from './execute.js';
 import {
   resolvesUnder, personalizationTarget, resolveRecordedPath,
 } from './paths.js';
@@ -347,7 +347,8 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, sou
       guideContent = fs.readFileSync(path.join(destDir, guide.target), 'utf8');
     }
   } catch (error) {
-    for (const a of error.applied ?? actions) {
+    const applied = error instanceof ExecutionError ? error.applied : actions;
+    for (const a of applied) {
       out(`  ${a.action.padEnd(15)}${a.target}`);
     }
     err(`error de ejecución: ${error.message}`);
@@ -440,7 +441,13 @@ async function runUpdate(io, out, err, parsed) {
   }
 }
 
-const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
+const isDir = (p) => {
+  try {
+    return fs.statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+};
 
 // The installation's origin in lock shape: what a later operation
 // needs to fetch the package again without asking. A remote source
