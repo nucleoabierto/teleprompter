@@ -4,7 +4,7 @@
 
 - [x] docs/tasks/011-documentacion-publica.md — Generar la documentación pública del producto
 - [x] docs/tasks/012-origen-remoto-github.md — Origen remoto `user/repo` y opción `--path`
-- [ ] docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md — El retirado de un directorio padre destruye los targets hijos entrantes
+- [x] docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md — El retirado de un directorio padre destruye los targets hijos entrantes
 - [ ] docs/tasks/030-registrar-targets-identical-en-el-lock.md — Registrar los targets `identical` en el lock
 
 ## Hito 1: Formato de paquete

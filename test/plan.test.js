@@ -635,6 +635,349 @@ test('update plan retires the old guide when the version renames it', () => {
   ]);
 });
 
+// --- Cambio de granularidad del mapa de instalación -------------
+
+test('update plan keeps incoming children of a recorded directory target', () => {
+  const { dest, lock } = destWithLock({ 'd/': { 'a.txt': 'a', 'b.txt': 'b' } });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/b.txt': 'b' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  const byTarget = Object.fromEntries(plan.resources.map((r) => [r.target, r.status]));
+  assert.equal(byTarget['d/a.txt'], 'identical');
+  assert.equal(byTarget['d/b.txt'], 'identical');
+  assert.deepEqual(plan.retired, []);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan marks update on a child the version changed under an intact tree', () => {
+  const { dest, lock } = destWithLock({ 'd/': { 'a.txt': 'viejo' } });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'update');
+  assert.deepEqual(plan.retired, []);
+});
+
+test('update plan marks each covered child by its own content', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'b.txt': 'viejo', 'sub': { 'x.txt': 'x' } },
+  });
+  const pkg = pkgWith('paquete', {
+    'd/a.txt': 'a', 'd/b.txt': 'nuevo', 'd/sub': { 'x.txt': 'x' },
+  });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  const byTarget = Object.fromEntries(plan.resources.map((r) => [r.target, r.status]));
+  assert.equal(byTarget['d/a.txt'], 'identical');
+  assert.equal(byTarget['d/b.txt'], 'update');
+  assert.equal(byTarget['d/sub'], 'identical');
+  assert.deepEqual(plan.retired, []);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan retires only the abandoned units of a covered directory', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'sub': { 'x.txt': 'x', 'y.txt': 'y' } },
+    'solo.txt': 's',
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/sub/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [
+    { target: 'd/sub/y.txt', status: 'retire' },
+    { target: 'solo.txt', status: 'retire' },
+  ]);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan degrades to per-unit conflicts when the recorded tree drifted', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'old.txt': 'o' },
+  });
+  fs.writeFileSync(path.join(dest, 'd', 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'd', 'f'), 'un archivo');
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/f/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  const byTarget = Object.fromEntries(
+    plan.conflicts.map((r) => [r.target, r.removal === true]),
+  );
+  assert.equal(byTarget['d/a.txt'], false);
+  assert.equal(byTarget['d/old.txt'], true);
+  // The file on the way to `d/f/x.txt` is kept, never retired.
+  assert.equal(byTarget['d/f'], undefined);
+  assert.equal(byTarget['d/f/x.txt'], false);
+});
+
+test('update plan creates the children when the recorded directory is gone', () => {
+  const { dest, lock } = destWithLock({}, {
+    extra: [{ target: 'd/', action: 'create', sha256: 'x'.repeat(64) }],
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'create');
+  assert.deepEqual(plan.retired, []);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan keeps the classic path when the recorded directory became a file', () => {
+  const { dest, lock } = destWithLock({ 'd/': { 'a.txt': 'a' } });
+  fs.rmSync(path.join(dest, 'd'), { recursive: true });
+  fs.writeFileSync(path.join(dest, 'd'), 'un archivo');
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  const removal = plan.conflicts.find((r) => r.target === 'd/');
+  assert.equal(removal.removal, true);
+  assert.equal(plan.resources[0].status, 'conflict');
+});
+
+test('update plan falls back to the entry when the recorded directory is unreadable', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'sub': { 'x.txt': 'x' } },
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/sub/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  fs.chmodSync(path.join(dest, 'd', 'sub'), 0);
+  try {
+    const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+    assert.deepEqual(plan.retired, []);
+    const removal = plan.conflicts.find((r) => r.target === 'd/');
+    assert.equal(removal.removal, true);
+  } finally {
+    fs.chmodSync(path.join(dest, 'd', 'sub'), 0o755);
+  }
+});
+
+test('update plan retires an abandoned subdirectory as a single unit', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'extra': { 'x.txt': 'x', 'sub': { 'y.txt': 'y' } } },
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [{ target: 'd/extra', status: 'retire' }]);
+});
+
+test('update plan classifies an expanded directory with an escaping chain as a whole', () => {
+  const outside = tmp();
+  const { dest, lock } = destWithLock({}, {
+    extra: [{ target: 'link/d', action: 'create', sha256: 'x'.repeat(64) }],
+  });
+  fs.symlinkSync(outside, path.join(dest, 'link'));
+  const pkg = pkgWith('paquete', { 'link/d/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  const removal = plan.conflicts.find((r) => r.target === 'link/d');
+  assert.equal(removal.removal, true);
+});
+
+test('update plan keeps a symlink on the way to a shipped target and pins the units', () => {
+  const dest = tmp();
+  writeTree(dest, {
+    'd': { 'a.txt': 'a', 'old.txt': 'o' },
+    'shared': { 'x.txt': 'x' },
+  });
+  fs.symlinkSync('../shared', path.join(dest, 'd', 'link'));
+  const lock = {
+    packages: {
+      paquete: {
+        version: '1.0.0',
+        files: [{
+          target: 'd/', action: 'create', sha256: hashPath(path.join(dest, 'd')),
+        }],
+      },
+    },
+  };
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/link/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  // The kept link may point under a sibling unit, so the abandoned
+  // content degrades to a decision instead of a silent removal.
+  const removal = plan.conflicts.find((r) => r.target === 'd/old.txt');
+  assert.equal(removal.removal, true);
+  assert.equal(plan.conflicts.find((r) => r.target === 'd/link'), undefined);
+});
+
+test('update plan keeps a file on the way to a shipped target without pinning', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a', 'old.txt': 'o', 'f': 'contenido' },
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a', 'd/f/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  // The file is kept: the incoming `d/f/x.txt` cannot land under it
+  // and conflicts on its own, but retiring the file was never an
+  // option — and a kept file does not pin the abandoned units.
+  assert.equal(plan.resources.find((r) => r.target === 'd/f/x.txt').status,
+    'conflict');
+  assert.equal(plan.conflicts.find((r) => r.target === 'd/f'), undefined);
+  assert.deepEqual(plan.retired, [{ target: 'd/old.txt', status: 'retire' }]);
+});
+
+test('update plan keeps an intact recorded non-directory ancestor', () => {
+  const dest = tmp();
+  writeTree(dest, { 'real': { 'x.txt': 'x' } });
+  fs.symlinkSync('real', path.join(dest, 'link'));
+  const lock = {
+    packages: {
+      paquete: {
+        version: '1.0.0',
+        files: [{
+          target: 'link', action: 'create', sha256: hashPath(path.join(dest, 'link')),
+        }],
+      },
+    },
+  };
+  const pkg = pkgWith('paquete', { 'link/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'identical');
+  assert.deepEqual(plan.retired, []);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan degrades a drifted recorded non-directory ancestor to a conflict', () => {
+  const dest = tmp();
+  writeTree(dest, { 'real': { 'x.txt': 'x' } });
+  fs.symlinkSync('real', path.join(dest, 'link'));
+  const lock = {
+    packages: {
+      paquete: {
+        version: '1.0.0',
+        files: [{ target: 'link', action: 'create', sha256: 'x'.repeat(64) }],
+      },
+    },
+  };
+  const pkg = pkgWith('paquete', { 'link/x.txt': 'x' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, []);
+  const removal = plan.conflicts.find((r) => r.target === 'link');
+  assert.equal(removal.removal, true);
+});
+
+test('update plan descends into directories leading to deeper recorded entries', () => {
+  const dest = tmp();
+  writeTree(dest, {
+    'd': { 'a.txt': 'a', 'sub': { 'deep.txt': 'deep', 'sib.txt': 's' } },
+  });
+  fs.symlinkSync('sub', path.join(dest, 'd', 'l'));
+  const deepSha = hashPath(path.join(dest, 'd', 'sub', 'deep.txt'));
+  const lock = {
+    packages: {
+      paquete: {
+        version: '1.0.0',
+        files: [
+          { target: 'd/', action: 'create', sha256: hashPath(path.join(dest, 'd')) },
+          { target: 'd/sub/deep.txt', action: 'create', sha256: deepSha },
+          { target: 'd/l/deep.txt', action: 'create', sha256: deepSha },
+        ],
+      },
+    },
+  };
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  // `d/sub` is not a unit: its recorded child classifies on its own
+  // entry and only the sibling retires. `d/l` leads to a recorded
+  // entry, so it is kept — and it does not pin the expansion.
+  assert.deepEqual(plan.retired, [
+    { target: 'd/sub/sib.txt', status: 'retire' },
+    { target: 'd/sub/deep.txt', status: 'retire' },
+    { target: 'd/l/deep.txt', status: 'retire' },
+  ]);
+});
+
+test('update plan classifies a separately recorded entry inside the tree on its own', () => {
+  const { dest, lock } = destWithLock({
+    'd/': { 'a.txt': 'a' },
+    'd/old.txt': 'o',
+  });
+  const pkg = pkgWith('paquete', { 'd/a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.deepEqual(plan.retired, [{ target: 'd/old.txt', status: 'retire' }]);
+});
+
+test('update plan keeps recorded children under an identical incoming directory', () => {
+  const { dest, lock } = destWithLock({ 'd/a.txt': 'a', 'd/b.txt': 'b' });
+  const pkg = pkgWith('paquete', { 'd': { 'a.txt': 'a', 'b.txt': 'b' } });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'identical');
+  assert.deepEqual(plan.retired, []);
+  assert.deepEqual(plan.conflicts, []);
+});
+
+test('update plan conflicts the incoming directory without retiring its children', () => {
+  const { dest, lock } = destWithLock({ 'd/a.txt': 'a', 'd/b.txt': 'b' });
+  const pkg = pkgWith('paquete', { 'd': { 'a.txt': 'nuevo', 'b.txt': 'b' } });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'conflict');
+  assert.deepEqual(plan.retired, []);
+});
+
 // --- resolveConflicts: la resolución como operación del plan ---
 
 test('resolveConflicts leaves a plan without conflicts untouched', async () => {

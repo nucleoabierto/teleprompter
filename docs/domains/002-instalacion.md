@@ -58,9 +58,26 @@ instalado.
     intacto) y `retire` (registrado, retirado por la versión e
     intacto → eliminación), y marca los retirados con deriva como
     `conflict` de eliminación —`overwrite` quita, `skip` conserva—.
-    Versión igual a la registrada → `upToDate`, sin plan.
+    La unidad del retirado baja a recursos cuando el mapa cambia de
+    granularidad (véase **unidad de retirado**). Versión igual a la
+    registrada → `upToDate`, sin plan.
     - Ancla: `buildUpdatePlan` en `src/plan.js`; contrato en
       `docs/instalador.md` «El plan de actualización»; D015
+  - **Unidad de retirado:** el subárbol máximo bajo un target
+    directorio registrado que ni los targets entrantes ni otra
+    entrada registrada cubren; el retirado opera sobre unidades,
+    no sobre el target completo. Lo que está en el camino de un
+    target entrante se conserva —nunca es unidad—, y un enlace
+    conservado puede apuntar bajo una unidad hermana, así que ancla
+    la expansión: todas las unidades pasan a decisión. Un target
+    registrado descendiente de uno entrante lo gobierna la acción
+    de ese recurso, y un árbol registrado intacto certifica el
+    contenido de sus hijos entrantes —su hash vale como hash
+    registrado para ellos—.
+    - Ancla: `uncoveredUnits` en `src/drift.js`, `isWithin` en
+      `src/paths.js` y `recordedHash` en `src/plan.js`
+    - Origen: tarea
+      `docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md`
 - **Entidades / estado:**
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
@@ -113,7 +130,12 @@ instalado.
     sigue siendo propio— pero no crea registro si nunca se escribió.
     Ancla: `writeLock` en `src/lock.js`
   - Un recurso retirado por la versión solo se elimina intacto —propio
-    y sin tocar—; modificado o no verificable exige decisión. Quedan
+    y sin tocar—; modificado o no verificable exige decisión. La
+    regla opera por unidad de retirado: un target registrado
+    ancestro de targets entrantes se expande en lugar de retirarse
+    entero —y si no puede descenderse se conserva intacto o se
+    decide—; un registrado descendiente de un entrante nunca se
+    retira. Quedan
     excluidos las entradas `skip` y el target de `personalization`
     que el manifiesto **entrante** siga declarando. Si la versión
     declara otra guía, la registrada se retira incluso modificada
@@ -231,8 +253,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-01 (revisión de arquitectura
-  `docs/architecture-reviews/002-instalacion-tras-el-ciclo-de-vida.md`)
+- Última revisión: 2026-10-03 (tarea
+  `docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

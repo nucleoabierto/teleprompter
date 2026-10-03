@@ -66,6 +66,18 @@ export function recordedChainSafe(root, rel) {
     && resolvesUnder(root, path.dirname(path.join(root, rel)));
 }
 
+// Whether `descendant` sits strictly inside `ancestor`, both
+// targets under the same root. The comparison works on normalized
+// paths stripped of their trailing separator —directory targets
+// are recorded as `d/`— because a bare string prefix would
+// conflate `d` with `dir`: `d/x` is inside `d`, `dir/x` is not.
+// An equal pair is never "within": `d` does not start with `d/`.
+export function isWithin(ancestor, descendant) {
+  const a = path.normalize(ancestor).replace(/[/\\]+$/, '');
+  const d = path.normalize(descendant).replace(/[/\\]+$/, '');
+  return d.startsWith(`${a}${path.sep}`);
+}
+
 // The leaf level of the recorded-path defense: for reads that follow
 // the leaf itself a parent-chain proof is not enough — a recorded
 // symlink pointing outside must not disclose its target, so the whole

@@ -25,7 +25,12 @@ nombra el paquete por su `name` en `teleprompter-lock.json`.
 Verifica la versión entrante y presenta el plan de actualización
 completo antes de escribir nada: `create`, `identical`, `update`
 —la versión cambió el recurso y el destino sigue intacto— y
-`retire` —la versión retira un recurso intacto—. Lo que la versión
+`retire` —la versión retira contenido intacto—. Si el mapa cambia
+de granularidad —un directorio instalado pasa a declararse por
+hijos, o hijos colapsan en un directorio— el retirado baja a lo
+abandonado: los targets entrantes y lo que está en su camino quedan
+en disco, y solo se elimina lo que la versión nueva ya no cubre
+bajo el directorio registrado. Lo que la versión
 cambió sobre una edición local, y los retirados modificados, se
 resuelven como las colisiones de `install`: pregunta interactiva,
 `--force`, `--skip` o aborto sin consola —para un retirado la

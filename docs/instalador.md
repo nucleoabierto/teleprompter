@@ -264,6 +264,17 @@ la registrada no produce plan: el paquete ya está en esa versión.
 - `retire` — registrado en el lock pero ausente del manifiesto
   entrante e intacto: la versión lo retira y el plan lo elimina.
 
+Cuando el mapa de instalación cambia de granularidad la comparación
+baja a los recursos: un target directorio registrado que es
+ancestro de targets entrantes no se retira entero —se expande en
+las unidades máximas que el mapa nuevo abandonó bajo él, cada una
+con la misma política de retirados—; lo que queda en el camino de
+un target entrante se conserva, y un enlace conservado ancla la
+expansión a decisiones. Un target registrado descendiente de un
+entrante tampoco se retira: lo gobierna la acción de ese recurso.
+Un árbol registrado intacto certifica el contenido de sus hijos
+entrantes —su hash vale como hash registrado para ellos—.
+
 Los retirados siguen la política de propiedad (D015): intacto se
 elimina automáticamente —lo propio y sin tocar se gestiona—;
 modificado o no verificable degrada a `conflict` marcado como

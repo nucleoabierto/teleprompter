@@ -7,6 +7,14 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- `update` ya no destruye los hijos entrantes cuando el mapa de
+  instalación cambia de granularidad: un target directorio
+  registrado que es ancestro de targets de la versión nueva se
+  expande en unidades de retirado en lugar de eliminarse entero
+  (docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md).
+
 ## [0.2.0] - 2026-10-02
 
 ### Added

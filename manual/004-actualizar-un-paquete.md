@@ -25,6 +25,16 @@ repositorio destino.
 - Un recurso retirado por la versión pero modificado localmente se
   decide igual: quitar o conservar —conservarlo mantiene su registro
   previo—.
+- Si el mapa cambia de granularidad, el retirado baja a lo
+  abandonado: un directorio instalado que la versión nueva declara
+  por hijos conserva los hijos entrantes en disco y solo elimina el
+  contenido que el mapa nuevo ya no cubre —módulo
+  `test/cli.test.js` («update keeps incoming children when the map
+  moves from a directory to per-child targets»)—; el caso inverso
+  —hijos registrados que colapsan en un directorio entrante—
+  reemplaza el subárbol completo («update replaces the subtree
+  wholesale when the map collapses children into a directory
+  target»).
 - `--dry-run` muestra el plan de actualización completo sin escribir
   nada.
 - Si el origen publica un paquete con otro nombre, la invocación es

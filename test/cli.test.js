@@ -995,6 +995,58 @@ test('update re-fetches from the recorded --path origin and applies the plan', a
   );
 });
 
+test('update keeps incoming children when the map moves from a directory to per-child targets', async () => {
+  const { dest, pkg } = await installed(validManifest('granular', {
+    install: [{ source: 'skills', target: 'skills/' }],
+  }), { 'skills/a.txt': 'a', 'skills/b.txt': 'b', 'skills/viejo.txt': 'v' });
+  writePkg(pkg, validManifest('granular', {
+    version: '2.0.0',
+    install: [
+      { source: 'skills/a.txt', target: 'skills/a.txt' },
+      { source: 'skills/b.txt', target: 'skills/b.txt' },
+    ],
+  }), { 'skills/a.txt': 'a', 'skills/b.txt': 'nuevo' });
+  const { code, stdout, stderr } = await run(['update', 'granular'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /identical\s+skills\/a\.txt/);
+  assert.match(out, /update\s+skills\/b\.txt/);
+  assert.match(out, /retire\s+skills\/viejo\.txt/);
+  assert.doesNotMatch(out, /retire\s+skills\/$/m);
+  assert.equal(fs.readFileSync(path.join(dest, 'skills/a.txt'), 'utf8'), 'a');
+  assert.equal(fs.readFileSync(path.join(dest, 'skills/b.txt'), 'utf8'), 'nuevo');
+  assert.ok(!fs.existsSync(path.join(dest, 'skills/viejo.txt')));
+  const lock = lockOf(dest);
+  assert.equal(lock.packages.granular.version, '2.0.0');
+  // The `identical` child stays on disk but unrecorded — registering
+  // identical targets is a separate defect (task 030).
+  assert.deepEqual(
+    lock.packages.granular.files.map((f) => f.target), ['skills/b.txt'],
+  );
+});
+
+test('update replaces the subtree wholesale when the map collapses children into a directory target', async () => {
+  const { dest } = await installed(validManifest('colapso', {
+    install: [
+      { source: 'skills/a.txt', target: 'skills/a.txt' },
+      { source: 'skills/b.txt', target: 'skills/b.txt' },
+    ],
+  }), { 'skills/a.txt': 'a', 'skills/b.txt': 'b' });
+  const nuevo = path.join(tmp(), 'colapso');
+  writePkg(nuevo, validManifest('colapso', {
+    version: '2.0.0',
+    install: [{ source: 'skills', target: 'skills/' }],
+  }), { 'skills/a.txt': 'a2', 'skills/c.txt': 'c' });
+  const { code, stdout, stderr } = await run(
+    ['update', 'colapso', '--path', nuevo, '--force'], { cwd: dest },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.doesNotMatch(stdout.join('\n'), /retire/);
+  assert.equal(fs.readFileSync(path.join(dest, 'skills/a.txt'), 'utf8'), 'a2');
+  assert.equal(fs.readFileSync(path.join(dest, 'skills/c.txt'), 'utf8'), 'c');
+  assert.ok(!fs.existsSync(path.join(dest, 'skills/b.txt')));
+});
+
 test('update reports already at that version when nothing changed', async () => {
   const { dest } = await installed(validManifest('igual'), { 'a.txt': 'a' });
   const { code, stdout } = await run(['update', 'igual'], { cwd: dest });
