@@ -48,4 +48,11 @@
 - [x] docs/tasks/022-escritura-atomica-del-registro.md — Escritura atómica del registro
 - [x] docs/tasks/025-guia-conservada-tras-retiro.md — Comportamiento de `guide` sobre una guía conservada tras retiro
 
+## Hito 6: Cadena de release a npm
+<!-- épica: docs/epics/005-cadena-de-release.md -->
+
+- [ ] docs/tasks/026-alinear-tags-con-contenido-publicado.md — Alinear los tags de release con el contenido publicado
+- [ ] docs/tasks/027-cadena-de-release.md — Definir y documentar la cadena de release
+- [ ] docs/tasks/028-trusted-publishing-ci.md — Publicación por CI con trusted publishing
+
 ## Propuestas en revisión
