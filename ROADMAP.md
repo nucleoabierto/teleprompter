@@ -13,21 +13,17 @@ acto repetible.
 
 ## Now
 
-- 1. **Colecciones** — habilitar repositorios con varios paquetes y
-  la selección entre ellos (`collection: true` ya está previsto en
-  el formato).
-  - Justificación: es la línea que más cambia la superficie pública
-    del formato; resolverla antes del próximo release mantiene
-    coherente la evolución del formato con lo ya publicado.
-
-## Next
-
 - 1. **Endurecimiento de la obtención remota** — timeout, límite de
   tamaño y distinción de errores HTTP, residuales registrados en la
   revisión de la tarea 012.
   - Justificación: `update` hace que el fetch se invoque con mucha
     más frecuencia que en `install`, de modo que el costo de un fetch
-    frágil creció con el ciclo de vida.
+    frágil creció con el ciclo de vida; con Colecciones cerrada, es
+    la única línea de Next y pasa a Now.
+
+## Next
+
+- Vacío: no quedan líneas comprometidas sin horizonte.
 
 ## Later
 
@@ -66,3 +62,9 @@ acto repetible.
   con D018, trusted publishing materializado en CI y validado de
   punta a punta con el release 0.2.1 —provenance incluido—;
   Colecciones pasa a Now)
+- Usuario: 2026-10-04 — Aprueba (hito 7 cerrado: la épica 006
+  materializó las colecciones —selección por nombre con `--package`
+  según D019, instalación local y remota por unidades atómicas,
+  `origin.package` con re-resolución en `update`, colección de
+  referencia e2e en `examples/` y manual renovado con Material—;
+  Endurecimiento de la obtención remota pasa a Now)

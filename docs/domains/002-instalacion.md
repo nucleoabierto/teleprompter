@@ -33,12 +33,22 @@ instalado.
     cuando el manifiesto la declara; `origin` registra de dónde vino
     la instalación —`{type:'github',repo,ref?}` o
     `{type:'path',path}` absoluta—, opcional en entradas escritas
-    antes del campo. Es la memoria que distingue lo propio de lo
-    ajeno.
+    antes del campo; una instalación desde colección añade
+    `package` con el nombre del miembro y el origen apunta a la
+    raíz de la colección. Es la memoria que distingue lo propio de
+    lo ajeno.
     - Ancla: `readLock`, `isValidLock`, `writeLock`, `lockEntry` y
       `lockEntries` en `src/lock.js` —la forma del registro solo se
       navega desde ese módulo— y `originOf` en `src/cli.js`;
-      D007, D014
+      D007, D014, D019
+  - **Unidad de colección:** cada paquete que una selección nombra
+    dentro de una colección; se instala como instalación plena e
+    independiente —plan, colisiones, guía y registro propios—, en
+    ejecución secuencial y atómica por unidad. La actualización
+    re-resuelve el miembro por su nombre en el índice del árbol
+    recién obtenido.
+    - Ancla: `selectUnits` e `installUnit` en `src/cli.js`,
+      `resolveSelection` en `src/collection.js`; D019
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
@@ -257,8 +267,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-03 (tarea
-  `docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md`)
+- Última revisión: 2026-10-04 (épica
+  `docs/epics/006-colecciones.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

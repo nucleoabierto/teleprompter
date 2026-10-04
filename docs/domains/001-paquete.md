@@ -20,8 +20,16 @@ destino— para que una instalación sea inspectable y repetible.
     - Ancla: `TOP_LEVEL_FIELDS` y `VALIDATORS` en `src/manifest.js`;
       contrato en `docs/especificacion-paquete.md`
   - **Colección:** un manifiesto con `collection: true` describe un
-    conjunto de paquetes y no es instalable.
-    - Ancla: `checkCollection` en `src/manifest.js`
+    conjunto de paquetes por ruta —un contenedor puro que no se
+    instala como paquete: el instalador lo resuelve a los miembros
+    que el consumidor selecciona.
+    - Ancla: `checkCollection` y `loadCollectionManifest` en
+      `src/manifest.js`; `src/collection.js`; D002, D019
+  - **Selección:** el conjunto de nombres con los que el consumidor
+    elige miembros de una colección —por el `name` de cada paquete,
+    nunca por ruta; repetir un nombre es un solo miembro.
+    - Ancla: `resolveSelection` y `isCollectionDir` en
+      `src/collection.js`; D019
   - **Entrada install:** par `source` (ruta dentro del paquete que debe
     existir) → `target` (ruta relativa dentro del destino).
     - Ancla: `checkInstallEntry` en `src/manifest.js`
@@ -61,6 +69,9 @@ destino— para que una instalación sea inspectable y repetible.
   - Cargar y validar el manifiesto de un directorio de paquete:
     `loadManifest` en `src/manifest.js` —devuelve errores, avisos y el
     manifiesto; nunca lanza.
+  - Cargar y validar el manifiesto de colección de un directorio:
+    `loadCollectionManifest` en `src/manifest.js` —mismo contrato de
+    lectura; los campos propios de paquete son error.
 
 ## Explicación del dominio
 
@@ -77,8 +88,10 @@ destino— para que una instalación sea inspectable y repetible.
     semver explícita, mapa `install`.
   - `docs/decisions/D010` — `.teleprompter/` como namespace gestionado
     para la guía de personalización.
+  - `docs/decisions/D019` — la selección en colecciones es por
+    nombre, con `--package` repetible.
 
 ## Estado de salud
 
-- Última revisión: 2026-09-29
+- Última revisión: 2026-10-04
 - Divergencias conocidas: Ninguna

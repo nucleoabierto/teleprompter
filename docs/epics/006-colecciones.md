@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada | [ ] Completada
+[x] Planificada | [x] Completada
 
 ## Objetivo
 
