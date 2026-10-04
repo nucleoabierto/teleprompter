@@ -115,11 +115,257 @@ test('main exits 1 on an invalid manifest without writing to the destination', a
   assert.deepEqual(fs.readdirSync(dest), []);
 });
 
-test('main exits 1 on a collection manifest', async () => {
-  const pkg = path.join(tmp(), 'coleccion');
-  writePkg(pkg, { collection: true, name: 'coleccion', packages: [] });
-  const { code } = await run(['--path', pkg, tmp()]);
+// --- colecciones ---
+
+// A collection fixture: the index manifest at the root plus one
+// package directory per member, built with the same writePkg helper.
+function writeCollection(dir, members, index = {}) {
+  writePkg(dir, {
+    collection: true,
+    name: path.basename(dir),
+    packages: members.map(({ path: p }) => ({ path: p })),
+    ...index,
+  });
+  for (const member of members) {
+    writePkg(path.join(dir, member.path), member.manifest ?? validManifest(path.basename(member.path)), member.files ?? { 'a.txt': 'a' });
+  }
+}
+
+test('a collection without --package prints the index and writes nothing', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa', manifest: validManifest('alfa', { description: 'el primero' }) },
+    { path: 'beta' },
+  ]);
+  const { code, stdout, stderr } = await run(['--path', coll, dest]);
+  assert.equal(code, EXIT_USAGE);
+  const shown = stdout.join('\n');
+  assert.match(shown, /el origen es una colección/);
+  assert.match(shown, /alfa\s+1\.0\.0\s+el primero/);
+  assert.match(shown, /beta\s+1\.0\.0/);
+  assert.match(stderr.join('\n'), /--package/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a collection of one member still requires --package', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{ path: 'alfa' }]);
+  const { code, stderr } = await run(['--path', coll, dest]);
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /--package/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--package installs the selected member of a local collection', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa' },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'beta']);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.beta.version, '1.0.0');
+  assert.equal(lock.packages.alfa, undefined);
+  assert.deepEqual(lock.packages.beta.origin, {
+    type: 'path', path: coll, package: 'beta',
+  });
+});
+
+test('several --package flags install each member in order with its own lock entry', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa' },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+  ]);
+  const { code, stdout, stderr } = await run(
+    ['--path', coll, dest, '--package', 'beta', '--package', 'alfa'],
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+  const shown = stdout.join('\n');
+  assert.ok(shown.indexOf('instalado: beta') < shown.indexOf('instalado: alfa'));
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.alfa.origin.package, 'alfa');
+  assert.equal(lock.packages.beta.origin.package, 'beta');
+});
+
+test('a repeated --package name installs the member once', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{ path: 'alfa' }]);
+  const { code, stdout, stderr } = await run(
+    ['--path', coll, dest, '--package', 'alfa', '--package', 'alfa'],
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(stdout.join('\n').match(/instalado: alfa/g).length, 1);
+});
+
+test('--package on a remote collection resolves inside the fetched tree', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const work = tmp();
+  const root = path.join(work, 'familia-abc123');
+  writeCollection(root, [
+    { path: 'alfa' },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+  ]);
+  const archive = path.join(work, 'a.tgz');
+  await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
+  const spy = spyFetch(okResponse(fs.readFileSync(archive)));
+  const { code, stderr } = await run(
+    ['o/familia', dest, '--package', 'beta'],
+    { tmpBase, fetch: spy.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.beta.origin, {
+    type: 'github', repo: 'o/familia', package: 'beta',
+  });
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('--package with a name absent from the index lists the available ones', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{ path: 'alfa' }, { path: 'beta' }]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'gamma']);
+  assert.equal(code, EXIT_USAGE);
+  const shown = stderr.join('\n');
+  assert.match(shown, /no tiene el paquete "gamma"/);
+  assert.match(shown, /disponibles: alfa, beta/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--package with a package origin (not a collection) is an error', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'local-pkg');
+  writePkg(pkg, validManifest('local-pkg'), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest, '--package', 'a']);
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no es una colección/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--package is rejected by update', async () => {
+  const { code, stderr } = await run(['update', 'a', '--package', 'b']);
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr[0], /uso:/);
+});
+
+test('duplicated basenames in the index make that selection ambiguous', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'uno/alfa' },
+    { path: 'dos/alfa' },
+    { path: 'beta' },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'alfa']);
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /varias veces en el índice/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a member with an invalid manifest fails only when selected', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'roto', manifest: { name: 'roto' } },
+    { path: 'beta' },
+  ]);
+  const bad = await run(['--path', coll, dest, '--package', 'roto']);
+  assert.equal(bad.code, EXIT_MANIFEST);
+  assert.deepEqual(fs.readdirSync(dest), []);
+  const good = await run(['--path', coll, dest, '--package', 'beta']);
+  assert.equal(good.code, EXIT_OK, good.stderr.join('\n'));
+});
+
+test('an index member with a broken manifest shows marked in the index', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'roto', manifest: { name: 'roto' } },
+    { path: 'beta' },
+  ]);
+  const { code, stdout } = await run(['--path', coll, dest]);
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stdout.join('\n'), /roto\s+\(manifiesto inválido\)/);
+});
+
+test('an index entry pointing to another collection errors when selected', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'anidada', manifest: { collection: true, packages: [] } },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'anidada']);
   assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /colección/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('an index path that does not exist errors when selected', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writePkg(coll, {
+    collection: true,
+    name: 'coleccion',
+    packages: [{ path: 'fantasma' }],
+  });
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'fantasma']);
+  assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /no existe/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a failure on the Nth unit leaves the previous ones installed', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa' },
+    { path: 'beta', manifest: { name: 'beta' } },
+  ]);
+  const { code } = await run(['--path', coll, dest, '--package', 'alfa', '--package', 'beta']);
+  assert.equal(code, EXIT_MANIFEST);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.alfa.version, '1.0.0');
+  assert.equal(lock.packages.beta, undefined);
+});
+
+test('--dry-run with several --package prints every plan and writes nothing', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{ path: 'alfa' }, { path: 'beta' }]);
+  const { code, stdout, stderr } = await run(
+    ['--path', coll, dest, '--package', 'alfa', '--package', 'beta', '--dry-run'],
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(stdout.join('\n').match(/plan de instalación:/g).length, 2);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--skip applies to every selected unit', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'local');
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa', manifest: validManifest('alfa', { install: [{ source: 'a.txt', target: 'a.txt' }] }) },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'a.txt', target: 'a.txt' }] }), files: { 'a.txt': 'a' } },
+  ]);
+  const { code, stderr } = await run(
+    ['--path', coll, dest, '--package', 'alfa', '--package', 'beta', '--skip'],
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'local');
 });
 
 test('main exits 2 on an unmet precondition without writing', async () => {
@@ -1483,4 +1729,54 @@ test('update exits 4 when the recorded repo origin is malformed', async () => {
   const { code, stderr } = await run(['update', 'raro'], { cwd: dest });
   assert.equal(code, EXIT_USAGE);
   assert.match(stderr.join('\n'), /no es un repositorio válido/);
+});
+
+test('an invalid collection manifest aborts with its errors', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writePkg(coll, {
+    collection: true,
+    name: 'coleccion',
+    packages: [{ path: 'alfa' }],
+    version: '1.0.0',
+  });
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'alfa']);
+  assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /manifiesto de colección inválido: version: campo de paquete/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--force applies to every selected unit', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'local');
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'alfa', manifest: validManifest('alfa', { install: [{ source: 'a.txt', target: 'a.txt' }] }) },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'a.txt', target: 'a.txt' }] }), files: { 'a.txt': 'a' } },
+  ]);
+  const { code, stderr } = await run(
+    ['--path', coll, dest, '--package', 'alfa', '--package', 'beta', '--force'],
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+});
+
+test('a remote collection with @ref records ref and package in the origin', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const work = tmp();
+  const root = path.join(work, 'familia-abc123');
+  writeCollection(root, [{ path: 'alfa' }]);
+  const archive = path.join(work, 'a.tgz');
+  await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
+  const spy = spyFetch(okResponse(fs.readFileSync(archive)));
+  const { code, stderr } = await run(
+    ['o/familia@v2', dest, '--package', 'alfa'],
+    { tmpBase, fetch: spy.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.alfa.origin, {
+    type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
+  });
 });

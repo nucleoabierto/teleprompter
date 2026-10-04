@@ -9,6 +9,8 @@ import {
 } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 import { classifyResource } from './drift.js';
+import { loadCollectionManifest } from './manifest.js';
+import { isCollectionDir, resolveSelection, describeIndex } from './collection.js';
 
 export const EXIT_OK = 0;
 export const EXIT_MANIFEST = 1;
@@ -17,9 +19,10 @@ export const EXIT_EXECUTION = 3;
 export const EXIT_USAGE = 4;
 export const EXIT_FETCH = 5;
 
-const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--force|--skip] [--dry-run] | guide [<paquete>] | list | check | update <paquete> [<user/repo[@ref]>|--path <paquete>] [--ref <ref>] [--force|--skip] [--dry-run]';
+const USAGE = 'uso: teleprompter [install] <user/repo[@ref]> [destino] | --path <paquete> [destino] [--package <nombre>]... [--force|--skip] [--dry-run] | guide [<paquete>] | list | check | update <paquete> [<user/repo[@ref]>|--path <paquete>] [--ref <ref>] [--force|--skip] [--dry-run]';
 const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
 const VALUE_OPTIONS = new Set(['--path', '--ref']);
+const MULTI_OPTIONS = new Set(['--package']);
 
 function splitArgs(rest) {
   const args = [];
@@ -27,11 +30,16 @@ function splitArgs(rest) {
   const options = {};
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
-    if (VALUE_OPTIONS.has(arg)) {
-      if (options[arg] !== undefined) return null;
+    if (VALUE_OPTIONS.has(arg) || MULTI_OPTIONS.has(arg)) {
       const value = rest[++i];
       if (value === undefined || value.startsWith('--')) return null;
-      options[arg] = value;
+      if (MULTI_OPTIONS.has(arg)) {
+        options[arg] = [...(options[arg] ?? []), value];
+      } else if (options[arg] !== undefined) {
+        return null;
+      } else {
+        options[arg] = value;
+      }
     } else if (arg.startsWith('--')) {
       flags.add(arg);
     } else {
@@ -65,6 +73,7 @@ function parseArgs(argv) {
     const split = splitArgs(argv.slice(1));
     if (split === null) return null;
     const { args, flags, options } = split;
+    if (options['--package'] !== undefined) return null;
     if (args.length < 1 || args.length > 2) return null;
     if (options['--ref'] !== undefined && !isValidRef(options['--ref'])) return null;
     if (options['--path'] !== undefined) {
@@ -96,14 +105,26 @@ function parseArgs(argv) {
   const { args, flags, options } = split;
   if (options['--path'] !== undefined) {
     if (args.length > 1 || options['--ref'] !== undefined) return null;
-    return { command: 'install', source: { kind: 'path', dir: options['--path'] }, dest: args[0], flags };
+    return {
+      command: 'install',
+      source: { kind: 'path', dir: options['--path'] },
+      dest: args[0],
+      flags,
+      packages: options['--package'] ?? [],
+    };
   }
   if (args.length < 1 || args.length > 2) return null;
   const spec = parseRepoSpec(args[0]);
   if (spec === null || (spec.ref !== null && options['--ref'] !== undefined)) return null;
   if (options['--ref'] !== undefined && !isValidRef(options['--ref'])) return null;
   spec.ref = options['--ref'] ?? spec.ref;
-  return { command: 'install', source: { kind: 'repo', spec }, dest: args[1], flags };
+  return {
+    command: 'install',
+    source: { kind: 'repo', spec },
+    dest: args[1],
+    flags,
+    packages: options['--package'] ?? [],
+  };
 }
 
 function printPlan(plan, out, title) {
@@ -332,14 +353,14 @@ function checkGuideDestination(destDir, manifest, err) {
 // and reports what happened — the same ending for install and update
 // apart from the final verb. On failure the report lists the actions
 // already applied so the partial state is visible.
-function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, source, verb }) {
+function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, origin, verb }) {
   let actions;
   let guide;
   let guideContent = null;
   try {
     actions = executePlan(pkgDir, destDir, plan);
     guide = installPersonalization(pkgDir, destDir, manifest);
-    writeLock(destDir, lock, manifest, actions, originOf(source));
+    writeLock(destDir, lock, manifest, actions, origin);
     // Deliver what was installed, not the package source — the
     // managed copy survives a remote fetch's cleanup and is the same
     // content `guide` will show later.
@@ -434,7 +455,7 @@ async function runUpdate(io, out, err, parsed) {
     }
 
     return executeAndReport(out, err, {
-      pkgDir, destDir, lock, plan, manifest, source, verb: 'actualizado',
+      pkgDir, destDir, lock, plan, manifest, origin: originOf(source), verb: 'actualizado',
     });
   } finally {
     if (cleanup !== null) cleanup();
@@ -464,10 +485,82 @@ function originOf(source) {
   return ref === null ? { type: 'github', repo } : { type: 'github', repo, ref };
 }
 
-// `install` checks its invocation's paths, then runs the shared
-// pipeline over the install plan — obtain, verify, plan, resolve,
-// execute, register, report.
-async function runInstall(io, out, err, { source, dest, flags }) {
+// A collection origin resolves to member units selected by name; a
+// package origin resolves to itself. Everything here is read-only:
+// no selection prints the index and aborts before any write.
+function selectUnits(out, err, rootDir, names) {
+  if (!isCollectionDir(rootDir)) {
+    if (names.length > 0) {
+      err('el origen no es una colección: --package no aplica');
+      return { code: EXIT_USAGE };
+    }
+    return { units: [{ dir: rootDir }] };
+  }
+  const collection = loadCollectionManifest(rootDir);
+  for (const warning of collection.warnings) out(`aviso: ${warning}`);
+  if (collection.errors.length > 0) {
+    for (const error of collection.errors) {
+      err(`manifiesto de colección inválido: ${error}`);
+    }
+    return { code: EXIT_MANIFEST };
+  }
+  if (names.length === 0) {
+    out('el origen es una colección:');
+    for (const entry of describeIndex(rootDir, collection.manifest)) {
+      out(entry.invalid
+        ? `  ${entry.name.padEnd(24)}(manifiesto inválido)`
+        : `  ${entry.name.padEnd(24)}${entry.version}${entry.description === undefined ? '' : `  ${entry.description}`}`);
+    }
+    err('selecciona con --package <nombre>');
+    return { code: EXIT_USAGE };
+  }
+  const resolved = resolveSelection(rootDir, collection.manifest, names);
+  if (!resolved.ok) {
+    for (const error of resolved.errors) err(error);
+    if (resolved.available.length > 0) {
+      err(`disponibles: ${resolved.available.join(', ')}`);
+    }
+    return { code: EXIT_USAGE };
+  }
+  return { units: resolved.units };
+}
+
+// One installable unit through the shared pipeline: verify, plan,
+// settle, execute, register, report. The lock is re-read per unit
+// because a previous unit of the same invocation already wrote its
+// own entry — writeLock builds on what it is given.
+async function installUnit(io, out, err, { source, unit, destDir, flags }) {
+  const result = verifyPackage(unit.dir, destDir);
+  const invalid = checkVerified(result, out, err);
+  if (invalid !== null) return invalid;
+  const { manifest } = result;
+
+  const lock = readLock(destDir);
+  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  const plan = buildPlan(unit.dir, manifest, destDir, result.creates, lock);
+  printPlan(plan, out, 'plan de instalación:');
+
+  const unresolved = await settleConflicts(io, out, err, flags, plan);
+  if (unresolved !== null) return unresolved;
+  const escaping = checkGuideDestination(destDir, manifest, err);
+  if (escaping !== null) return escaping;
+
+  if (flags.has('--dry-run')) {
+    out('fin del plan (--dry-run): nada se escribió');
+    return EXIT_OK;
+  }
+
+  const origin = { ...originOf(source) };
+  if (unit.name !== undefined) origin.package = unit.name;
+  return executeAndReport(out, err, {
+    pkgDir: unit.dir, destDir, lock, plan, manifest, origin, verb: 'instalado',
+  });
+}
+
+// `install` checks its invocation's paths, obtains the origin once
+// and runs the shared pipeline per selected unit — a collection
+// fans out to its chosen members, each an independent install.
+async function runInstall(io, out, err, { source, dest, flags, packages }) {
   const destDir = dest ?? io.cwd;
   const badPaths = source.kind === 'path'
     ? [source.dir, destDir].filter((p) => !isDir(p))
@@ -481,29 +574,13 @@ async function runInstall(io, out, err, { source, dest, flags }) {
   if (!obtained.ok) return obtained.code;
   const { pkgDir, cleanup } = obtained;
   try {
-    const result = verifyPackage(pkgDir, destDir);
-    const invalid = checkVerified(result, out, err);
-    if (invalid !== null) return invalid;
-    const { manifest } = result;
-
-    const lock = readLock(destDir);
-    for (const warning of lock.warnings) out(`aviso: ${warning}`);
-    const plan = buildPlan(pkgDir, manifest, destDir, result.creates, lock);
-    printPlan(plan, out, 'plan de instalación:');
-
-    const unresolved = await settleConflicts(io, out, err, flags, plan);
-    if (unresolved !== null) return unresolved;
-    const escaping = checkGuideDestination(destDir, manifest, err);
-    if (escaping !== null) return escaping;
-
-    if (flags.has('--dry-run')) {
-      out('fin del plan (--dry-run): nada se escribió');
-      return EXIT_OK;
+    const selected = selectUnits(out, err, pkgDir, packages);
+    if (selected.units === undefined) return selected.code;
+    for (const unit of selected.units) {
+      const code = await installUnit(io, out, err, { source, unit, destDir, flags });
+      if (code !== EXIT_OK) return code;
     }
-
-    return executeAndReport(out, err, {
-      pkgDir, destDir, lock, plan, manifest, source, verb: 'instalado',
-    });
+    return EXIT_OK;
   } finally {
     if (cleanup !== null) cleanup();
   }

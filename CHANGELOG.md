@@ -7,6 +7,15 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Added
+
+- `install` acepta repositorios multi-paquete —colecciones—: con
+  `--package <nombre>` (repetible) instala los paquetes elegidos del
+  índice; sin selección imprime el índice y aborta. Cada paquete
+  instalado es una unidad independiente del ciclo de vida y el
+  registro guarda su `origin` con el nombre elegido para que
+  `update` lo re-resuelva.
+
 ## [0.2.1] - 2026-10-04
 
 ### Fixed

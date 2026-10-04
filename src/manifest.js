@@ -197,29 +197,32 @@ const VALIDATORS = [
   }),
 ];
 
-// Never throws: every problem lands in errors so the CLI can report
-// them all in one pass instead of failing on the first one.
-export function loadManifest(pkgDir) {
-  const warnings = [];
-  const errors = [];
-  const manifestPath = path.join(pkgDir, 'teleprompter.json');
-
+// The shared preamble: read and parse the manifest file. Never
+// throws — every problem lands in errors so the CLI can report them
+// all in one pass instead of failing on the first one.
+function readManifestFile(dir) {
+  const manifestPath = path.join(dir, 'teleprompter.json');
   let raw;
   try {
     raw = fs.readFileSync(manifestPath, 'utf8');
   } catch {
-    return { manifest: null, warnings, errors: [`no existe ${manifestPath}`] };
+    return { manifest: null, errors: [`no existe ${manifestPath}`] };
   }
-
-  let manifest;
   try {
-    manifest = JSON.parse(raw);
+    const manifest = JSON.parse(raw);
+    if (!isPlainObject(manifest)) {
+      return { manifest: null, errors: ['el manifiesto debe ser un objeto JSON'] };
+    }
+    return { manifest, errors: [] };
   } catch (error) {
-    return { manifest: null, warnings, errors: [`JSON inválido en ${manifestPath}: ${error.message}`] };
+    return { manifest: null, errors: [`JSON inválido en ${manifestPath}: ${error.message}`] };
   }
-  if (!isPlainObject(manifest)) {
-    return { manifest: null, warnings, errors: ['el manifiesto debe ser un objeto JSON'] };
-  }
+}
+
+export function loadManifest(pkgDir) {
+  const warnings = [];
+  const { manifest, errors } = readManifestFile(pkgDir);
+  if (manifest === null) return { manifest: null, warnings, errors };
 
   for (const key of Object.keys(manifest)) {
     if (!TOP_LEVEL_FIELDS.has(key)) {
@@ -227,6 +230,77 @@ export function loadManifest(pkgDir) {
     }
   }
   for (const validate of VALIDATORS) validate(manifest, { pkgDir }, errors);
+
+  return { manifest: errors.length === 0 ? manifest : null, warnings, errors };
+}
+
+const COLLECTION_FIELDS = new Set([
+  'format', 'name', 'description', 'license', 'author',
+  'collection', 'packages', 'metadata',
+]);
+
+const PACKAGE_ONLY_FIELDS = ['version', 'install', 'requires', 'personalization'];
+
+// A collection manifest describes the index, not an installable
+// unit: the package contract's own fields are errors here, and the
+// name is cosmetic — no directory match, just the name shape.
+export function loadCollectionManifest(colDir) {
+  const warnings = [];
+  const { manifest, errors } = readManifestFile(colDir);
+  if (manifest === null) return { manifest: null, warnings, errors };
+
+  for (const key of Object.keys(manifest)) {
+    if (!COLLECTION_FIELDS.has(key)) {
+      warnings.push(`campo desconocido ignorado: "${key}"`);
+    }
+  }
+  if (manifest.collection !== true) {
+    errors.push('collection: debe ser true en un manifiesto de colección');
+  }
+  for (const field of PACKAGE_ONLY_FIELDS) {
+    if (manifest[field] !== undefined) {
+      errors.push(`${field}: campo de paquete no permitido en una colección`);
+    }
+  }
+  if (manifest.format !== undefined && manifest.format !== KNOWN_FORMAT) {
+    errors.push(`format: desconocido "${manifest.format}" (esperado "${KNOWN_FORMAT}")`);
+  }
+  if (manifest.name !== undefined
+    && (!isNonEmptyString(manifest.name)
+      || manifest.name.length > 64 || !NAME_RE.test(manifest.name))) {
+    errors.push('name: debe ser kebab-case (minúsculas, números y guiones, máx. 64)');
+  }
+  if (!Array.isArray(manifest.packages)) {
+    errors.push('packages: obligatorio, lista de { "path" }');
+  } else {
+    manifest.packages.forEach((entry, index) => {
+      const where = `packages[${index}]`;
+      if (!isPlainObject(entry)) {
+        errors.push(`${where}: debe ser un objeto { "path" }`);
+        return;
+      }
+      checkKeys(entry, new Set(['path']), where, errors);
+      checkRelativePath(entry.path, `${where}.path`, errors);
+    });
+  }
+  if (manifest.author !== undefined) {
+    if (!isPlainObject(manifest.author)) {
+      errors.push('author: debe ser un objeto { "name", "email"?, "url"? }');
+    } else {
+      checkKeys(manifest.author, OBJECT_KEYS.author, 'author', errors);
+      if (!isNonEmptyString(manifest.author.name)) {
+        errors.push('author.name: obligatorio dentro de author');
+      }
+    }
+  }
+  if (manifest.metadata !== undefined && !isPlainObject(manifest.metadata)) {
+    errors.push('metadata: debe ser un objeto');
+  }
+  for (const field of ['description', 'license']) {
+    if (manifest[field] !== undefined && typeof manifest[field] !== 'string') {
+      errors.push(`${field}: debe ser una cadena`);
+    }
+  }
 
   return { manifest: errors.length === 0 ? manifest : null, warnings, errors };
 }

@@ -28,7 +28,7 @@ manual.
 
 - [x] docs/tasks/031-definir-comportamiento-colecciones.md —
   Definir el comportamiento de instalación desde colecciones
-- [ ] docs/tasks/032-instalar-desde-coleccion.md — Instalar el
+- [x] docs/tasks/032-instalar-desde-coleccion.md — Instalar el
   paquete seleccionado de una colección
 - [ ] docs/tasks/033-origen-y-ciclo-de-vida-coleccion.md —
   `origin` de colección en el registro y ciclo de vida por paquete

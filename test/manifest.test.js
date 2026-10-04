@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { loadManifest } from '../src/manifest.js';
+import { loadManifest, loadCollectionManifest } from '../src/manifest.js';
 import { isSafeRelative } from '../src/paths.js';
 
 function tmp() {
@@ -174,4 +174,76 @@ test('isSafeRelative rejects absolute, dot-dot, and Windows-style paths', () => 
   assert.equal(isSafeRelative('a\\..\\b'), false);
   assert.equal(isSafeRelative('C:\\x'), false);
   assert.equal(isSafeRelative('\\\\servidor\\x'), false);
+});
+
+// --- manifiesto de colección ---
+
+function collErrors(manifest) {
+  const dir = path.join(tmp(), 'coleccion');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'teleprompter.json'),
+    typeof manifest === 'string' ? manifest : JSON.stringify(manifest));
+  return loadCollectionManifest(dir);
+}
+
+const baseCollection = { collection: true, packages: [{ path: 'alfa' }] };
+
+test('loadCollectionManifest accepts a well-formed collection index', () => {
+  const { manifest, errors } = collErrors({
+    ...baseCollection,
+    name: 'familia',
+    description: 'varios',
+    author: { name: 'a' },
+    metadata: { x: 1 },
+  });
+  assert.deepEqual(errors, []);
+  assert.equal(manifest.collection, true);
+});
+
+test('loadCollectionManifest reports a missing or broken manifest file', () => {
+  const dir = path.join(tmp(), 'vacia');
+  fs.mkdirSync(dir);
+  assert.match(loadCollectionManifest(dir).errors[0], /no existe/);
+  assert.match(collErrors('{').errors[0], /JSON inválido/);
+  assert.match(collErrors('[]').errors[0], /debe ser un objeto/);
+});
+
+test('loadCollectionManifest requires collection: true', () => {
+  const { errors } = collErrors({ packages: [] });
+  assert.ok(errors.some((e) => /collection: debe ser true/.test(e)));
+});
+
+test('loadCollectionManifest rejects package-only fields', () => {
+  for (const field of ['version', 'install', 'requires', 'personalization']) {
+    const { errors } = collErrors({ ...baseCollection, [field]: field === 'install' ? [] : 'x' });
+    assert.ok(errors.some((e) => e.startsWith(`${field}: campo de paquete`)), field);
+  }
+});
+
+test('loadCollectionManifest validates format, name, author, metadata and strings', () => {
+  assert.ok(collErrors({ ...baseCollection, format: 'otro@9' }).errors.some((e) => /format/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, name: 'Mayus' }).errors.some((e) => /name: debe ser kebab-case/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, name: 7 }).errors.some((e) => /name: debe ser kebab-case/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, author: 'x' }).errors.some((e) => /author: debe ser un objeto/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, author: {} }).errors.some((e) => /author\.name/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, author: { name: 'a', raro: 1 } }).errors.some((e) => /campo desconocido/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, metadata: 3 }).errors.some((e) => /metadata/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, description: 1 }).errors.some((e) => /description: debe ser una cadena/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, license: 1 }).errors.some((e) => /license: debe ser una cadena/.test(e)));
+});
+
+test('loadCollectionManifest validates the packages index entries', () => {
+  assert.ok(collErrors({ collection: true }).errors.some((e) => /packages: obligatorio/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: 'x' }).errors.some((e) => /packages: obligatorio/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: ['alfa'] }).errors.some((e) => /debe ser un objeto/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: [{ path: 'a', name: 'a' }] }).errors.some((e) => /campo desconocido "name"/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: [{ path: '' }] }).errors.some((e) => /cadena no vacía/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: [{ path: '/abs' }] }).errors.some((e) => /ruta absoluta/.test(e)));
+  assert.ok(collErrors({ ...baseCollection, packages: [{ path: '../fuera' }] }).errors.some((e) => /\.\./.test(e)));
+});
+
+test('loadCollectionManifest warns on unknown fields but keeps the manifest', () => {
+  const { manifest, warnings } = collErrors({ ...baseCollection, raro: 1 });
+  assert.equal(manifest.collection, true);
+  assert.ok(warnings.some((w) => /raro/.test(w)));
 });
