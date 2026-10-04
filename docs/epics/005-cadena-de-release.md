@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada | [ ] Completada
+[x] Planificada | [x] Completada
 
 ## Objetivo
 
@@ -29,7 +29,7 @@ registrada (D018)—.
   Alinear los tags de release con el contenido publicado
 - [x] docs/tasks/027-cadena-de-release.md — Definir y documentar la
   cadena de release
-- [ ] docs/tasks/028-trusted-publishing-ci.md — Publicación por CI
+- [x] docs/tasks/028-trusted-publishing-ci.md — Publicación por CI
   con trusted publishing
 
 ## Plan técnico

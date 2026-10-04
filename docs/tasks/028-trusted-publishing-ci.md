@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+[x] Completada
 
 ## Tipo
 
@@ -66,8 +66,28 @@ estructuralmente.
   falta `--provenance`.
 - La configuración en npmjs.com es un paso del usuario, no del
   agente: la tarea lo deja explícito y no la da por hecha.
+- Ejecutada el 2026-10-04:
+  - `.github/workflows/publish.yml` creado: disparador `push` de
+    tags `v*`; job `test` (suite completa) condición del job
+    `publish`, que corre con `id-token: write`, actualiza npm a
+    ≥11.5.1 y ejecuta `npm publish` —el provenance sale por
+    defecto, sin bandera—. `prepublishOnly` vuelve a correr la
+    suite dentro del publish.
+  - Sin tokens: el workflow no referencia secretos y no hay
+    `.npmrc` con credenciales; la autenticación es OIDC.
+  - Validación local: `npm publish --dry-run` disparó
+    `prepublishOnly` (suite completa en verde), empaquetó 32
+    archivos y solo falló en «versión ya publicada», esperado. La
+    validación real de OIDC ocurre en la primera publicación.
+  - Pendiente del usuario (paso manual con su sesión 2FA):
+    configurar el trusted publisher en npmjs.com → Settings del
+    paquete → Trusted Publisher → GitHub Actions: org
+    `nucleoabierto`, repo `teleprompter`, workflow `publish.yml`,
+    sin environment. No había sesión npm local activa
+    (`npm whoami` → 401), así que `npm trust github` no se pudo
+    usar desde el agente.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-04 — Aprueba
+- Usuario: 2026-10-04 — Aprueba

@@ -1,0 +1,44 @@
+name: Publish
+
+# Cadena de release: docs/release.md — el push del tag `v*` sobre
+# el commit de release dispara la publicación (D018).
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # Trusted publishing exige npm ≥ 11.5.1; el que trae el
+      # runner no basta.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      # prepublishOnly vuelve a correr la suite antes de empaquetar.
+      # Sin registry-url: setup-node escribiría un authToken dummy
+      # que puede romper el intercambio OIDC.
+      - run: npm publish
