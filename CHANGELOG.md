@@ -7,6 +7,16 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Changed
+
+- La obtención remota tiene presupuestos y diagnósticos propios:
+  cada endpoint agota un tiempo máximo (60 s por defecto) y la
+  descarga está limitada en tamaño (50 MB), con error específico en
+  ambos casos; el mensaje de obtención distingue «no encontrados»
+  (404), «error de servidor» (5xx) y «acceso denegado o límite de
+  peticiones» (401/403), y un fallo del sistema de archivos al crear
+  el directorio temporal deja de propagar como error inesperado.
+
 ## [0.3.0] - 2026-10-04
 
 ### Added

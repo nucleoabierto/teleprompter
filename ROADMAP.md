@@ -14,22 +14,13 @@ reconstruir el destino.
 
 ## Now
 
-- 1. **Endurecimiento de la obtención remota** — timeout, límite de
-  tamaño y distinción de errores HTTP, residuales registrados en la
-  revisión de la tarea 012.
-  - Estado: pendiente de arrancar
-  - Justificación: `update` hace que el fetch se invoque con mucha
-    más frecuencia que en `install`, y las líneas de Next —revisión
-    de desactualizados, reproducción del destino— lo multiplican:
-    el costo de un fetch frágil crece con cada línea que se apoya
-    en él.
-- 2. **Pin de obtención remota** — conservar el commit exacto detrás
+- 1. **Pin de obtención remota** — conservar el commit exacto detrás
   de cada instalación y hacer determinista la re-obtención (idea
   `docs/ideas/010-pin-de-obtencion-remota.md`).
   - Estado: pendiente de arrancar
-  - Justificación: es de tamaño tarea y toca la misma superficie que
-    el endurecimiento —`fetch` y la semántica de `origin`—, así que
-    conviene ejecutarla mientras el contexto está caliente; su
+  - Justificación: es de tamaño tarea y comparte superficie con el
+    endurecimiento ya materializado —`fetch` y la semántica de
+    `origin`—; su
     determinismo es la base honesta de las tres líneas de Next: sin
     pin, revisar desactualizados no detecta el commit que avanzó sin
     bump y reproducir el destino no es exacto.

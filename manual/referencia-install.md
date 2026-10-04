@@ -189,4 +189,4 @@ repositorio destino.
 | `2`    | Plan no ejecutable: precondiciones incumplidas o colisiones     |
 | `3`    | Error de ejecución (informa de lo ya aplicado antes de fallar)  |
 | `4`    | Error de invocación: argumentos ausentes o rutas que no existen |
-| `5`    | Error de obtención: repositorio inaccesible, referencia inexistente o archivo corrupto |
+| `5`    | Error de obtención: repositorio inaccesible o tiempo agotado, no encontrado (404), error de servidor (5xx), acceso denegado (401/403), descarga que excede el tamaño máximo o archivo corrupto |

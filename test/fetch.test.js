@@ -53,13 +53,25 @@ const notFound = { ok: false, status: 404 };
 
 function spyFetch(behaviors) {
   const urls = [];
-  const impl = async (url) => {
+  const impl = async (url, opts) => {
     urls.push(url);
     const next = behaviors[urls.length - 1] ?? behaviors.at(-1);
-    return typeof next === 'function' ? next() : next;
+    return typeof next === 'function' ? next(opts) : next;
   };
   return { urls, fetch: impl };
 }
+
+// A request that hangs until its abort signal fires — it rejects with
+// the signal's reason, like undici does on AbortSignal.timeout.
+const hangUntilAbort = (opts) => new Promise((_, reject) => {
+  opts.signal.addEventListener('abort', () => reject(opts.signal.reason));
+});
+
+const bigResponse = (declared, buf) => ({
+  ok: true,
+  headers: { get: (k) => (k === 'content-length' ? String(declared) : null) },
+  arrayBuffer: async () => toBody(buf),
+});
 
 test('parseRepoSpec parses owner/repo with and without ref', () => {
   assert.deepEqual(parseRepoSpec('nucleoabierto/mi-paquete'), {
@@ -143,6 +155,148 @@ test('fetchRepoTree reports unreachable when every request throws', async () => 
   assert.equal(res.ok, false);
   assert.match(res.error, /no se pudo contactar.*o\/r@x/);
   assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree distinguishes server errors from not-found', async () => {
+  for (const [status, pattern] of [
+    [500, /error de servidor.*o\/r/],
+    [502, /error de servidor.*o\/r/],
+    [403, /acceso denegado.*o\/r/],
+    [401, /acceso denegado.*o\/r/],
+    [418, /HTTP 418.*o\/r/],
+  ]) {
+    const { fetch } = spyFetch([{ ok: false, status }]);
+    const tmpBase = tmp();
+    const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase });
+    assert.equal(res.ok, false);
+    assert.match(res.error, pattern, `status ${status}`);
+    assert.deepEqual(fs.readdirSync(tmpBase), []);
+  }
+});
+
+test('fetchRepoTree reports server error when endpoints disagree', async () => {
+  const { fetch } = spyFetch([{ ok: false, status: 404 }, { ok: false, status: 500 }]);
+  const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase: tmp() });
+  assert.equal(res.ok, false);
+  assert.match(res.error, /error de servidor/);
+});
+
+test('fetchRepoTree tries the next endpoint when a request times out', async () => {
+  const buf = await makeTarball('o-r-t', { 'a.txt': 'a' });
+  const { urls, fetch } = spyFetch([hangUntilAbort, okResponse(buf)]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: tmp(), timeoutMs: 25 },
+  );
+  assert.equal(res.ok, true);
+  assert.equal(urls.length, 2);
+  res.cleanup();
+});
+
+test('fetchRepoTree reports the timeout when every request expires', async () => {
+  const { fetch } = spyFetch([hangUntilAbort]);
+  const tmpBase = tmp();
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase, timeoutMs: 25 },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /tiempo máximo excedido.*o\/r/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree stays generic when only some requests time out', async () => {
+  const { fetch } = spyFetch([() => { throw new Error('ENOTFOUND'); }, hangUntilAbort]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: tmp(), timeoutMs: 25 },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /no se pudo contactar con GitHub: o\/r/);
+  assert.doesNotMatch(res.error, /tiempo máximo/);
+});
+
+test('fetchRepoTree reports an unexpected response without a status', async () => {
+  const { fetch } = spyFetch([{ ok: false }]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: tmp() },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /respuesta inesperada.*o\/r/);
+});
+
+test('fetchRepoTree rejects an oversized declared length without reading the body', async () => {
+  let bodyRead = false;
+  const impl = async () => ({
+    ok: true,
+    headers: { get: () => '1048576' },
+    arrayBuffer: async () => { bodyRead = true; return new ArrayBuffer(0); },
+  });
+  const tmpBase = tmp();
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch: impl, tmpBase, maxBytes: 1024 },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /tamaño máximo/);
+  assert.equal(bodyRead, false);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree rejects an oversized body without declared length', async () => {
+  const { fetch } = spyFetch([bigResponse(0, Buffer.alloc(2048))]);
+  const tmpBase = tmp();
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase, maxBytes: 1024 },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /tamaño máximo/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree accepts a body exactly at the size limit', async () => {
+  const buf = await makeTarball('o-r-b', { 'a.txt': 'a' });
+  const { fetch } = spyFetch([okResponse(buf)]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: tmp(), maxBytes: buf.byteLength },
+  );
+  assert.equal(res.ok, true);
+  res.cleanup();
+});
+
+test('fetchRepoTree reports a body-read failure and a mid-download timeout', async () => {
+  const failing = (error) => async () => ({
+    ok: true,
+    arrayBuffer: async () => { throw error; },
+  });
+  const timeout = new Error('agotado');
+  timeout.name = 'TimeoutError';
+  for (const [impl, pattern] of [
+    [failing(new Error('corte de red')), /la descarga falló.*o\/r/],
+    [failing(timeout), /tiempo máximo excedido.*o\/r/],
+  ]) {
+    const tmpBase = tmp();
+    const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch: impl, tmpBase });
+    assert.equal(res.ok, false);
+    assert.match(res.error, pattern);
+    assert.deepEqual(fs.readdirSync(tmpBase), []);
+  }
+});
+
+test('fetchRepoTree reports a temp-dir failure instead of throwing', async () => {
+  const work = tmp();
+  const blocker = path.join(work, 'bloqueo');
+  fs.writeFileSync(blocker, 'x');
+  const { fetch } = spyFetch([notFound]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: path.join(blocker, 'imposible') },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /directorio temporal/);
 });
 
 test('fetchRepoTree reports extraction failure on a corrupt archive', async () => {

@@ -70,4 +70,4 @@ el registro queda a la versión nueva con el origen efectivo.
 | Manifiesto del origen inválido                         | `1`    |
 | Precondición incumplida o decisiones pendientes sin consola | `2` |
 | Error de ejecución                                     | `3`    |
-| Origen remoto inaccesible                              | `5`    |
+| Origen remoto inaccesible, agotado en tiempo o tamaño, no encontrado, con error de servidor o acceso denegado | `5`    |
