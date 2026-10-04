@@ -88,6 +88,11 @@ export function executePlan(pkgDir, destDir, plan) {
         applied.push(entry);
         copyResource(path.join(pkgDir, r.source), dest);
         entry.sha256 = hashPath(dest);
+      } else if (action === 'identical') {
+        // The plan already proved the content equal; the hash goes
+        // with the action so the registry can record what the
+        // package manages even when nothing was written.
+        applied.push({ target: r.target, action, sha256: hashPath(dest) });
       } else {
         applied.push({ target: r.target, action });
       }

@@ -41,6 +41,11 @@ referencia completa del comando, en la
   ni acciones internas del registro. — módulo `test/cli.test.js`,
   «check reports drift in product language, without hashes or
   actions»
+- **Un recurso idéntico al paquete también se verifica:** instalar
+  sobre contenido que ya coincide registra esos targets y `check`
+  los reporta intactos como cualquier otro. — módulo
+  `test/cli.test.js`, «check and list cover the identical resources
+  the lock recorded»
 - **Un registro escrito a mano se clasifica igual** que uno
   producido por una instalación real. — módulo `test/cli.test.js`,
   «check reports a hand-written lock entry whose hash differs as

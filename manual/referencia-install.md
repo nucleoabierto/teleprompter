@@ -116,8 +116,9 @@ destino: un JSON pensado para versionarse con el repositorio:
 
 `packages` se indexa por el `name` del manifiesto y cada entrada
 contiene `version`, `installedAt` y `files`: una entrada por recurso
-con su `target`, la acción realizada (`create`, `overwrite`, `skip`) y
-el SHA-256 del contenido escrito —las entradas `skip` no llevan hash—.
+con su `target`, la acción realizada (`create`, `overwrite`,
+`identical`, `skip`) y el SHA-256 del contenido —escrito o ya
+presente e idéntico—; las entradas `skip` no llevan hash.
 La entrada registra además el `origin` de la instalación: el
 repositorio `owner/name` con el ref usado —o sin él, si se obtuvo la
 rama por defecto— o la ruta absoluta de `--path`; los registros

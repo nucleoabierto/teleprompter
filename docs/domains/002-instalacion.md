@@ -126,8 +126,11 @@ instalado.
     escribir nada —un escape hace el plan no ejecutable (D005)—.
     Ancla: `installPersonalization` en `src/execute.js` y la
     pre-verificación en `src/cli.js`; D010
-  - Un recurso `identical` conserva su registro previo —el contenido
-    sigue siendo propio— pero no crea registro si nunca se escribió.
+  - Un recurso `identical` conserva el registro previo que sigue
+    siendo veraz —una omisión `skip`, un hash que coincide— y
+    registra el recurso en los demás casos: el paquete lo gestiona
+    lo escribiera quien lo escribiera, y un hash registrado que el
+    disco desmiente no sobrevive.
     Ancla: `writeLock` en `src/lock.js`
   - Un recurso retirado por la versión solo se elimina intacto —propio
     y sin tocar—; modificado o no verificable exige decisión. La
@@ -159,7 +162,8 @@ instalado.
     que el informe muestre el estado parcial.
     - Ancla: `executePlan` y `ExecutionError` en `src/execute.js`
   - Registrar la instalación: fusiona el lock preservando otros
-    paquetes; `identical` no se registra y `skip` va sin hash; la
+    paquetes; `identical` conserva el registro previo veraz o se
+    registra con su acción y su hash, y `skip` va sin hash; la
     guía gestionada se añade a `files` y al campo `personalization`
     sin figurar entre las acciones del plan. La escritura es
     atómica —temporal en el mismo directorio + `rename`—, así que un

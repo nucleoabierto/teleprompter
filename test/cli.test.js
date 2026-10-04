@@ -1018,11 +1018,47 @@ test('update keeps incoming children when the map moves from a directory to per-
   assert.ok(!fs.existsSync(path.join(dest, 'skills/viejo.txt')));
   const lock = lockOf(dest);
   assert.equal(lock.packages.granular.version, '2.0.0');
-  // The `identical` child stays on disk but unrecorded — registering
-  // identical targets is a separate defect (task 030).
+  // The `identical` child registers with its real action, same as
+  // the updated one — the lock records everything managed.
   assert.deepEqual(
-    lock.packages.granular.files.map((f) => f.target), ['skills/b.txt'],
+    lock.packages.granular.files.map((f) => [f.target, f.action]),
+    [['skills/a.txt', 'identical'], ['skills/b.txt', 'overwrite']],
   );
+});
+
+test('install over identical content records every managed target in the lock', async () => {
+  const dest = tmp();
+  fs.mkdirSync(path.join(dest, 'skills'));
+  fs.writeFileSync(path.join(dest, 'skills', 'a.txt'), 'a');
+  fs.writeFileSync(path.join(dest, 'skills', 'b.txt'), 'b');
+  const pkg = path.join(tmp(), 'granular');
+  writePkg(pkg, validManifest('granular', {
+    install: [
+      { source: 'skills/a.txt', target: 'skills/a.txt' },
+      { source: 'skills/b.txt', target: 'skills/b.txt' },
+    ],
+  }), { 'skills/a.txt': 'a', 'skills/b.txt': 'b' });
+  const { code, stdout, stderr } = await run(['install', '--path', pkg, dest]);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /identical\s+skills\/a\.txt/);
+  const { files } = lockOf(dest).packages.granular;
+  assert.deepEqual(files.map((f) => f.target), ['skills/a.txt', 'skills/b.txt']);
+  for (const f of files) {
+    assert.equal(f.action, 'identical');
+    assert.match(f.sha256, /^[0-9a-f]{64}$/);
+  }
+});
+
+test('check and list cover the identical resources the lock recorded', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a');
+  const pkg = path.join(tmp(), 'granular');
+  writePkg(pkg, validManifest('granular'), { 'a.txt': 'a' });
+  assert.equal((await run(['install', '--path', pkg, dest])).code, EXIT_OK);
+  const list = await run(['list'], { cwd: dest });
+  assert.match(list.stdout.join('\n'), /a\.txt/);
+  const check = await run(['check'], { cwd: dest });
+  assert.match(check.stdout.join('\n'), /intacto\s+a\.txt/);
 });
 
 test('update replaces the subtree wholesale when the map collapses children into a directory target', async () => {

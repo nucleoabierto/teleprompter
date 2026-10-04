@@ -9,6 +9,11 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ### Fixed
 
+- `install` y `update` registran en `teleprompter-lock.json` los
+  recursos `identical` —ya presentes con el mismo contenido— con su
+  acción y su hash, así que `check` y `list` los cubren y dejan de
+  quedar desregistrados
+  (docs/tasks/030-registrar-targets-identical-en-el-lock.md).
 - `update` ya no destruye los hijos entrantes cuando el mapa de
   instalación cambia de granularidad: un target directorio
   registrado que es ancestro de targets de la versión nueva se

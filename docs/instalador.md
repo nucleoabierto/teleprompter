@@ -166,10 +166,10 @@ Cada entrada de paquete contiene:
 
 - `version` del manifiesto instalado.
 - `installedAt` — instante de la instalación.
-- `files` — una entrada por recurso instalado: su `target`, la acción
-  realizada (`create`, `overwrite`, `skip`), y el hash SHA-256 del
-  contenido escrito. Las entradas `skip` registran la decisión sin
-  hash.
+- `files` — una entrada por recurso gestionado: su `target`, la
+  acción realizada (`create`, `overwrite`, `identical`, `skip`), y
+  el hash SHA-256 del contenido —escrito o ya presente e idéntico—.
+  Las entradas `skip` registran la decisión sin hash.
 - `origin` — de dónde vino la instalación, para que una operación
   posterior pueda reobtener el paquete sin pedir el origen de nuevo:
   `{ "type": "github", "repo": "owner/name", "ref": "…" }` para un

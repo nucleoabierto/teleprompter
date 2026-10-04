@@ -69,19 +69,28 @@ function isValidOrigin(o) {
 // Merges the new install into the existing history: other packages'
 // records survive untouched, while this package's entry is replaced
 // wholesale because it describes the installation just performed.
-// `identical` keeps any previous record — the content is still ours
-// and the recorded hash still matches — but creates none for a
-// resource we never wrote. `mkdir` actions are plan bookkeeping, not
-// installed files. `origin` is the source the install came from, in
-// lock shape: a later operation can re-fetch the package without
-// asking for it again.
+// `identical` keeps a previous record that still tells the truth —
+// a `skip` records an omission with no hash, a matching hash keeps
+// its provenance — and registers one otherwise: a resource the
+// plan proves equal to the package is managed whatever wrote it,
+// and a recorded hash that no longer matches the disk must not
+// survive. `mkdir` actions are plan bookkeeping, not installed
+// files. `origin` is the source the install came from, in lock
+// shape: a later operation can re-fetch the package without asking
+// for it again.
 export function writeLock(destDir, lock, manifest, actions, origin) {
   const previous = new Map(
     (lockEntry(lock, manifest.name)?.files ?? []).map((f) => [f.target, f]),
   );
   const files = actions.flatMap(({ target, action, sha256 }) => {
     if (action === 'remove') return [];
-    if (action === 'identical' || action === 'mkdir' || action === 'keep') {
+    if (action === 'identical') {
+      const prev = previous.get(target);
+      const stillTrue = prev !== undefined
+        && (prev.action === 'skip' || prev.sha256 === sha256);
+      return [stillTrue ? prev : { target, action, sha256 }];
+    }
+    if (action === 'mkdir' || action === 'keep') {
       const prev = previous.get(target);
       return prev === undefined ? [] : [prev];
     }

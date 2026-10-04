@@ -50,6 +50,42 @@ test('writeLock persists the registry and leaves no temp files', () => {
   );
 });
 
+test('writeLock registers identical entries and preserves truthful records', () => {
+  const dest = tmp();
+  const lock = {
+    packages: {
+      p: {
+        version: '0.9.0',
+        files: [
+          { target: 'vieja.txt', action: 'create', sha256: 'viejo' },
+          { target: 'omitida.txt', action: 'skip' },
+          { target: 'movida.txt', action: 'create', sha256: 'viejo' },
+        ],
+      },
+    },
+    warnings: [],
+  };
+  const applied = [
+    { target: 'vieja.txt', action: 'identical', sha256: 'viejo' },
+    { target: 'omitida.txt', action: 'identical', sha256: 'sha-omitida' },
+    { target: 'movida.txt', action: 'identical', sha256: 'nuevo' },
+    { target: 'nueva.txt', action: 'identical', sha256: 'sha-nueva' },
+    { target: 'd/', action: 'mkdir' },
+  ];
+  writeLock(dest, lock, manifest, applied, undefined);
+  assert.deepEqual(lockEntry(readLock(dest), 'p').files, [
+    // A matching record keeps its provenance.
+    { target: 'vieja.txt', action: 'create', sha256: 'viejo' },
+    // A `skip` recorded an omission: it stays one.
+    { target: 'omitida.txt', action: 'skip' },
+    // A stale hash must not survive the proof that the resource is
+    // now identical to the package.
+    { target: 'movida.txt', action: 'identical', sha256: 'nuevo' },
+    // An identical never written registers with its real action.
+    { target: 'nueva.txt', action: 'identical', sha256: 'sha-nueva' },
+  ]);
+});
+
 test('a failed write leaves the previous lock intact and no temp residue', () => {
   const dest = tmp();
   const previous = JSON.stringify({ packages: { viejo: { version: '0.9.0', files: [] } } });
