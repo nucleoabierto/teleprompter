@@ -2,7 +2,8 @@
 
 > **Tipo:** idea de funcionalidad — tamaño conjunto (complejidad media)
 > **Fecha:** 2026-10
-> **Orden sugerido:** 1 de 4 — cierra el ciclo de vida con lo ya
+> **Orden sugerido:** 2 de 4 — primera de Next tras el pin (revisión
+> del roadmap 2026-10-04): cierra el ciclo de vida con lo ya
 > construido; el registro ya sabe qué retirar
 
 ## Problema

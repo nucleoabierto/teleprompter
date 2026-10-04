@@ -2,8 +2,9 @@
 
 > **Tipo:** idea de funcionalidad — tamaño tarea (complejidad baja)
 > **Fecha:** 2026-10
-> **Orden sugerido:** 4 de 4 — pequeña y protectora; cierra la
-> brecha de reproducibilidad que las hermanas dejan abierta
+> **Orden sugerido:** 1 de 4 — decidido en la revisión del roadmap
+> 2026-10-04: se ejecuta en Now junto al endurecimiento del fetch,
+> por compartir superficie y dar base determinista a las hermanas
 
 ## Problema
 

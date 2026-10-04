@@ -3,55 +3,68 @@
 ## Dirección
 
 Que el paquete sea un canal completo del mantenedor al repositorio
-destino. El canal ya está abierto: el producto distribuye, instala,
-entrega el criterio para adaptar, mantiene un ciclo de vida —visible,
-contrastable, actualizable— y se publica en npm, ejecutable con
-`npx`. La dirección pasa ahora al alcance y la gobernanza del canal:
-que el formato cubra colecciones de paquetes, que la obtención remota
-sea robusta y que la cadena de release haga de cada publicación un
-acto repetible.
+destino. El canal ya está abierto y el formato ya cubre colecciones:
+el producto distribuye, instala, entrega el criterio para adaptar,
+mantiene un ciclo de vida —visible, contrastable, actualizable— y se
+publica en npm con cadena de release repetible, ejecutable con `npx`.
+La dirección pasa ahora a cerrar el ciclo y hacerlo fiable: que la
+obtención remota sea robusta y determinista, que el ciclo tenga
+salida —revisar, actualizar y retirar— y que el registro permita
+reconstruir el destino.
 
 ## Now
 
 - 1. **Endurecimiento de la obtención remota** — timeout, límite de
   tamaño y distinción de errores HTTP, residuales registrados en la
   revisión de la tarea 012.
+  - Estado: pendiente de arrancar
   - Justificación: `update` hace que el fetch se invoque con mucha
-    más frecuencia que en `install`, de modo que el costo de un fetch
-    frágil creció con el ciclo de vida; con Colecciones cerrada, es
-    la única línea de Next y pasa a Now.
+    más frecuencia que en `install`, y las líneas de Next —revisión
+    de desactualizados, reproducción del destino— lo multiplican:
+    el costo de un fetch frágil crece con cada línea que se apoya
+    en él.
+- 2. **Pin de obtención remota** — conservar el commit exacto detrás
+  de cada instalación y hacer determinista la re-obtención (idea
+  `docs/ideas/010-pin-de-obtencion-remota.md`).
+  - Estado: pendiente de arrancar
+  - Justificación: es de tamaño tarea y toca la misma superficie que
+    el endurecimiento —`fetch` y la semántica de `origin`—, así que
+    conviene ejecutarla mientras el contexto está caliente; su
+    determinismo es la base honesta de las tres líneas de Next: sin
+    pin, revisar desactualizados no detecta el commit que avanzó sin
+    bump y reproducir el destino no es exacto.
 
 ## Next
 
-- Vacío: no quedan líneas comprometidas sin horizonte.
-
-## Later
-
-Ideas de la lluvia de 2026-10-04 (docs/ideas/007–010), en el orden
-sugerido:
+Ideas de la lluvia de 2026-10-04 comprometidas (`docs/ideas/007–009`),
+en el orden decidido en la revisión del 2026-10-04:
 
 - 1. **Desinstalación de paquetes** — salida limpia del ciclo de
   vida: retirar un paquete y sus recursos registrados con plan
   visible (idea 007).
-  - Justificación: el registro ya sabe qué retirar; es la pieza
-    que hace creíble que el lock describe el estado real.
+  - Justificación: cierra el ciclo con la infraestructura ya
+    construida —plan y registro— y es la de menor riesgo del
+    conjunto; su lectura del registro es la que la reproducción
+    compartirá después.
 - 2. **Revisión de desactualizados** — consultar qué paquetes
   ofrecen versión nueva sin actualizar, y actualizar lo revisado
   en una invocación (idea 008).
-  - Justificación: `update` hoy decide a ciegas; la revisión es
-    el eslabón que falta del ciclo instalar → revisar →
-    actualizar → retirar.
+  - Justificación: `update` hoy decide a ciegas; sondea orígenes
+    remotos, así que rinde mejor con el fetch endurecido y pinneado
+    —puede señalar el commit que avanzó sin bump, hoy invisible—.
 - 3. **Reproducción del destino desde el registro** — reinstalar de
   una vez lo que el lock de un repo declara, desde sus orígenes
   (idea 009).
-  - Justificación: el lock pasa de bitácora a fuente reproducible;
-    el onboarding del equipo deja de ser conocimiento tribal.
-- 4. **Pin de obtención remota** — conservar el commit exacto
-  detrás de cada instalación y hacer determinista la re-obtención
-  (idea 010).
-  - Justificación: hace verificable la promesa de D017 —la versión
-    identifica el contenido—; complementa el endurecimiento del
-    fetch de Now.
+  - Justificación: la más dependiente del conjunto —consume los
+    orígenes pinneados, la lectura del registro que comparte con la
+    desinstalación y la mecánica multi-unidad que la revisión
+    establece—; ejecutarla última la hace exacta en lugar de
+    aproximada.
+
+## Later
+
+Vacío: las cuatro ideas de la lluvia quedaron comprometidas —el pin
+en Now y el resto ordenado en Next.
 
 ## No ahora
 
@@ -99,3 +112,11 @@ sugerido:
   reproducción del destino y pin de obtención—; las descartadas
   por ahora: alcance global, variantes por agente, andamiaje
   `init`, descubrimiento y orígenes remotos adicionales)
+- Usuario: 2026-10-04 — Aprueba (replanificación de prioridades:
+  el pin de obtención remota pasa a Now junto al endurecimiento
+  del fetch —comparten superficie y el pin da base determinista
+  a Next—; el ciclo de vida queda ordenado en Next: desinstalación,
+  revisión de desactualizados, reproducción del destino; Later
+  queda vacío y la Dirección se actualiza a cerrar el ciclo y
+  hacerlo fiable)
+

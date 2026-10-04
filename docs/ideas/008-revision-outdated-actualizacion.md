@@ -2,9 +2,10 @@
 
 > **Tipo:** idea de funcionalidad — tamaño conjunto (complejidad media)
 > **Fecha:** 2026-10
-> **Orden sugerido:** 2 de 4 — complementa la desinstalación para
-> cerrar el ciclo; el usuario la refinó: falta revisar los
-> desactualizados antes de decidir
+> **Orden sugerido:** 3 de 4 — segunda de Next (revisión del roadmap
+> 2026-10-04): complementa la desinstalación para cerrar el ciclo;
+> el usuario la refinó: falta revisar los desactualizados antes de
+> decidir
 
 ## Problema
 
