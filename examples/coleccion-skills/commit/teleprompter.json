@@ -1,0 +1,13 @@
+{
+  "format": "teleprompter-package@1",
+  "name": "commit",
+  "version": "1.0.0",
+  "description": "El skill commit del ciclo de tareas, como paquete independiente",
+  "license": "MIT",
+  "install": [
+    { "source": "skills/commit/", "target": ".agents/skills/commit/" }
+  ],
+  "requires": {
+    "paths": [{ "path": ".agents/skills/", "create": true }]
+  }
+}

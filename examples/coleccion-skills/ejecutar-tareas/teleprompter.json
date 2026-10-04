@@ -1,0 +1,13 @@
+{
+  "format": "teleprompter-package@1",
+  "name": "ejecutar-tareas",
+  "version": "1.0.0",
+  "description": "El skill ejecutar-tareas del ciclo de tareas, como paquete independiente",
+  "license": "MIT",
+  "install": [
+    { "source": "skills/ejecutar-tareas/", "target": ".agents/skills/ejecutar-tareas/" }
+  ],
+  "requires": {
+    "paths": [{ "path": ".agents/skills/", "create": true }]
+  }
+}

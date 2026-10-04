@@ -1,0 +1,14 @@
+{
+  "format": "teleprompter-package@1",
+  "name": "crear-tareas",
+  "version": "1.0.0",
+  "description": "El skill crear-tareas del ciclo de tareas, como paquete independiente",
+  "license": "MIT",
+  "install": [
+    { "source": "skills/crear-tareas/", "target": ".agents/skills/crear-tareas/" }
+  ],
+  "requires": {
+    "paths": [{ "path": ".agents/skills/", "create": true }]
+  },
+  "personalization": "PERSONALIZE.md"
+}

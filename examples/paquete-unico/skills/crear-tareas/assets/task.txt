@@ -1,0 +1,44 @@
+# [Título de la tarea]
+
+## Estado
+
+[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+
+## Tipo
+
+[Tipo de la tarea para el enrutado de `ejecutar-tareas`, en minúsculas: desarrollo, investigación, mantenimiento u otro. La lista es abierta y extensible. Si se omite, la tarea se ejecuta con el comportamiento general. El tipo `mantenimiento` cubre el trabajo que preserva el sistema sin añadir capacidad observable, en dos perfiles: `mantenimiento (refactoring)` —código con comportamiento a preservar; su aceptación exige misma API pública, misma suite en verde y mismo comportamiento observable, y se enruta al sub-flujo de desarrollo— y `mantenimiento` a secas —trabajo de proceso sin comportamiento observable (documentar dominio, revisar arquitectura, limpieza), ejecutado con el comportamiento general—.]
+
+## Objetivo
+
+[Descripción concisa del objetivo de la tarea. Qué se quiere lograr y por qué.]
+
+## Dependencias
+
+- [Lista de tareas que deben completarse antes de empezar esta, o "Ninguna" si no tiene.]
+
+## Entrada
+
+- [Qué se necesita para ejecutar la tarea: archivos, contexto, decisiones del usuario, etc.]
+
+## Resultado esperado
+
+- [Descripción del resultado que se debe producir: archivo(s) a crear o modificar, contenido esperado, formato.]
+
+## Criterios de calidad
+
+- [Lista de criterios verificables que permiten evaluar si el resultado es correcto. Cada criterio debe ser objetivo y comprobable.]
+
+## Procedimiento sugerido
+
+1. [Paso 1]
+2. [Paso 2]
+3. [Paso 3]
+
+## Notas
+
+- [Observaciones, decisiones tomadas durante la ejecución, o instrucciones adicionales.]
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario: [fecha] — [Aprueba | Solicita cambios]

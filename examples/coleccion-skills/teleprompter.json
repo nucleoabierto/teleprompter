@@ -1,0 +1,12 @@
+{
+  "format": "teleprompter-package@1",
+  "name": "skills-ciclo",
+  "description": "Cada skill del ciclo de tareas como paquete propio",
+  "license": "MIT",
+  "collection": true,
+  "packages": [
+    { "path": "crear-tareas/" },
+    { "path": "ejecutar-tareas/" },
+    { "path": "commit/" }
+  ]
+}
