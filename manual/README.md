@@ -3,6 +3,10 @@
 Documentación de usuario del instalador Teleprompter. Para una primera
 instalación, empezar por la guía de uso.
 
+El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/):
+`pipx install mkdocs-material` y `mkdocs serve` para previsualizarlo o
+`mkdocs build --strict` para verificarlo.
+
 ## Guías
 
 - [Guía de uso](guia-de-uso.md) — instalar un paquete paso a paso, con

@@ -145,6 +145,22 @@ ya es la registrada, responde que ya está en esa versión.
 
 Véase la [referencia de `update`](referencia-update.md).
 
+## Instalar desde una colección
+
+Un repositorio puede agrupar varios paquetes —una colección—. Sin
+selección, la operación imprime el índice de lo que ofrece; con
+`--package <nombre>` instala el paquete elegido, repetible para
+varios:
+
+```sh
+npx @nucleoabierto/teleprompter install usuario/familia-skills
+npx @nucleoabierto/teleprompter install usuario/familia-skills --package crear-tareas
+```
+
+Cada paquete instalado es una unidad independiente: se lista, se
+verifica, se consulta y se actualiza por separado. Véase
+[instalar desde una colección](005-instalar-desde-una-coleccion.md).
+
 ## Inspeccionar sin instalar
 
 `--dry-run` ejecuta solo la verificación y el plan, y termina sin

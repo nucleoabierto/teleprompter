@@ -33,6 +33,9 @@ colisiones con lo que ya existe y registra la instalación en
 - [Actualizar un paquete](004-actualizar-un-paquete.md) — la
   actualización consciente de la deriva y los escenarios que la
   suite verifica.
+- [Instalar desde una colección](005-instalar-desde-una-coleccion.md)
+  — repositorios multi-paquete: selección por nombre para el
+  consumidor, declaración del índice para el mantenedor.
 
 ## En el repositorio
 

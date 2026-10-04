@@ -4,19 +4,27 @@ repo_url: https://github.com/nucleoabierto/teleprompter
 edit_uri: edit/master/manual/
 docs_dir: manual
 theme:
-  name: mkdocs
+  name: material
+  language: es
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
 nav:
   - Inicio: index.md
   - Guía de uso: guia-de-uso.md
-  - Referencia de install: referencia-install.md
-  - Referencia de guide: referencia-guide.md
-  - Referencia de list: referencia-list.md
-  - Referencia de check: referencia-check.md
-  - Referencia de update: referencia-update.md
-  - Instalar un paquete: 001-instalar-un-paquete.md
-  - Listar los paquetes instalados: 002-listar-paquetes-instalados.md
-  - Verificar los recursos instalados: 003-verificar-recursos-instalados.md
-  - Actualizar un paquete: 004-actualizar-un-paquete.md
+  - Referencia:
+    - Referencia de install: referencia-install.md
+    - Referencia de guide: referencia-guide.md
+    - Referencia de list: referencia-list.md
+    - Referencia de check: referencia-check.md
+    - Referencia de update: referencia-update.md
+  - Funcionalidad:
+    - Instalar un paquete: 001-instalar-un-paquete.md
+    - Listar los paquetes instalados: 002-listar-paquetes-instalados.md
+    - Verificar los recursos instalados: 003-verificar-recursos-instalados.md
+    - Actualizar un paquete: 004-actualizar-un-paquete.md
+    - Instalar desde una colección: 005-instalar-desde-una-coleccion.md
 # README.md es el índice del directorio en el repositorio y en el
 # paquete npm; la portada del sitio es index.md.
 exclude_docs: |

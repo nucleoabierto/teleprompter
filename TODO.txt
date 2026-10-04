@@ -68,4 +68,4 @@
 - [x] docs/tasks/032-instalar-desde-coleccion.md — Instalar el paquete seleccionado de una colección
 - [x] docs/tasks/033-origen-y-ciclo-de-vida-coleccion.md — `origin` de colección en el registro y ciclo de vida por paquete
 - [x] docs/tasks/034-coleccion-referencia-e2e.md — Empaquetar una colección de referencia e instalarla de extremo a extremo
-- [ ] docs/tasks/035-documentar-colecciones.md — Documentar las colecciones en el manual
+- [x] docs/tasks/035-documentar-colecciones.md — Documentar las colecciones en el manual

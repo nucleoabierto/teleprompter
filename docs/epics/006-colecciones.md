@@ -34,7 +34,7 @@ manual.
   `origin` de colección en el registro y ciclo de vida por paquete
 - [x] docs/tasks/034-coleccion-referencia-e2e.md — Empaquetar una
   colección de referencia e instalarla de extremo a extremo
-- [ ] docs/tasks/035-documentar-colecciones.md — Documentar las
+- [x] docs/tasks/035-documentar-colecciones.md — Documentar las
   colecciones en el manual
 
 ## Plan técnico

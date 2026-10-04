@@ -4,6 +4,7 @@
 teleprompter [install] <user/repo[@ref]> [destino] [--ref <ref>]
 teleprompter [install] --path <paquete> [destino]
 
+Selección en colecciones: [--package <nombre>]...
 Opciones comunes: [--force|--skip] [--dry-run]
 ```
 
@@ -27,6 +28,37 @@ la forma corta.
 
 `destino` y el directorio de `--path` deben ser directorios
 existentes.
+
+## Colecciones
+
+Un origen puede ser una **colección**: un repositorio multi-paquete
+cuyo `teleprompter.json` declara `collection: true` y un índice
+`packages` de rutas —véase la [sección Colecciones de la
+especificación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/especificacion-paquete.md)—.
+La colección no se instala como unidad: se selecciona qué paquete o
+paquetes instalar con `--package <nombre>`, repetible para varios.
+
+- El nombre es el del manifiesto de cada paquete —coincide con el
+  nombre de su directorio—, nunca la ruta del índice.
+- Repetir el mismo nombre instala el paquete una sola vez: la
+  selección es un conjunto.
+- Ante una colección sin `--package`, la operación imprime el
+  índice —nombre, versión y descripción de cada paquete; los
+  miembros con manifiesto inválido aparecen marcados— y aborta con
+  código `4` sin escribir nada.
+- `--package` con un nombre ausente del índice aborta con código
+  `4` listando los disponibles; `--package` sobre un origen que no
+  es colección es también un error de invocación.
+- Un miembro con manifiesto inválido solo falla si se selecciona;
+  una entrada del índice que apunta a otra colección es un error al
+  seleccionarla —las colecciones no se anidan—.
+
+Cada paquete seleccionado se instala como una unidad independiente:
+su propio plan, su resolución de colisiones, su guía y su entrada
+en el registro. Las unidades se ejecutan secuencialmente en el
+orden de los flags y cada una es atómica —un fallo en la unidad N
+deja instaladas las N-1 anteriores—; `--force`, `--skip` y
+`--dry-run` aplican a todas.
 
 ## Fases
 
@@ -122,7 +154,10 @@ presente e idéntico—; las entradas `skip` no llevan hash.
 La entrada registra además el `origin` de la instalación: el
 repositorio `owner/name` con el ref usado —o sin él, si se obtuvo la
 rama por defecto— o la ruta absoluta de `--path`; los registros
-escritos antes de este campo carecen de él.
+escritos antes de este campo carecen de él. Una instalación desde
+colección añade `package` con el nombre elegido, y el `origin`
+apunta a la raíz de la colección —así una actualización posterior
+re-resuelve el mismo paquete a través del índice.
 Los registros de otros paquetes instalados en el mismo destino se
 conservan. Un registro ausente no bloquea la operación: se ignora en
 silencio y se trata como si no hubiera instalaciones previas; un

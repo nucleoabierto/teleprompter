@@ -20,6 +20,24 @@ nombra el paquete por su `name` en `teleprompter-lock.json`.
 - `--ref` sobrescribe el ref de un origen de repositorio; con un
   origen local es un error de invocación.
 
+## Orígenes de colección
+
+Si el origen registrado —o el explícito— es una colección, la
+actualización re-resuelve el mismo paquete: busca su nombre en el
+índice del árbol recién obtenido y actualiza ese miembro, no otro.
+El origen reescrito conserva el nombre elegido, así que las
+actualizaciones siguientes siguen resolviendo por el índice —el
+mantenedor puede reubicar el paquete dentro del repositorio sin
+romper orígenes registrados—.
+
+- Si el paquete ya no figura en el índice, la operación aborta con
+  código `4` —«ya no está en la colección»— listando los
+  disponibles, sin escribir nada.
+- Si el mantenedor disolvió la colección en un paquete único con el
+  mismo nombre, la actualización sigue funcionando sobre él.
+- `update` no acepta `--package`: el paquete a actualizar se nombra
+  como argumento, y ese mismo nombre resuelve al miembro.
+
 ## Qué hace
 
 Verifica la versión entrante y presenta el plan de actualización
@@ -47,6 +65,7 @@ el registro queda a la versión nueva con el origen efectivo.
 | El paquete no está instalado                           | `4`    |
 | No hay origen registrado ni se indica uno              | `4`    |
 | El origen obtenido publica otro paquete                | `4`    |
+| El paquete ya no está en la colección del origen       | `4`    |
 | `--ref` con un origen local, `--ref` con `--path`, o argumentos de más | `4` |
 | Manifiesto del origen inválido                         | `1`    |
 | Precondición incumplida o decisiones pendientes sin consola | `2` |
