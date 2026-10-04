@@ -27,7 +27,31 @@ acto repetible.
 
 ## Later
 
-- Vacío: no quedan temas de dirección sin compromiso.
+Ideas de la lluvia de 2026-10-04 (docs/ideas/007–010), en el orden
+sugerido:
+
+- 1. **Desinstalación de paquetes** — salida limpia del ciclo de
+  vida: retirar un paquete y sus recursos registrados con plan
+  visible (idea 007).
+  - Justificación: el registro ya sabe qué retirar; es la pieza
+    que hace creíble que el lock describe el estado real.
+- 2. **Revisión de desactualizados** — consultar qué paquetes
+  ofrecen versión nueva sin actualizar, y actualizar lo revisado
+  en una invocación (idea 008).
+  - Justificación: `update` hoy decide a ciegas; la revisión es
+    el eslabón que falta del ciclo instalar → revisar →
+    actualizar → retirar.
+- 3. **Reproducción del destino desde el registro** — reinstalar de
+  una vez lo que el lock de un repo declara, desde sus orígenes
+  (idea 009).
+  - Justificación: el lock pasa de bitácora a fuente reproducible;
+    el onboarding del equipo deja de ser conocimiento tribal.
+- 4. **Pin de obtención remota** — conservar el commit exacto
+  detrás de cada instalación y hacer determinista la re-obtención
+  (idea 010).
+  - Justificación: hace verificable la promesa de D017 —la versión
+    identifica el contenido—; complementa el endurecimiento del
+    fetch de Now.
 
 ## No ahora
 
@@ -68,3 +92,10 @@ acto repetible.
   `origin.package` con re-resolución en `update`, colección de
   referencia e2e en `examples/` y manual renovado con Material—;
   Endurecimiento de la obtención remota pasa a Now)
+- Usuario: 2026-10-04 — Aprueba (lluvia de ideas post-hito 7: de
+  nueve candidatas evaluadas contra skills.sh, marketplaces de
+  Claude Code y mise/aqua, cuatro entran a Later —desinstalación,
+  revisión de desactualizados con su comando de revisión previa,
+  reproducción del destino y pin de obtención—; las descartadas
+  por ahora: alcance global, variantes por agente, andamiaje
+  `init`, descubrimiento y orígenes remotos adicionales)
