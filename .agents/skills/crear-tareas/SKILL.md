@@ -62,22 +62,18 @@ Instrucciones para que un agente cree tareas definitivas en `docs/tasks/` y las 
 
 ### 2b. Modo flujo de idea a tarea
 
-5. **Verificar la propuesta:** `propuesta.md` en estado `[p]`, aprobación del usuario comunicada y borradores `MM-titulo.md` presentes. Si alguna condición falla, detenerse e informar al usuario sin modificar archivos. Si todo es correcto, registrar la decisión en el campo Revisión de `propuesta.md`.
-6. **Promocionar cada borrador en orden de numeración.** Por cada `MM-titulo.md`:
-   - Aplicar revisión de redacción y pulido mecánico en modo preventivo. Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
-   - Asignar el siguiente número de tarea disponible y mover el archivo a `docs/tasks/NNN-slug.md`.
-   - Añadir la sección Estado con `[ ]` Pendiente y la sección Revisión con los marcadores de la plantilla sin rellenar.
-   - Renumerar las dependencias: cada «Borrador NN» pasa al número de tarea definitivo que le correspondió —verificar que ya tiene número asignado—; las dependencias a tareas existentes (números de tarea) se conservan.
-7. **Actualizar el índice de `propuesta.md`** para que cada línea apunte a la tarea definitiva: `- docs/tasks/NNN-slug.md — título breve`.
-8. **Cambiar el estado de `propuesta.md`** a `[a]` Aprobada y eliminar su línea de la sección «Propuestas en revisión» de `TODO.txt`.
+5. **Verificar la propuesta:** `propuesta.md` en estado `[p]`, aprobación del usuario comunicada y borradores `MM-titulo.md` presentes. Si alguna condición falla, detenerse e informar al usuario sin modificar archivos. Si todo es correcto, registrar la decisión en el campo Revisión de `propuesta.md` con `tarea.sh registrar-revision` de `actualizar-artefactos`.
+6. **Revisar cada borrador en orden de numeración.** Por cada `MM-titulo.md`, aplicar revisión de redacción y pulido mecánico en modo preventivo. Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
+7. **Promocionar los borradores** delegando la mecánica en `promocion.sh promover` de `actualizar-artefactos`, invocado sobre el directorio de la propuesta con el directorio de tareas y el índice como términos: mueve cada `MM-titulo.md` a `docs/tasks/NNN-slug.md` con numeración continua, inyecta `## Estado` y `## Revisión`, renumera las dependencias «Borrador MM» y actualiza el índice de `propuesta.md`. Devuelve la correspondencia `MM<TAB>NNN<TAB>ruta` por borrador; una referencia no resoluble aborta la promoción sin escribir.
+8. **Cerrar el ciclo de la propuesta:** cambiar el estado de `propuesta.md` a «Aprobada» con `tarea.sh estado` y retirar su línea `[p]` del índice con `todo.sh retirar`, operaciones de `actualizar-artefactos`.
 
 ### 3. Núcleo común
 
-En modo flujo de idea a tarea, la promoción del paso 6 ya realizó el equivalente de los pasos 9 y 10; continuar en el paso 11, que registra las entradas en `## General` a la espera de que el orquestador del flujo las agrupe invocando `planificar`.
+En modo flujo de idea a tarea, la promoción del paso 7 ya realizó el equivalente de los pasos 9 y 10; continuar en el paso 11, que registra las entradas en `## General` a la espera de que el orquestador del flujo las agrupe invocando `planificar`.
 
-9. **Determinar el siguiente número de tarea** consultando `TODO.txt` y `docs/tasks/`. Si `TODO.txt` no existe, crearlo con la estructura del proyecto antes de continuar.
+9. **Determinar el siguiente número de tarea** con la operación `siguiente` de `consultar-artefactos` sobre `docs/tasks/` —si el índice `TODO.txt` referenciara un número mayor, manda el índice—. Si `TODO.txt` no existe, crearlo con `todo.sh inicializar` de `actualizar-artefactos` antes de continuar.
 10. **Crear cada archivo de tarea** en `docs/tasks/` usando `assets/task.txt`, con estado inicial `[ ]` y la sección Revisión con los marcadores de la plantilla sin rellenar.
-11. **Añadir las entradas a `TODO.txt`** con el formato `- [ ] docs/tasks/NNN-identificador.md — título breve`, donde el identificador es una versión en kebab-case del título. El destino es la agrupación correspondiente si la tarea pertenece a trabajo planificado —épica o encabezado ligero—, o la sección `## General` si es una tarea suelta sin agrupación propia; si la sección no existe, crearla antes de la primera agrupación. Si el destino no está claro, inferirlo del contexto de la solicitud o la propuesta y, si aun así hay duda, preguntar al usuario.
+11. **Añadir las entradas a `TODO.txt`** con `todo.sh añadir` de `actualizar-artefactos`: `- [ ] docs/tasks/NNN-identificador.md — título breve`, donde el identificador es una versión en kebab-case del título. El destino es la agrupación correspondiente si la tarea pertenece a trabajo planificado —épica o encabezado ligero—, o `general` si es una tarea suelta sin agrupación propia —la operación crea la sección antes de la primera agrupación si falta—. Si el destino no está claro, inferirlo del contexto de la solicitud o la propuesta y, si aun así hay duda, preguntar al usuario.
 12. **Informar al usuario** de las tareas creadas. En modo flujo de idea a tarea, indicar que las entradas quedaron en `## General` a la espera de la agrupación: si el skill no fue invocado por el orquestador del flujo, ofrecer invocar `planificar` en modo promoción para cerrar la planeación del conjunto.
 
 ## Finalización

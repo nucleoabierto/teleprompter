@@ -48,7 +48,7 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 ## Procedimiento
 
 1. **Leer `docs/decisions/README.md`** para obtener el índice de decisiones con sus disparadores.
-2. **Cotejar los disparadores con el trabajo:** buscar en el índice las entradas cuyos disparadores coincidan con los archivos, comandos o palabras clave del trabajo a realizar. La búsqueda puede hacerse con `grep -iEB1 -- '- Disparadores:.*(palabras)' docs/decisions/README.md`.
+2. **Cotejar los disparadores con el trabajo** delegando en `consultar-artefactos`: la operación `coincidencias` del índice devuelve `archivo`, `estado` y `resumen` de cada entrada cuyos disparadores contienen alguno de los términos del trabajo —archivos, comandos o palabras clave—.
 3. **Descartar las no vigentes:** las entradas cuyo estado sea `Sustituida` u `Obsoleta` no aplican; si la sustituta existe y aplica, es la que se trae.
 4. **Leer las decisiones aplicables** en `docs/decisions/DNNN-slug.md` y traerlas al contexto.
 5. **Informar brevemente** de qué decisiones aplican (o que ninguna aplica) y seguir con el trabajo.

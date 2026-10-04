@@ -38,23 +38,24 @@ Instrucciones para que un agente escriba frontend conforme a la guía de estilo 
 
 ## Salida
 
-- Frontend escrito o ajustado conforme a la guía: todos los valores visuales referencian tokens.
-- Un veredicto de cumplimiento con la evidencia producida: qué se verificó estáticamente, qué se verificó renderizado (si aplica) y qué quedó sin poder verificar, declarado explícitamente.
+- Frontend escrito o ajustado conforme a la guía: todos los valores visuales referencian tokens y las garantías del contrato de experiencia se cumplen.
+- Un veredicto de cumplimiento con la evidencia producida: qué se verificó estáticamente, qué se verificó renderizado (si aplica) y qué quedó sin poder verificar, declarado explícitamente. Cuando hubo derivación, qué se derivó y qué principio lo arbitró.
 - Si aparecen lagunas o deriva de la guía (decisión no cubierta, discrepancia con lo declarado), un reporte para el usuario —nunca una invención silenciosa—.
 
 ## Principios rectores
 
 1. **Tokens antes que literales:** todo color, tamaño, espaciado, radio o sombra en el código nuevo proviene de `var(--…)` declarado en la guía; un literal fuera de `:root` es el indicador de deriva de mayor señal.
 2. **La guía manda, el brief puede mandar más:** cuando el encargo del usuario contradice la guía, el encargo gana y la discrepancia se reporta para que la guía se actualice —no se resuelve en silencio—.
-3. **Evidencia, no impresión:** «se ve bien» no es un veredicto; el cumplimiento se demuestra con chequeos concretos, estáticos o renderizados según lo que el proyecto permita.
-4. **Autoridad por niveles:** los fallos deterministas bloquean el trabajo; los riesgos heurísticos se reportan; los juicios subjetivos escalan al usuario. No se disfrazan unos de otros.
-5. **Sin herramienta no hay excusa, hay degradación:** si el proyecto no tiene linter ni es servible, la validación se degrada a chequeos ad hoc (búsqueda de literales, repaso contra la rúbrica) y la degradación se declara en el veredicto.
+3. **Deriva con la guía, no desde el gusto:** ante un componente o decisión que la guía no describe, el estilo se deriva con su orientación generativa y sus principios; lo derivado se informa —qué se decidió y qué principio lo arbitró—, nunca en silencio. La laguna queda reservada a lo que ni la guía ni la orientación resuelven: un valor que falta es de la guía, no del componente.
+4. **Evidencia, no impresión:** «se ve bien» no es un veredicto; el cumplimiento se demuestra con chequeos concretos, estáticos o renderizados según lo que el proyecto permita.
+5. **Autoridad por niveles:** los fallos deterministas bloquean el trabajo; los riesgos heurísticos se reportan; los juicios subjetivos escalan al usuario. No se disfrazan unos de otros.
+6. **Sin herramienta no hay excusa, hay degradación:** si el proyecto no tiene linter ni es servible, la validación se degrada a chequeos ad hoc (búsqueda de literales, repaso contra la rúbrica) y la degradación se declara en el veredicto.
 
 ## Procedimiento
 
 1. **Cargar la guía.** Leer el `DESIGN.md` del proyecto antes de escribir una línea de frontend; extraer los tokens disponibles y los anti-patrones vetados. Si no existe, detenerse y proponer `documentar-guia-estilo`.
-2. **Escribir con la guía.** Todo valor visual referencia un token; los componentes reutilizan los patrones declarados; los anti-patrones están vetados. Si el trabajo exige un valor que la guía no cubre, parar y elevar la laguna al usuario.
-3. **Validar estáticamente.** Verificar en el código producido que no hay valores literales fuera de `:root` (con linter si el proyecto lo tiene, con búsqueda ad hoc si no) y repasar el diff contra la rúbrica fija de `references/rubrica-y-validacion.md`.
+2. **Escribir con la guía.** Todo valor visual referencia un token; los componentes reutilizan los patrones declarados; los anti-patrones están vetados. Ante un componente o decisión que la guía no describe, derivar el estilo con su sección «Orientación para decisiones nuevas» y sus principios —informando qué se derivó y qué principio lo arbitró—; elevar como laguna solo lo que ni la guía ni la orientación resuelven, típicamente un valor que falta. Si el trabajo exige contradecir la guía, parar y elevar la laguna al usuario.
+3. **Validar estáticamente.** Verificar en el código producido que no hay valores literales fuera de `:root` (con linter si el proyecto lo tiene, con búsqueda ad hoc si no), que se cumplen las garantías del contrato de experiencia de la guía —foco visible, presupuestos de transición, áreas de toque, salidas de estado: cada una con la comprobación que declara— y repasar el diff contra la rúbrica fija de `references/rubrica-y-validacion.md`.
 4. **Validar renderizado cuando sea posible.** Si el proyecto es servible, capturar el resultado (screenshot por estado y breakpoint relevante) y confrontarlo con la guía y la rúbrica. Si no lo es, declararlo y no simular la evidencia.
 5. **Emitir el veredicto.** Conforme con evidencia, o con la lista de fallos deterministas a corregir, riesgos heurísticos reportados y juicios elevados al usuario —declarando qué nivel de evidencia se pudo obtener—.
 
@@ -62,7 +63,8 @@ Instrucciones para que un agente escriba frontend conforme a la guía de estilo 
 
 El skill ha terminado cuando:
 
-- El frontend escrito referencia solo tokens de la guía, o las lagunas detectadas se elevaron al usuario.
+- El frontend escrito referencia solo tokens de la guía y cumple las garantías del contrato de experiencia, o las lagunas detectadas se elevaron al usuario.
+- Las derivaciones que hubo se informaron —qué se decidió y qué principio lo arbitró—.
 - El veredicto declara qué se verificó, con qué nivel de evidencia, y qué quedó sin verificar.
 
 ## Referencias

@@ -24,6 +24,7 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 - Cuando el producto tiene varias líneas de trabajo abiertas —épicas planificadas, hitos ligeros, tareas sueltas— sin orden ni dirección declarados.
 - Cuando aparece una línea nueva o se cierra una existente y hay que replantear el orden.
 - Cuando una decisión cambia el costo relativo entre líneas —por ejemplo, un refactor transversal cuya posición altera el costo de las demás— y el orden declarado hay que revisarlo.
+- Cuando `mantener-roadmap` detecta divergencia de dirección al reflejar la ejecución —un horizonte comprometido agotado con sucesores esperando, trabajo comprometido sin línea en el roadmap, una épica completada aún listada—: la replanificación es suya y la puerta humana sigue decidiendo la dirección.
 
 ## Cuándo no usar
 
@@ -57,7 +58,7 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 ### 1. Reunir las líneas
 
-1. **Inventariar las líneas de trabajo abiertas:** recorrer `docs/epics/` con estado `Planificada`, los hitos ligeros de `TODO.txt` sin épica enlazada y las tareas sueltas pendientes de `## General`.
+1. **Inventariar las líneas de trabajo abiertas** con la operación `inventario` de `consultar-artefactos`, que devuelve las épicas con su estado, las agrupaciones del índice —con o sin épica enlazada— y las tareas sueltas no completadas de `## General`.
 2. **Leer el contenido real de cada línea:** los planes técnicos de las épicas y los objetivos de las tareas sueltas, buscando las interacciones —qué línea cambia el costo de qué otra, qué formato o estructura asume una forma del sistema que otra línea todavía puede alterar.
 3. **Si hay una sola línea abierta**, informar de que no hay orden que decidir y terminar sin crear el documento.
 
@@ -74,8 +75,8 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 ### 4. Materializar el roadmap
 
-9. **Crear o actualizar `ROADMAP.md`** en la raíz del repositorio siguiendo `assets/roadmap.md`, registrando la aprobación en su sección Revisión. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
-10. **Reflejar los horizontes comprometidos en `TODO.txt`:** recolocar las agrupaciones (encabezados de hito y tareas sueltas) para que el orden del índice coincida con el declarado en Now y Next, sin tocar el estado de ninguna tarea. Later y No ahora no aparecen en el índice. Si el índice ya coincide, no tocarlo.
+9. **Crear o actualizar `ROADMAP.md`** en la raíz del repositorio siguiendo `assets/roadmap.md`, registrando la aprobación en su sección Revisión con `tarea.sh registrar-revision` de `actualizar-artefactos`. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
+10. **Reflejar los horizontes comprometidos en `TODO.txt`:** recolocar las agrupaciones —encabezados de hito y tareas sueltas— para que el orden del índice coincida con el declarado en Now y Next, componiendo la reordenación con `todo.sh recolocar` de `actualizar-artefactos`, que mueve bloques sin tocar el estado de ninguna tarea. Later y No ahora no aparecen en el índice. Si el índice ya coincide, no tocarlo.
 11. **Informar al usuario** del roadmap producido y del orden reflejado en el índice.
 
 ## Finalización

@@ -62,32 +62,33 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 ### 1. Entender el subsistema
 
 1. **Leer el archivo de la tarea** para fijar objetivo, alcance y criterios de calidad.
-2. **Leer el plan técnico de la épica**, si la tarea figura bajo un encabezado con comentario `<!-- épica: ... -->` en `TODO.txt` o referencia una épica; esa guía de arquitectura es el marco del plan.
+2. **Leer el plan técnico de la épica**, si la tarea figura bajo un encabezado con épica enlazada en el índice —la operación `grupos` de `consultar-artefactos` resuelve los encabezados y sus enlaces— o referencia una épica; esa guía de arquitectura es el marco del plan.
 3. **Apoyarse en la sección `## Contexto` de la tarea:** lo ya recopilado por `recopilar-contexto` es el punto de partida. Completar la exploración solo donde el contexto tenga vacíos respecto a lo que el plan necesita —una pieza del subsistema no cubierta, un patrón dudoso—, sin repetir desde cero lo ya recopilado.
-4. **Redactar el resumen del subsistema** en dos o tres frases: qué hace, qué patrón sigue y dónde encaja el cambio. Si la lectura revela un malentendido en la propia tarea, plantearlo al usuario antes de seguir.
+4. **Resolver la incertidumbre activa con `prueba-concepto`:** si al entender el subsistema o al redactar las acciones el plan queda colgado de una hipótesis que el código puede responder —si una API soporta el caso, si un enfoque rinde, si dos piezas encajan como el plan supone—, invocar `prueba-concepto` con la hipótesis y la decisión que depende de su resultado, e incorporar la conclusión antes de redactar el plan: en el resumen del subsistema o en el `Contexto:` de la acción afectada. La evidencia teórica —mejores prácticas, comparación documental— corresponde a `investigar`.
+5. **Redactar el resumen del subsistema** en dos o tres frases: qué hace, qué patrón sigue y dónde encaja el cambio. Si la lectura revela un malentendido en la propia tarea, plantearlo al usuario antes de seguir.
 
 ### 2. Redactar el plan técnico
 
-5. **Listar las acciones como checklist** que realizan el objetivo de la tarea, en orden de implementación cuando el orden importe. Cada ítem `- [ ]` declara la acción a nivel conceptual y lleva sub-bullets anidados: `Aporta:` con la explicación de cómo contribuye al desarrollo, y `Contexto:` solo cuando la planeación descubrió algo que el ejecutor no puede inferir del código ni de la tarea y cuya omisión haría probable un error.
-6. **Añadir detalle solo donde previene errores costosos:** una referencia a archivo o una decisión de implementación concreta se incluye cuando omitirla haría probable un error; no porque el plan parezca más minucioso. El `Contexto:` por ítem sigue esta misma regla.
-7. **Verificar la guía de la épica:** cada acción del plan sigue los patrones y decisiones transversales que la épica declara; si el plan necesita apartarse, se explicita la discrepancia al usuario.
+6. **Listar las acciones como checklist** que realizan el objetivo de la tarea, en orden de implementación cuando el orden importe. Cada ítem `- [ ]` declara la acción a nivel conceptual y lleva sub-bullets anidados: `Aporta:` con la explicación de cómo contribuye al desarrollo, y `Contexto:` solo cuando la planeación descubrió algo que el ejecutor no puede inferir del código ni de la tarea y cuya omisión haría probable un error.
+7. **Añadir detalle solo donde previene errores costosos:** una referencia a archivo o una decisión de implementación concreta se incluye cuando omitirla haría probable un error; no porque el plan parezca más minucioso. El `Contexto:` por ítem sigue esta misma regla.
+8. **Verificar la guía de la épica:** cada acción del plan sigue los patrones y decisiones transversales que la épica declara; si el plan necesita apartarse, se explicita la discrepancia al usuario.
 
 ### 3. Redactar la suite de pruebas esperada
 
-8. **Extraer los casos de uso** del objetivo y los criterios de calidad de la tarea.
-9. **Generar casos con ZOMBIE como guía interna:** para cada comportamiento, recorrer el eje de progresión (*zero, one, many*) y el de bordes (*boundary, interface, exception*), empezando por el caso más simple y actualizando la lista de forma iterativa.
-10. **Expresar cada caso como expectativa de comportamiento:** qué hace el sistema ante qué estímulo, con el resultado observable; sin nombrar funciones, clases ni detalles internos. La expectativa termina con la letra ZOMBIE que la derivó entre paréntesis —`(Z)`, `(O)`, `(M)`, `(B)`, `(I)` o `(E)`— cuando un parámetro ZOMBIE aplicó de verdad; las pruebas de regresión o de arnés van sin anotar.
-11. **Trazar cada prueba a su caso de uso:** cada expectativa indica de qué caso de uso deriva; si una prueba no encuentra anclaje, se descarta o se plantea el caso de uso que falta.
+9. **Tomar los casos de uso del PRD del conjunto:** si la épica tiene PRD —`docs/prd/NNN-slug.md`—, los casos de uso que la tarea toca se extraen de él, no se inventan desde el objetivo; cada expectativa de la suite traza a su `CU-N`. Si la tarea necesita un caso de uso que el PRD no declara, es una laguna: se eleva al usuario o se actualiza el PRD, nunca se inventa. Si el conjunto no tiene PRD, extraer los casos de uso del objetivo y los criterios de calidad de la tarea.
+10. **Generar casos con ZOMBIE como guía interna:** para cada comportamiento, recorrer el eje de progresión (*zero, one, many*) y el de bordes (*boundary, interface, exception*), empezando por el caso más simple y actualizando la lista de forma iterativa.
+11. **Expresar cada caso como expectativa de comportamiento:** qué hace el sistema ante qué estímulo, con el resultado observable; sin nombrar funciones, clases ni detalles internos. La expectativa termina con la letra ZOMBIE que la derivó entre paréntesis —`(Z)`, `(O)`, `(M)`, `(B)`, `(I)` o `(E)`— cuando un parámetro ZOMBIE aplicó de verdad; las pruebas de regresión o de arnés van sin anotar.
+12. **Trazar cada prueba a su caso de uso:** cada expectativa indica de qué caso de uso deriva; si una prueba no encuentra anclaje, se descarta o se plantea el caso de uso que falta.
 
 ### 4. Puerta humana
 
-12. **Aplicar revisión de redacción y pulido mecánico en modo preventivo.** Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
-13. **Presentar el plan y la suite al usuario** para aprobación. Si solicita cambios, ajustar y repetir la presentación. Si lo rechaza, no escribir nada en el archivo de la tarea y terminar informando del rechazo.
+13. **Aplicar revisión de redacción y pulido mecánico en modo preventivo.** Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
+14. **Presentar el plan y la suite al usuario** para aprobación. Si solicita cambios, ajustar y repetir la presentación. Si lo rechaza, no escribir nada en el archivo de la tarea y terminar informando del rechazo.
 
 ### 5. Materializar el plan
 
-14. **Agregar las dos secciones al archivo de la tarea**, antes de la sección Revisión: `## Plan técnico` con el resumen del subsistema y la checklist de acciones con sus `Aporta:` y `Contexto:`, y `## Suite de pruebas esperada` con las expectativas trazadas.
-15. **Informar al usuario** de que el plan quedó en el archivo de la tarea, listo para la fase de ejecución.
+15. **Agregar las dos secciones al archivo de la tarea** con `tarea.sh insertar-seccion` de `actualizar-artefactos` —cada una queda inmediatamente antes de `## Revisión`—: `## Plan técnico` con el resumen del subsistema y la checklist de acciones con sus `Aporta:` y `Contexto:`, y `## Suite de pruebas esperada` con las expectativas trazadas.
+16. **Informar al usuario** de que el plan quedó en el archivo de la tarea, listo para la fase de ejecución.
 
 ## Finalización
 

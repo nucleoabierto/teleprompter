@@ -41,7 +41,7 @@ Instrucciones para que un agente someta la implementación de una tarea de desar
 2. **Rol adversarial:** el revisor busca problemas, no confirma el trabajo; pero «no hay hallazgos» es un veredicto válido —un revisor obligado a producir hallazgos acaba inventándolos.
 3. **Consistencia con el código base:** el diff se juzga también contra los archivos hermanos o de funcionalidad similar, no solo contra el enunciado de la tarea; el patrón canónico se extrae del código existente.
 4. **Hallazgos citados:** cada hallazgo nombra la regla declarada del proyecto o el patrón concreto que infringe; una observación sin anclaje en una regla o patrón no es un hallazgo.
-5. **La revisión no ejecuta ni reescribe:** el revisor no corre las puertas mecánicas ni modifica el código; su producto es el informe.
+5. **La revisión no corre puertas ni reescribe:** el revisor no ejecuta las puertas mecánicas ni modifica el código; su ejecución se limita a reconstruir el diff con git y a consultas puntuales, y su producto es el informe.
 
 ## Procedimiento
 
@@ -52,13 +52,13 @@ Instrucciones para que un agente someta la implementación de una tarea de desar
 
 ### 2. Lanzar el revisor independiente
 
-3. **Lanzar un subagente de contexto aislado** que recibe únicamente el archivo de la tarea y la ubicación de los cambios, sin el razonamiento del ejecutor. Su encargo:
+3. **Lanzar un subagente de contexto aislado y con capacidad de ejecutar comandos** —los necesita para obtener el diff con git por sí mismo— que recibe únicamente el archivo de la tarea y la ubicación de los cambios, sin el razonamiento del ejecutor. Su encargo:
    - **Obtener el diff por sí mismo** con git a partir de la ubicación indicada, incluidos los archivos nuevos.
    - **Verificar cada criterio de calidad** del archivo de tarea contra el diff.
    - **Revisar la consistencia con el código base:** leer al menos los archivos hermanos o de funcionalidad similar relevantes y comprobar que el diff sigue los patrones vigentes (estructura, nombrado, manejo de errores, estilo).
    - **Revisar las reglas declaradas del proyecto** que apliquen al cambio.
    - **Cotejar contra las lecciones aprendidas:** consultar `docs/lessons/README.md`, identificar las notas cuyos disparadores coincidan con los archivos y acciones del diff, leerlas y verificar que el diff no repite errores ya aprendidos —aunque el ejecutor las haya aplicado bien, la revisión confirma independientemente.
-   - **Verificar el plan nominalmente:** confrontar cada acción del `## Plan técnico` con su realización en el diff y cada expectativa de la `## Suite de pruebas esperada` con la prueba que la cubre. Una acción no realizada solo es aceptable si figura en `## Desviaciones del plan` con su motivo y decisión: la desviación registrada cuenta como realización declarada, y el revisor verifica que el registro exista y sea coherente con el diff.
+   - **Verificar el plan nominalmente:** confrontar cada acción del `## Plan técnico` —enumerable con la operación `checklist` de `consultar-artefactos`— con su realización en el diff y cada expectativa de la `## Suite de pruebas esperada` con la prueba que la cubre. Una acción no realizada solo es aceptable si figura en `## Desviaciones del plan` con su motivo y decisión: la desviación registrada cuenta como realización declarada, y el revisor verifica que el registro exista y sea coherente con el diff.
    - **Distinguir en el veredicto:** «plan no seguido sin desviación registrada» es un hallazgo que solicita cambios; «desviación registrada» se reporta como tal y puede requerir confirmación del usuario en la aprobación final.
    - **Buscar problemas no previstos:** invariantes rotos, casos borde ignorados, discrepancias entre lo declarado en la tarea y lo implementado.
    - **Producir el informe:** criterios verificados, verificación nominal del plan, hallazgos con la regla o patrón infringido citado, y veredicto.

@@ -49,10 +49,10 @@ Instrucciones para que un agente ejecute la mitad de planeación del flujo de de
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y comprobar el estado de planeación: si ya contiene `## Plan técnico` y `## Suite de pruebas esperada` aprobados, informar de que la tarea ya está planeada y terminar sin tocar nada.
-2. **Revisar las dependencias declaradas.** Para cada tarea bloqueante: si está ejecutada, nada que hacer; si tiene plan aprobado sin ejecutar, leer su `## Plan técnico` y tratarlo como base asumida —el contexto y la conectividad de esta tarea se recopilan sobre el mundo que ese plan describe—; si no tiene plan aprobado, la dependencia bloquea la planeación: informar al invocador y terminar.
+1. **Leer el archivo de la tarea** y comprobar el estado de planeación con la operación `planeacion` de `consultar-artefactos`: si ya contiene `## Plan técnico` y `## Suite de pruebas esperada` aprobados, informar de que la tarea ya está planeada y terminar sin tocar nada.
+2. **Revisar las dependencias declaradas** —la operación `dependencias` de `consultar-artefactos` las devuelve—. Para cada tarea bloqueante: si está ejecutada, nada que hacer; si tiene plan aprobado sin ejecutar, leer su `## Plan técnico` y tratarlo como base asumida —el contexto y la conectividad de esta tarea se recopilan sobre el mundo que ese plan describe—; si no tiene plan aprobado, la dependencia bloquea la planeación: informar al invocador y terminar.
 3. **Invocar `recopilar-contexto`** con el archivo de la tarea —y los planes base de las dependencias, si los hay—, que registra `## Contexto`.
-4. **Invocar `evaluar-conectividad`**, que registra `## Conectividad`. Si el veredicto es `desconectada`, dar de alta la tarea puente con `crear-tareas`, declararla como dependencia bloqueante en la tarea actual e informar al invocador —que la marcará `[!]` en `TODO.txt`— sin llegar a planear.
+4. **Invocar `evaluar-conectividad`**, que registra `## Conectividad`. Si el veredicto es `desconectada`, dar de alta la tarea puente con `crear-tareas`, declararla como dependencia en la tarea actual —`tarea.sh añadir-linea` de `actualizar-artefactos` sobre la sección `## Dependencias`— e informar al invocador —que la marcará `[!]` en `TODO.txt`— sin llegar a planear.
 5. **Invocar `planear-implementacion`**, que produce `## Plan técnico` y `## Suite de pruebas esperada` y los somete a la puerta humana. Si el usuario rechaza el plan, informar al invocador y terminar.
 6. **Informar al invocador** de que la tarea quedó planeada: secciones aprobadas registradas, lista para `desarrollar-tarea` en esta iteración o en otra sesión.
 

@@ -51,7 +51,7 @@ Instrucciones para que un agente registre una decisión de diseño siguiendo el 
 
 ## Procedimiento
 
-1. **Determinar el siguiente número disponible.** Listar `docs/decisions/` y tomar el número siguiente al último existente. Si el directorio no existe, crearlo y empezar en `D001`.
+1. **Determinar el siguiente número disponible** con la operación `siguiente` de `consultar-artefactos` sobre `docs/decisions/` y prefijo `D`. Si el directorio no existe, crearlo y empezar en `D001`.
 2. **Redactar el título.** Frase nominal breve que describe la decisión, no el problema. Por ejemplo: «`TODO.txt` como índice único de tareas», no «Cómo organizar las tareas».
 3. **Redactar el contexto.** Dos a cuatro frases que describan las fuerzas en juego: qué problema motivó la decisión, qué opciones estaban sobre la mesa, qué restricciones aplican. Sin justificar la decisión todavía.
 4. **Redactar la decisión.** Una a tres frases, en presente y en primera persona del plural, que digan qué se decidió de forma clara y concreta.

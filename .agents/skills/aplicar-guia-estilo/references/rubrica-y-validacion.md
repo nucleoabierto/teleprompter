@@ -12,6 +12,7 @@ La crítica no es «que quede mejor»: es una lista verificable de dimensiones. 
 - **Estados cubiertos:** lo escrito contempla los estados que la guía declara —loading, empty, error, disabled, hover, focus— según lo que aplique al componente.
 - **Densidad y composición:** la densidad de información y el layout siguen lo declarado en la sección de atmósfera y layout de la guía. Dimensión heurística.
 - **Anti-patrones:** nada de lo vetado en la sección de anti-patrones aparece en el diff. Dimensión determinista cuando el veto es un valor, heurística cuando es una estética.
+- **Contrato de experiencia:** las garantías de comportamiento que la guía declara —foco visible, presupuestos de transición, áreas de toque, salidas de estado— se cumplen en lo escrito, cada una con la comprobación que declara. Determinista cuando la garantía es un valor o una regla CSS, heurística cuando exige interactuar.
 - **Responsive:** el comportamiento sigue lo declarado en la sección de layout; no hay overflow ni rupturas en los breakpoints que la guía cubre. Determinista si se puede renderizar.
 
 ## Validación estática (nivel 1)

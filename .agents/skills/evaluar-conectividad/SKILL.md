@@ -47,13 +47,13 @@ Instrucciones para que un agente contraste lo que una tarea de desarrollo asume 
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y su sección `## Contexto` para fijar qué asume la tarea: archivos, módulos, interfaces o patrones que el objetivo presupone.
+1. **Leer el archivo de la tarea** y su sección `## Contexto` —cuya presencia se verifica con la operación `secciones` de `consultar-artefactos`— para fijar qué asume la tarea: archivos, módulos, interfaces o patrones que el objetivo presupone.
 2. **Contrastar cada supuesto con el codebase:** para cada elemento que la tarea necesita, verificar que existe y tiene la forma que la tarea espera, usando los archivos ya identificados en el contexto.
 3. **Emitir el veredicto:**
    - `Conectada`: todo lo que la tarea asume existe en el codebase; el sub-flujo puede continuar a la planeación.
    - `Parcialmente conectada`: falta algo. Si lo que falta es absorbible por la propia tarea —un elemento pequeño que la implementación puede crear dentro de su alcance—, se declara en la justificación y el sub-flujo continúa. Si no lo es, el veredicto registrado es `desconectada`.
    - `Desconectada`: la tarea depende de capacidad base que no existe y no es absorbible; el sub-flujo no debe planear.
-4. **Registrar la sección `## Conectividad`** en el archivo de la tarea: el veredicto, la justificación breve y, en los veredictos parcial o desconectado, qué falta.
+4. **Registrar la sección `## Conectividad`** en el archivo de la tarea con `tarea.sh insertar-seccion` de `actualizar-artefactos` —queda antes de `## Revisión`—: el veredicto, la justificación breve y, en los veredictos parcial o desconectado, qué falta.
 5. **Si el veredicto es desconectada**, identificar la capacidad base faltante y devolver al invocador la descripción de la tarea puente que la cubriría; el invocador la da de alta con `crear-tareas` y declara la dependencia en la tarea actual.
 6. **Informar al invocador** del veredicto y, cuando aplique, de la tarea puente necesaria.
 

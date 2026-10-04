@@ -62,7 +62,7 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 
 2. **Identificar las tareas del conjunto.** En modo promoción, son las tareas recién creadas de la propuesta; en modo bajo demanda, son las que el usuario lista.
 3. **Leer los archivos de tarea** para extraer objetivos, dependencias y resultados esperados. El plan se construye sobre ese contenido real.
-4. **Decidir si el conjunto amerita épica.** Si es trivial (pocas piezas, sin decisiones transversales), informar al usuario y agrupar bajo un encabezado ligero —un `## Hito N: título` sin documento de épica ni comentario de enlace—, moviendo las entradas de las tareas bajo él; terminar. En caso de duda, preguntar al usuario.
+4. **Decidir si el conjunto amerita épica.** Si es trivial (pocas piezas, sin decisiones transversales), informar al usuario y agrupar bajo un encabezado ligero —`todo.sh encabezado` de `actualizar-artefactos` crea el `## Hito N: título` sin comentario de enlace y `todo.sh mover` lleva las entradas de las tareas bajo él—; terminar. En caso de duda, preguntar al usuario.
 5. **Determinar si existe una épica destino.** Revisar `docs/epics/` y los encabezados de `TODO.txt`. Si el conjunto pertenece a una épica existente, el procedimiento actualiza esa épica en lugar de crear una nueva; en caso de duda, preguntar al usuario.
 
 ### 3. Redactar el borrador de épica
@@ -73,25 +73,26 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
    - **Piezas:** la lista de tareas del conjunto, existentes o por crear, con referencia a sus archivos.
    - **Plan técnico:** el orden de implementación derivado de las dependencias entre piezas, las dependencias técnicas y las decisiones transversales ya tomadas (patrones y estructuras que las piezas comparten).
    - **Criterio de cierre:** la condición bajo la que el conjunto se considera completo.
-7. **Aplicar revisión de redacción y pulido mecánico en modo preventivo.** Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
+7. **Redactar el PRD del conjunto** invocando `mantener-prd` con la propuesta —si la hay— y las piezas: el documento de producto con los casos de uso `CU-N` y el comportamiento esperado que las tareas declararán y la suite anclará. Si el conjunto es un hito ligero sin épica, el PRD solo procede cuando introduce comportamiento de producto observable; en caso de duda, preguntar al usuario.
+8. **Aplicar revisión de redacción y pulido mecánico en modo preventivo** a la épica y al PRD. Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
 
 ### 4. Puerta humana
 
-8. **Presentar el borrador al usuario** para aprobación. Si solicita cambios, ajustar y repetir desde el paso 6. Si lo rechaza, no crear ni modificar el documento de épica y terminar. En modo promoción, las entradas de las tareas ya figuran en `## General` desde la promoción; informar de que el conjunto queda sin agrupar.
+9. **Presentar el borrador de la épica y el PRD al usuario** para aprobación —la misma puerta para ambos: el PRD declara el qué que la épica guía—. Si solicita cambios, ajustar y repetir desde el paso 6. Si lo rechaza, no crear ni modificar el documento de épica ni el PRD y terminar. En modo promoción, las entradas de las tareas ya figuran en `## General` desde la promoción; informar de que el conjunto queda sin agrupar.
 
 ### 5. Materializar la épica
 
-9. **Si es épica nueva:** asignar el siguiente número disponible en `docs/epics/`, crear `docs/epics/NNN-slug.md` con estado `Planificada` y registrar la aprobación en su sección Revisión.
-10. **Si es épica existente:** añadir las piezas nuevas a su lista, actualizar objetivo, alcance o plan técnico solo si el conjunto nuevo lo exige, y registrar la incorporación en su sección Revisión.
-11. **Reflejar la agrupación en `TODO.txt`:** crear o reutilizar el encabezado de la épica con el formato de hito (`## Hito N: título de la épica`, donde `N` es el siguiente número de hito del índice) y añadir bajo él el comentario `<!-- épica: docs/epics/NNN-slug.md -->`. Colocar las líneas de las tareas del conjunto bajo ese encabezado, creándolas si aún no existen y moviéndolas desde su ubicación actual si ya figuran en el índice.
-12. **Informar al usuario** de la épica creada o actualizada y de la agrupación resultante.
+10. **Si es épica nueva:** asignar el siguiente número disponible en `docs/epics/` —operación `siguiente` de `consultar-artefactos`—, crear `docs/epics/NNN-slug.md` con estado `Planificada` y registrar la aprobación en su sección Revisión con `tarea.sh registrar-revision` de `actualizar-artefactos`.
+11. **Si es épica existente:** añadir las piezas nuevas a su lista, actualizar objetivo, alcance o plan técnico solo si el conjunto nuevo lo exige, extender su PRD con los casos de uso nuevos vía `mantener-prd` y registrar la incorporación en su sección Revisión con `tarea.sh registrar-revision`.
+12. **Reflejar la agrupación en `TODO.txt`** con `todo.sh` de `actualizar-artefactos`: si el encabezado de la épica no existe, `encabezado` crea el `## Hito N: título de la épica` —numera con el siguiente de la serie y escribe el comentario `<!-- épica: docs/epics/NNN-slug.md -->` cuando se le pasa la ruta del documento—; si ya existe, se reutiliza. `añadir` crea bajo el encabezado las líneas de las tareas del conjunto que no figuren en el índice y `mover` traslada bajo él las que ya figuran.
+13. **Informar al usuario** de la épica creada o actualizada, del PRD y de la agrupación resultante.
 
 ## Finalización
 
 El skill ha terminado cuando:
 
-- El usuario aprobó el borrador de la épica.
-- El documento existe en `docs/epics/` (o la épica existente quedó actualizada) con estado `Planificada`.
+- El usuario aprobó el borrador de la épica y el PRD.
+- El documento existe en `docs/epics/` (o la épica existente quedó actualizada) con estado `Planificada`, y el PRD del conjunto existe en `docs/prd/` con los casos de uso identificados —o se declaró que el conjunto no lo amerita—.
 - `TODO.txt` refleja la agrupación con su encabezado, el comentario de enlace a la épica y las tareas bajo él.
 
 ## Referencias

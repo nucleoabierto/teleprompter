@@ -50,13 +50,14 @@ Instrucciones para que un agente mantenga viva la documentación de producto del
 2. **Un hogar por hecho:** cada hecho se define una sola vez. Los hechos del modelo no se repiten en la doc de producto: se referencia el documento de dominio correspondiente.
 3. **Indexado o no existe:** todo documento de producto está listado en el índice del directorio; un documento huérfano se da de alta o se elimina.
 4. **Anclado a la suite:** cada escenario nombra la prueba que lo verifica —módulo y título, no número de línea— de modo que una funcionalidad no puede quedar obsoleta sin que una prueba lo delate. La suite concreta (archivo, framework) es dato del proyecto evaluado, no parte del formato.
-5. **Lenguaje de uso, no de implementación:** los escenarios y las guías describen lo que el usuario observa y hace, no aserciones ni símbolos internos.
+5. **Trazado por el ancla, no por identificadores:** cuando el PRD del conjunto declara los casos de uso (`CU-N` en `docs/prd/`), los escenarios se redactan desde ese comportamiento declarado —mismo vocabulario de negocio—, pero el documento público queda limpio de identificadores internos: la remontada al PRD corre por el ancla a la prueba, que traza a su `CU-N` en la suite. El lector público lee producto; quien necesita la intención la remonta por la cadena escenario → prueba → caso de uso.
+6. **Lenguaje de uso, no de implementación:** los escenarios y las guías describen lo que el usuario observa y hace, no aserciones ni símbolos internos.
 
 ## Procedimiento
 
 1. **Delimitar el impacto en producto.** Reconstruir el diff con git a partir de la ubicación indicada —`git status` y `git diff` en el árbol de trabajo, o el rango de commits por sus hashes— e identificar si el cambio altera el comportamiento observable: ¿añade, cambia o elimina una funcionalidad?, ¿cambia un flujo del usuario?, ¿cambia la referencia de uso (formatos, persistencia, contratos externos)? La lista de señales es orientativa, abierta y extensible. Si ninguna aplica, emitir «sin impacto» y terminar.
 2. **Localizar los documentos afectados.** Si el cambio es de modelo sin comportamiento nuevo, deriva a `documentar-dominio` y termina con «sin impacto» en producto.
-3. **Crear o actualizar los documentos.** Si la funcionalidad no tiene documento, asignar el siguiente número disponible en la sección de funcionalidades y crearlo con `assets/feature.txt` describiendo el comportamiento actual. Si existe, actualizar los escenarios afectados, manteniendo los anclas a la suite.
+3. **Crear o actualizar los documentos.** Si la funcionalidad no tiene documento, asignar el siguiente número disponible en la sección de funcionalidades —operación `siguiente` de `consultar-artefactos`— y crearlo con `assets/feature.txt` describiendo el comportamiento actual. Si existe, actualizar los escenarios afectados, manteniendo los anclas a la suite.
 4. **Actualizar el índice** del directorio con el documento nuevo o los cambios.
 5. **Verificar los anclas:** cada escenario citado debe existir en la suite con el módulo y el título declarados; un escenario que la suite ya no verifica indica documentación desfasada y se corrige.
 6. **Informar del resultado:** «sin impacto» o documentación actualizada.

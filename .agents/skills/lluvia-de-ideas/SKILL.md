@@ -63,7 +63,7 @@ Instrucciones para que un agente acompañe al usuario en una conversación de ll
 
 ### 3. Escribir los archivos de idea
 
-5. **Crear `docs/ideas/` si no existe** y asignar a cada idea el siguiente número disponible de la serie del directorio (`001`, `002`, …).
+5. **Crear `docs/ideas/` si no existe** y asignar a cada idea el siguiente número disponible de la serie del directorio —operación `siguiente` de `consultar-artefactos`— (`001`, `002`, …).
 6. **Redactar cada archivo** con el formato de `references/formato-idea.md`: cabecera con tipo y fecha, Problema, Qué desbloquea, Flujos de trabajo que se hacen viables, Ventajas como producto y Tensión que introduce en el roadmap. En las ideas del mismo origen, la tensión referencia a las hermanas por su slug y la cabecera declara el «Orden sugerido» confirmado.
 7. **Revisar la redacción y pulir mecánicamente** cada archivo. Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura` en modo preventivo; de lo contrario, realizar el equivalente manualmente.
 8. **Presentar los archivos al usuario** e informar del encaje: cada idea puede entrar al flujo invocando `idea-a-tarea`, que las consume desde `docs/ideas/` en el orden sugerido.

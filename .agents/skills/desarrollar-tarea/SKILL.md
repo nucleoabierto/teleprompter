@@ -45,7 +45,7 @@ Instrucciones para que un agente ejecute la mitad de ejecución del flujo de des
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y validar la entrada: `## Plan técnico` y `## Suite de pruebas esperada` presentes y aprobados. Si falta alguna, informar al invocador de que la tarea requiere `planear-tarea` primero y terminar sin ejecutar.
+1. **Leer el archivo de la tarea** y validar la entrada con la operación `planeacion` de `consultar-artefactos`: `## Plan técnico` y `## Suite de pruebas esperada` presentes y aprobados. Si falta alguna, informar al invocador de que la tarea requiere `planear-tarea` primero y terminar sin ejecutar.
 2. **Invocar `ejecutar-implementacion`** con el archivo de la tarea: implementa el plan, marca la checklist, cubre la suite esperada y registra las desviaciones; escala al usuario las que cambian objetivo, alcance o guía de la épica. Si el usuario no confirma una desviación mayor, informar al invocador y terminar.
 3. **Devolver el control al invocador** informando del diff producido y de las desviaciones registradas.
 

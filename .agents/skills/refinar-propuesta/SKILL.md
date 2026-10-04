@@ -42,7 +42,7 @@ Instrucciones para que un agente cree la propuesta en `docs/proposals/NNN-slug/`
 
 1. **La propuesta es la unidad de revisión:** `propuesta.md` contiene el enmarcado del problema y la solución más el índice de borradores; el detalle de cada tarea vive en su propio archivo `MM-titulo.md`. Los borradores no tienen ciclo de vida propio: siguen el de la propuesta.
 2. **Refinamiento progresivo:** los borradores se crean de uno en uno, iterando cada uno antes de pasar al siguiente. No se generan todos a la vez: cada borrador puede revelar algo que cambie a los siguientes.
-3. **Investigar antes de redactar:** si un borrador requiere evidencia externa para definirse con calidad, se invoca `investigar` durante el refinamiento y se referencia en «Investigaciones de apoyo».
+3. **La evidencia se resuelve en el refinamiento, nunca como borrador:** si una tarea necesita evidencia externa para definirse —p. ej. mejores prácticas, formatos, comparación de opciones—, se resuelve durante el refinamiento en su forma adecuada: teórica, con `investigar`; o activa, con `prueba-concepto`, que valida la hipótesis con código desechable —un test, un script temporal, un prototipo mínimo—. El documento o la conclusión se referencia en «Investigaciones de apoyo»; los borradores nacen con la evidencia ya incorporada. Un borrador cuyo contenido sea «investigar X» es la señal de que el refinamiento no terminó: la propuesta no va a revisión con su enfoque pendiente de evidencia, porque las tareas que dependen de él nacerían condicionadas a un resultado posterior. El descubrimiento de implementación —el que el ejecutor hace sobre el subsistema al planear— no es esto: vive en el sub-flujo de desarrollo.
 4. **Borrador es futura tarea:** cada borrador usa los mismos campos que la plantilla de tarea definitiva (`assets/borrador.md`), sin Estado ni Revisión, que se añaden al promocionar. Esto permite que `crear-tareas` lo mueva a `docs/tasks/` sin reescritura.
 5. **La puerta asíncrona bloquea:** tras enviar a revisión, el agente se detiene. No promociona, no ejecuta, no sigue refinando hasta que el usuario decida.
 
@@ -50,22 +50,22 @@ Instrucciones para que un agente cree la propuesta en `docs/proposals/NNN-slug/`
 
 ### 1. Crear la propuesta
 
-1. **Determinar el siguiente número de propuesta.** Listar `docs/proposals/` y tomar el número siguiente al más alto existente, con formato `NNN`. Si el directorio no existe, crearlo y empezar en `001`.
+1. **Determinar el siguiente número de propuesta** con la operación `siguiente` de `consultar-artefactos` sobre `docs/proposals/`, con formato `NNN`. Si el directorio no existe, crearlo y empezar en `001`.
 2. **Crear el directorio `docs/proposals/NNN-slug/`** con un slug breve derivado del título.
 3. **Redactar `propuesta.md`** siguiendo `assets/propuesta.md`: problema, oportunidad, forma de solución, solución, alternativas, fuera de alcance e investigaciones de apoyo («Ninguna» si aún no hay). Verificar que hay al menos dos alternativas documentadas. Dejar el estado en `[ ]` Borrador y la sección Borradores vacía.
 
 ### 2. Descomponer en borradores
 
 4. **Descomponer la forma de solución en tareas.** Cada borrador debe ser ejecutable de forma independiente por `ejecutar-tareas`: objetivo claro, entrada suficiente, criterios de calidad verificables, procedimiento sugerido.
-5. **Investigar cuando haga falta.** Si un borrador necesita evidencia externa (mejores prácticas, formatos, comparación de opciones), invocar `investigar` antes de redactarlo y añadir la referencia a «Investigaciones de apoyo» de `propuesta.md`.
+5. **Resolver la evidencia antes de redactar.** Si la descomposición revela que una tarea necesita evidencia externa (p. ej. mejores prácticas, formatos, comparación de opciones), resolverla antes de redactar el borrador afectado, en su forma adecuada: teórica con `investigar`, o activa con `prueba-concepto`; referenciar el resultado en «Investigaciones de apoyo» de `propuesta.md`. Si la evidencia cambia la forma de solución, actualizar `propuesta.md` y los borradores ya creados antes de continuar. Ningún borrador es una investigación: si el instinto es crear «01-investigar-…», la evidencia se resuelve ahora, durante el refinamiento. Las puertas humanas son las de cada skill: `investigar` pausa el refinamiento hasta que el usuario apruebe el documento; `prueba-concepto` informa su conclusión, que entra en la propuesta y queda cubierta por la revisión de esta. Si el usuario rechaza el resultado, la descomposición se replantea con lo aprendido o la propuesta continúa sin esa evidencia, declarándolo en «Investigaciones de apoyo».
 6. **Crear los borradores de uno en uno.** Por cada tarea, crear `MM-titulo.md` (numeración de dos dígitos: `01`, `02`, …) siguiendo `assets/borrador.md`, iterar el contenido hasta que sea sólido y solo entonces pasar al siguiente. Las dependencias se expresan como «Borrador NN» cuando apuntan a otro borrador de la misma propuesta y por su número de tarea («035») cuando apuntan a una tarea existente.
 7. **Actualizar el índice de `propuesta.md`** a medida que se añade cada borrador: `- \`MM-titulo.md\` — título breve (depende de MM, si aplica)`.
 8. **Revisar la redacción y pulir mecánicamente** `propuesta.md` y cada borrador antes de enviar a revisión. Si el arnés lo permite, invocar `revisar-redaccion` en modo preventivo y, con su salida, `pulir-escritura` en modo preventivo; de lo contrario, realizar el equivalente manualmente.
 
 ### 3. Enviar a revisión
 
-9. **Cambiar el estado de `propuesta.md`** a `[p]` Pendiente de revisión.
-10. **Añadir la línea a `TODO.txt`** en la sección «Propuestas en revisión» (al final del archivo, después de los hitos; crear la sección si no existe): `- [p] docs/proposals/NNN-slug/ — título (N borradores)`.
+9. **Cambiar el estado de `propuesta.md`** a «Pendiente de revisión» con `tarea.sh estado` de `actualizar-artefactos`.
+10. **Añadir la línea a `TODO.txt`** con `todo.sh añadir` de `actualizar-artefactos` sobre la sección de propuestas —la operación la crea al final del archivo si no existe—: `- [p] docs/proposals/NNN-slug/ — título (N borradores)`.
 11. **Informar al usuario** de que la propuesta espera revisión y **detenerse**. La puerta humana asíncrona queda activa.
 
 ### Ciclo de vida posterior
