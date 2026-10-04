@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+[x] Completada
 
 ## Tipo
 
@@ -73,8 +73,26 @@ mismo.
   el tag identifique el artefacto publicado.
 - La convención tag ↔ commit de release que esta corrección siga a
   futuro la fija la tarea 027.
+- Ejecutada el 2026-10-04:
+  - `v0.2.0`: `npm pack` en `3209608` produce
+    `b9687682d97611e3eea278d8650d50b7bf225e8a`, idéntico al
+    `dist.shasum` publicado. Tag anotado recreado sobre ese commit
+    (`8f81421` → `3209608`) y actualizado en `origin` con
+    `git push -f`.
+  - `v0.1.1`: ya era correcto. `npm pack` en `13350a2` produce
+    `111ec423b6f33daf1904043adf0d9399d1663dad`, idéntico al
+    `dist.shasum` publicado. Sin cambios.
+  - `v0.1.0`: no verificable — la versión fue despublicada y
+    `npm view @nucleoabierto/teleprompter@0.1.0` responde 404, por
+    lo que no hay `shasum` de registry con qué contrastar.
+    `npm pack` local en `2f91d94` produce
+    `dc368a18dcecf5b1f89616d7c06a794d3db463ee`; el tag se deja como
+    está, sobre el commit que introdujo el CLI con versión `0.1.0`.
+  - El comparativo `v0.1.1...v0.2.0` del changelog ahora abarca 33
+    commits, desde la base común `5d8583f` hasta `3209608` —la
+    totalidad de los cambios publicados como 0.2.0—.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-04 — Aprueba
+- Usuario: 2026-10-04 — Aprueba
