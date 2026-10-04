@@ -432,12 +432,39 @@ async function runUpdate(io, out, err, parsed) {
   if (!obtained.ok) return obtained.code;
   const { pkgDir, cleanup } = obtained;
   try {
-    const result = verifyPackage(pkgDir, destDir);
+    // A collection origin re-resolves the member through the index
+    // of the freshly obtained tree — the name is the package being
+    // updated, whether the origin came from the lock or the
+    // invocation (D019).
+    let unitDir = pkgDir;
+    let fromCollection = false;
+    if (isCollectionDir(pkgDir)) {
+      const collection = loadCollectionManifest(pkgDir);
+      for (const warning of collection.warnings) out(`aviso: ${warning}`);
+      if (collection.errors.length > 0) {
+        for (const error of collection.errors) {
+          err(`manifiesto de colección inválido: ${error}`);
+        }
+        return EXIT_MANIFEST;
+      }
+      const resolved = resolveSelection(pkgDir, collection.manifest, [parsed.pkg]);
+      if (!resolved.ok) {
+        err(`el paquete "${parsed.pkg}" ya no está en la colección`);
+        if (resolved.available.length > 0) {
+          err(`disponibles: ${resolved.available.join(', ')}`);
+        }
+        return EXIT_USAGE;
+      }
+      unitDir = resolved.units[0].dir;
+      fromCollection = true;
+    }
+
+    const result = verifyPackage(unitDir, destDir);
     const invalid = checkVerified(result, out, err, parsed.pkg);
     if (invalid !== null) return invalid;
     const { manifest } = result;
 
-    const plan = buildUpdatePlan(pkgDir, manifest, destDir, result.creates, lock);
+    const plan = buildUpdatePlan(unitDir, manifest, destDir, result.creates, lock);
     if (plan.upToDate) {
       out(`${manifest.name}@${manifest.version} ya está en esa versión`);
       return EXIT_OK;
@@ -454,8 +481,12 @@ async function runUpdate(io, out, err, parsed) {
       return EXIT_OK;
     }
 
+    // The rewritten origin must stay re-resolvable: a collection
+    // update keeps the member name beside the source.
+    const origin = originOf(source);
+    if (fromCollection) origin.package = parsed.pkg;
     return executeAndReport(out, err, {
-      pkgDir, destDir, lock, plan, manifest, origin: originOf(source), verb: 'actualizado',
+      pkgDir: unitDir, destDir, lock, plan, manifest, origin, verb: 'actualizado',
     });
   } finally {
     if (cleanup !== null) cleanup();

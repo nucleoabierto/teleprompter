@@ -55,14 +55,18 @@ function isValidLock(data) {
 
 // `origin` is optional — locks written before it existed stay
 // valid — but when present it must name the re-fetchable source:
-// a GitHub repo with its optional ref, or a local path.
+// a GitHub repo with its optional ref, or a local path. A
+// collection install adds the selected member's name, which a
+// later update re-resolves through the index.
 function isValidOrigin(o) {
   if (o === null || typeof o !== 'object' || Array.isArray(o)) return false;
+  const pkgOk = o.package === undefined || typeof o.package === 'string';
   if (o.type === 'github') {
-    return typeof o.repo === 'string'
+    return pkgOk
+      && typeof o.repo === 'string'
       && (o.ref === undefined || typeof o.ref === 'string');
   }
-  if (o.type === 'path') return typeof o.path === 'string';
+  if (o.type === 'path') return pkgOk && typeof o.path === 'string';
   return false;
 }
 

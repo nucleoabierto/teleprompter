@@ -30,7 +30,7 @@ manual.
   Definir el comportamiento de instalación desde colecciones
 - [x] docs/tasks/032-instalar-desde-coleccion.md — Instalar el
   paquete seleccionado de una colección
-- [ ] docs/tasks/033-origen-y-ciclo-de-vida-coleccion.md —
+- [x] docs/tasks/033-origen-y-ciclo-de-vida-coleccion.md —
   `origin` de colección en el registro y ciclo de vida por paquete
 - [ ] docs/tasks/034-coleccion-referencia-e2e.md — Empaquetar una
   colección de referencia e instalarla de extremo a extremo

@@ -1184,6 +1184,8 @@ test('a lock with a malformed origin degrades to no history', async () => {
     { type: 'github' },
     { type: 'github', repo: 'o/r', ref: 5 },
     { type: 'path' },
+    { type: 'github', repo: 'o/r', package: 7 },
+    { type: 'path', path: '/x', package: 7 },
   ];
   for (const origin of malformed) {
     const dest = tmp();
@@ -1779,4 +1781,189 @@ test('a remote collection with @ref records ref and package in the origin', asyn
   assert.deepEqual(lock.packages.alfa.origin, {
     type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
   });
+});
+
+// --- update desde colección ---
+
+// Installs every member of a local collection into a fresh
+// destination and hands both over so the test can mutate the
+// collection and drive `update` against it.
+async function installedFromCollection(members) {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, members);
+  for (const member of members) {
+    const { code, stderr } = await run(
+      ['--path', coll, dest, '--package', path.basename(member.path)],
+    );
+    assert.equal(code, EXIT_OK, stderr.join('\n'));
+  }
+  return { dest, coll };
+}
+
+test('update re-resolves the recorded member of a local collection', async () => {
+  const { dest, coll } = await installedFromCollection([
+    { path: 'alfa' },
+    { path: 'beta', manifest: validManifest('beta', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+  ]);
+  writePkg(path.join(coll, 'alfa'), validManifest('alfa', {
+    version: '2.0.0',
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'n.txt', target: 'n.txt' }],
+  }), { 'a.txt': 'nuevo', 'n.txt': 'n' });
+
+  const { code, stdout, stderr } = await run(['update', 'alfa'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /actualizado: alfa@2\.0\.0/);
+  assert.equal(fs.readFileSync(path.join(dest, 'n.txt'), 'utf8'), 'n');
+  const lock = lockOf(dest);
+  assert.equal(lock.packages.alfa.version, '2.0.0');
+  assert.deepEqual(lock.packages.alfa.origin, { type: 'path', path: coll, package: 'alfa' });
+  assert.equal(lock.packages.beta.version, '1.0.0');
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+});
+
+test('update re-fetches the recorded remote collection and updates the member', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const build = async (version, content) => {
+    const work = tmp();
+    const root = path.join(work, 'familia-abc123');
+    writeCollection(root, [{
+      path: 'alfa',
+      manifest: validManifest('alfa', { version }),
+      files: { 'a.txt': content },
+    }]);
+    const archive = path.join(work, 'a.tgz');
+    await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
+    return fs.readFileSync(archive);
+  };
+  const spy1 = spyFetch(okResponse(await build('1.0.0', 'viejo')));
+  await run(['o/familia', dest, '--package', 'alfa'], { tmpBase, fetch: spy1.fetch });
+  const spy2 = spyFetch(okResponse(await build('2.0.0', 'nuevo')));
+  const { code, stdout, stderr } = await run(
+    ['update', 'alfa'], { cwd: dest, tmpBase, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /actualizado: alfa@2\.0\.0/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.deepEqual(lockOf(dest).packages.alfa.origin, {
+    type: 'github', repo: 'o/familia', package: 'alfa',
+  });
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('update with an explicit collection source resolves the package by name', async () => {
+  const dest = tmp();
+  const collA = path.join(tmp(), 'familia-a');
+  writeCollection(collA, [{ path: 'alfa' }]);
+  await run(['--path', collA, dest, '--package', 'alfa']);
+  const collB = path.join(tmp(), 'familia-b');
+  writeCollection(collB, [{
+    path: 'alfa',
+    manifest: validManifest('alfa', { version: '3.0.0' }),
+    files: { 'a.txt': 'de la otra familia' },
+  }]);
+  const { code, stdout, stderr } = await run(
+    ['update', 'alfa', '--path', collB], { cwd: dest },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /actualizado: alfa@3\.0\.0/);
+  assert.deepEqual(lockOf(dest).packages.alfa.origin, {
+    type: 'path', path: collB, package: 'alfa',
+  });
+});
+
+test('--ref overrides the ref of a recorded collection origin', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const build = async (version) => {
+    const work = tmp();
+    const root = path.join(work, 'familia-abc123');
+    writeCollection(root, [{
+      path: 'alfa',
+      manifest: validManifest('alfa', { version }),
+      files: { 'a.txt': version },
+    }]);
+    const archive = path.join(work, 'a.tgz');
+    await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
+    return fs.readFileSync(archive);
+  };
+  const spy1 = spyFetch(okResponse(await build('1.0.0')));
+  await run(['o/familia@v1', dest, '--package', 'alfa'], { tmpBase, fetch: spy1.fetch });
+  const spy2 = spyFetch(okResponse(await build('2.0.0')));
+  const { code, stderr } = await run(
+    ['update', 'alfa', '--ref', 'v2'], { cwd: dest, tmpBase, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(spy2.urls[0], /tar\.gz\/v2/);
+  assert.deepEqual(lockOf(dest).packages.alfa.origin, {
+    type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
+  });
+});
+
+test('update reports a member retired from the collection index', async () => {
+  const { dest, coll } = await installedFromCollection([{ path: 'alfa' }]);
+  writePkg(coll, {
+    collection: true,
+    name: 'coleccion',
+    packages: [{ path: 'beta' }],
+  });
+  writePkg(path.join(coll, 'beta'), validManifest('beta'), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['update', 'alfa'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  const shown = stderr.join('\n');
+  assert.match(shown, /ya no está en la colección/);
+  assert.match(shown, /disponibles: beta/);
+  assert.equal(lockOf(dest).packages.alfa.version, '1.0.0');
+});
+
+test('update follows a collection dissolved into a single package', async () => {
+  const dest = tmp();
+  // The collection directory must be named after the member: the
+  // dissolved single-package manifest has to pass checkName.
+  const coll = path.join(tmp(), 'alfa');
+  writeCollection(coll, [{ path: 'alfa' }]);
+  await run(['--path', coll, dest, '--package', 'alfa']);
+  writePkg(coll, validManifest('alfa', { version: '2.0.0' }), { 'a.txt': 'suelto' });
+  const { code, stdout, stderr } = await run(['update', 'alfa'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /actualizado: alfa@2\.0\.0/);
+  assert.deepEqual(lockOf(dest).packages.alfa.origin, { type: 'path', path: coll });
+});
+
+test('list, check and guide treat a collection-installed package like any other', async () => {
+  const dest = tmp();
+  const contenido = '# Guía\nde la colección';
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{
+    path: 'alfa',
+    manifest: validManifest('alfa', { personalization: 'guia.md' }),
+    files: { 'a.txt': 'a', 'guia.md': contenido },
+  }]);
+  await run(['--path', coll, dest, '--package', 'alfa']);
+
+  const listed = await run(['list'], { cwd: dest });
+  assert.equal(listed.code, EXIT_OK);
+  assert.match(listed.stdout.join('\n'), /alfa/);
+
+  const checked = await run(['check'], { cwd: dest });
+  assert.equal(checked.code, EXIT_OK);
+  assert.match(checked.stdout.join('\n'), / {4}intacto\s+a\.txt/);
+
+  const guided = await run(['guide'], { cwd: dest });
+  assert.equal(guided.code, EXIT_OK);
+  assert.match(guided.stdout.join('\n'), /de la colección/);
+});
+
+test('update aborts when the collection manifest itself is invalid', async () => {
+  const { dest, coll } = await installedFromCollection([{ path: 'alfa' }]);
+  writePkg(coll, {
+    collection: true,
+    name: 'coleccion',
+    packages: [{ path: 'alfa' }],
+    version: '1.0.0',
+  });
+  const { code, stderr } = await run(['update', 'alfa'], { cwd: dest });
+  assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /manifiesto de colección inválido/);
 });
