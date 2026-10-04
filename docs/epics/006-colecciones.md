@@ -26,7 +26,7 @@ manual.
 
 ## Piezas
 
-- [ ] docs/tasks/031-definir-comportamiento-colecciones.md —
+- [x] docs/tasks/031-definir-comportamiento-colecciones.md —
   Definir el comportamiento de instalación desde colecciones
 - [ ] docs/tasks/032-instalar-desde-coleccion.md — Instalar el
   paquete seleccionado de una colección

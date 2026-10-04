@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -70,8 +70,43 @@ materializan.
   ocupados por `destino` y `ref`), y ante una colección sin
   selección, error que imprime el índice de paquetes disponibles
   en lugar de selector interactivo.
+- Definición acordada con el usuario (2026-10-04) y registrada
+  como D019:
+  - Selección por nombre con la opción `--package <nombre>`,
+    repetible y válida con orígenes `github` (`user/repo[@ref]`)
+    y `path`; el nombre es el del manifiesto del paquete —idéntico
+    al basename de su directorio por `checkName`— nunca la ruta.
+    Valores repetidos se deduplican: la selección es un conjunto.
+  - Colección sin `--package` → `install` aborta sin escribir e
+    imprime el índice (nombre, versión y descripción por paquete)
+    sugiriendo la selección; exit ≠ 0.
+  - `--package` con origen no-colección → error; nombre ausente del
+    índice → error con la lista de disponibles.
+  - Cardinalidad: uno o varios paquetes por flag repetido; cada uno
+    se instala como unidad independiente (plan, entrada de lock y
+    guía propios). La ejecución es secuencial en el orden de los
+    flags; cada unidad es atómica según D005, de modo que un fallo
+    en la unidad N deja instaladas y reportadas las N-1 anteriores.
+    `--force`/`--skip`/`--dry-run` aplican a todas las unidades.
+    Sin comodín «todos» en esta versión.
+  - `origin` gana el campo opcional `package: "<nombre>"` cuando el
+    paquete vino de colección, en ambos tipos (`github`, `path`);
+    `update` re-resuelve nombre → ruta a través del índice, así el
+    índice puede reubicar paquetes sin romper orígenes. Locks sin
+    `package` siguen válidos. Nombre desaparecido del índice →
+    error «el paquete ya no está en la colección».
+  - Bordes: nombres duplicados en el índice → colección ambigua
+    para la selección (error); entrada del índice que apunta a otra
+    colección → error (sin anidamiento); un miembro con manifiesto
+    inválido solo falla si se selecciona —en el índice impreso
+    aparece marcado, no aborta—, pues la selección resuelve por el
+    basename de la ruta, idéntico al nombre; `update` no admite
+    `--package` y, ante un origen explícito que sea colección,
+    re-resuelve el miembro por el nombre del paquete que se
+    actualiza. El código de salida concreto de cada error lo fija
+    la implementación (032).
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-04 — Aprueba
+- Usuario: 2026-10-04 — Aprueba

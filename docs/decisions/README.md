@@ -125,3 +125,11 @@ decisión antes de actuar.
     `v*`, `prepublishOnly`, trusted publishing, CI, dist-tag,
     `docs/release.md`, `package.json`
   - Estado: Aceptada
+- [D019-seleccion-por-nombre-en-coleccion.md](D019-seleccion-por-nombre-en-coleccion.md)
+  — el paquete de una colección se selecciona por nombre con
+  `--package` (repetible); sin selección se aborta imprimiendo el
+  índice, y `origin` gana el campo `package` para re-resolverlo.
+  - Disparadores: colección, `collection`, `packages`, `--package`,
+    selección, índice, `install`, `origin`, lock, `update`,
+    `src/manifest.js`, `src/cli.js`
+  - Estado: Aceptada

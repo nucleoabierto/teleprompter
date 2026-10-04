@@ -35,3 +35,13 @@ en `docs/lessons/` las marca como `consolidada`.
     históricos puntuales van en la decisión (D018) o quedan fuera
     de la documentación viva.
   Estado: pendiente
+- Id: 20261004T010000
+  Tarea: docs/epics/006-colecciones.md (planeación del hito 7)
+  Esperado: las tareas promocionadas toman el siguiente número libre
+    y las transformaciones solo tocan los archivos del conjunto.
+  Obtenido: se asignaron 029-033 sin verificar que 029 y 030 ya
+    existían completadas, y el script de promoción con glob añadió
+    secciones Estado/Revisión duplicadas a esas tareas ajenas.
+  Corrección: consultar los números ocupados en `docs/tasks/` antes
+    de asignar y acotar los globs a los archivos propios.
+  Estado: pendiente
