@@ -13,25 +13,16 @@ acto repetible.
 
 ## Now
 
-- 1. **Cadena de release a npm** — épica 005 (hito 6, 3 tareas):
-  alinear los tags con el contenido publicado, definir y documentar
-  la cadena que D008 aplazó y, según lo que ella decida, materializar
-  trusted publishing en CI.
-  - Estado: planificada; la tarea 026 no tiene dependencias.
-  - Justificación: es pequeña, acotada y cierra la línea de
-    publicación que ya se materializó; toda línea siguiente terminará
-    en un publish que esta cadena gobierna, de modo que definirla
-    antes protege lo que venga después.
-
-## Next
-
 - 1. **Colecciones** — habilitar repositorios con varios paquetes y
   la selección entre ellos (`collection: true` ya está previsto en
   el formato).
   - Justificación: es la línea que más cambia la superficie pública
     del formato; resolverla antes del próximo release mantiene
     coherente la evolución del formato con lo ya publicado.
-- 2. **Endurecimiento de la obtención remota** — timeout, límite de
+
+## Next
+
+- 1. **Endurecimiento de la obtención remota** — timeout, límite de
   tamaño y distinción de errores HTTP, residuales registrados en la
   revisión de la tarea 012.
   - Justificación: `update` hace que el fetch se invoque con mucha
@@ -70,3 +61,8 @@ acto repetible.
   materializada con 0.2.0 en el registry; lo que restaba —la cadena
   de release— se descompuso en la épica 005 y pasa a Now por ser
   pequeña, acotada y protectora de toda publicación futura)
+- Usuario: 2026-10-04 — Aprueba (hito 6 cerrado: tags alineados con
+  el contenido publicado, cadena documentada en `docs/release.md`
+  con D018, trusted publishing materializado en CI y validado de
+  punta a punta con el release 0.2.1 —provenance incluido—;
+  Colecciones pasa a Now)
