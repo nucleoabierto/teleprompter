@@ -23,7 +23,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test --experimental-test-coverage --test-coverage-include='**/src/**' --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100"
+    "test": "node --test --experimental-test-coverage --test-coverage-include='**/src/**' --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100",
+    "prepublishOnly": "npm test"
   },
   "dependencies": {
     "tar": "^7.5.22"

@@ -25,9 +25,9 @@ registrada (D018)—.
 
 ## Piezas
 
-- [ ] docs/tasks/026-alinear-tags-con-contenido-publicado.md —
+- [x] docs/tasks/026-alinear-tags-con-contenido-publicado.md —
   Alinear los tags de release con el contenido publicado
-- [ ] docs/tasks/027-cadena-de-release.md — Definir y documentar la
+- [x] docs/tasks/027-cadena-de-release.md — Definir y documentar la
   cadena de release
 - [ ] docs/tasks/028-trusted-publishing-ci.md — Publicación por CI
   con trusted publishing

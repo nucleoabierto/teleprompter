@@ -117,3 +117,11 @@ decisión antes de actuar.
   - Disparadores: `upToDate`, `update`, versión, semver, plan de
     actualización, `buildUpdatePlan`, mismo número
   - Estado: Aceptada
+- [D018-tag-de-release-dispara-publicacion-ci.md](D018-tag-de-release-dispara-publicacion-ci.md)
+  — el tag `v*` sobre el commit de release dispara el workflow de
+  CI que corre la suite y publica con trusted publishing;
+  `prepublishOnly` cubre el publish manual.
+  - Disparadores: npm, release, publicación, `npm publish`, tag,
+    `v*`, `prepublishOnly`, trusted publishing, CI, dist-tag,
+    `docs/release.md`, `package.json`
+  - Estado: Aceptada

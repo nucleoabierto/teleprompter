@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+[x] Completada
 
 ## Tipo
 
@@ -33,7 +33,7 @@ imposible por construcción.
 - `package.json` — scripts, `files`, `bin`; hoy sin
   `prepublishOnly` ni `publishConfig`.
 - Prácticas observadas: commits convencionales, tags `v*`,
-  publicación manual con cuenta `gilmrjc` (2FA), dist-tag `legacy`
+  publicación manual con cuenta individual (2FA), dist-tag `legacy`
   usado una sola vez para 0.1.1 —no hay política de líneas de
   mantenimiento—.
 
@@ -77,8 +77,21 @@ imposible por construcción.
 - Requisitos de plataforma verificados: npm ≥ 11.5.1 y Node ≥ 22.14
   localmente; publicar exige 2FA o granular token con bypass-2FA;
   trusted publishing es GA desde julio de 2025 y el repo es público.
+- Ejecutada el 2026-10-04:
+  - Piezas acordadas con el usuario: tag `vX.Y.Z` sobre el commit
+    de release como declaración y disparador de CI; puerta doble
+    —job de tests condición del publish en CI + `prepublishOnly`
+    en `package.json`—; publicación por CI con trusted publishing
+    (materializada por la tarea 028).
+  - `docs/release.md` documenta la cadena completa con
+    responsables, bloqueos y el procedimiento ante publish fallido.
+  - `package.json` gana `prepublishOnly: npm test`.
+  - D018 registrada en `docs/decisions/` e indexada. La mención de
+    `legacy` se quedó en D018 por decisión del usuario: en
+    `docs/release.md` solo queda la política de largo plazo
+    (`latest` único, sin líneas paralelas).
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-04 — Aprueba
+- Usuario: 2026-10-04 — Aprueba

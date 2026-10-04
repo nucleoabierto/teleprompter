@@ -24,3 +24,14 @@ en `docs/lessons/` las marca como `consolidada`.
     modifique archivos; la lectura directa no sustituye al diff
     real ni a la ejecución de la suite.
   Estado: pendiente
+- Id: 20261004T004549
+  Tarea: docs/tasks/027-cadena-de-release.md
+  Esperado: el documento de la cadena de release contiene solo la
+    política de largo plazo del proyecto.
+  Obtenido: `docs/release.md` incluía la mención del dist-tag
+    `legacy`, una acción puntual histórica (backfill de 0.1.1).
+  Corrección: eliminar la mención —«es un detalle que no es
+    relevante en el contexto de largo plazo»—; los detalles
+    históricos puntuales van en la decisión (D018) o quedan fuera
+    de la documentación viva.
+  Estado: pendiente
