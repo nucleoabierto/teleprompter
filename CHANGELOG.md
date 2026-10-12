@@ -7,6 +7,8 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-12
+
 ### Changed
 
 - La obtención remota tiene presupuestos y diagnósticos propios:
@@ -77,7 +79,8 @@ destino:
 - Especificación pública del formato de paquete y paquete de referencia
   `ciclo-tareas`.
 
-[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/nucleoabierto/teleprompter/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.1.1...v0.2.0
