@@ -1,7 +1,7 @@
 ---
 name: crear-tareas
 description: >
-  Crea tareas definitivas en docs/tasks/ y las registra en TODO.txt
+  Crea tareas definitivas en docs/tasks/ y las registra en TODO.md
   a partir de una solicitud articulada del usuario.
   Usar cuando el usuario pida crear tareas o cuando se descubran
   nuevas tareas durante la ejecución de otra tarea.
@@ -11,7 +11,7 @@ description: >
 
 # Crear tareas
 
-Instrucciones para que un agente cree tareas definitivas en `docs/tasks/` y las registre en `TODO.txt` a partir de una solicitud articulada.
+Instrucciones para que un agente cree tareas definitivas en `docs/tasks/` y las registre en `TODO.md` a partir de una solicitud articulada.
 
 ## Cuándo usar
 
@@ -27,17 +27,17 @@ Instrucciones para que un agente cree tareas definitivas en `docs/tasks/` y las 
 ## Entrada
 
 - La solicitud del usuario, que puede describir una o varias tareas, articulada con objetivo, resultado esperado y al menos un criterio de calidad. Si la entrada es una solicitud sin articular, se descompone en tareas antes de crear.
-- `TODO.txt` como índice actual de tareas.
+- `TODO.md` como índice actual de tareas.
 - `assets/task.txt` como plantilla de tarea definitiva.
 
 ## Salida
 
 - Uno o varios archivos de tarea en `docs/tasks/` siguiendo la plantilla, con estado inicial `[ ]` y la sección Revisión con los marcadores sin rellenar.
-- Entradas correspondientes añadidas a `TODO.txt`, bajo la agrupación correspondiente cuando la tienen y en `## General` en caso contrario.
+- Entradas correspondientes añadidas a `TODO.md`, bajo la agrupación correspondiente cuando la tienen y en `## General` en caso contrario.
 
 ## Principios rectores
 
-1. **Una tarea, un archivo:** cada tarea produce un archivo en `docs/tasks/` siguiendo la plantilla y una línea en `TODO.txt`.
+1. **Una tarea, un archivo:** cada tarea produce un archivo en `docs/tasks/` siguiendo la plantilla y una línea en `TODO.md`.
 2. **Validación antes de crear:** la descomposición se presenta al usuario antes de generar archivos.
 
 ## Procedimiento
@@ -50,16 +50,16 @@ Instrucciones para que un agente cree tareas definitivas en `docs/tasks/` y las 
 
 ### 2. Núcleo común
 
-4. **Determinar el siguiente número de tarea** consultando `TODO.txt` y `docs/tasks/`. Si `TODO.txt` no existe, crearlo con la estructura del proyecto antes de continuar.
+4. **Determinar el siguiente número de tarea** consultando `TODO.md` y `docs/tasks/`. Si `TODO.md` no existe, crearlo con la estructura del proyecto antes de continuar.
 5. **Crear cada archivo de tarea** en `docs/tasks/` usando `assets/task.txt`, con estado inicial `[ ]` y la sección Revisión con los marcadores de la plantilla sin rellenar.
-6. **Añadir las entradas a `TODO.txt`** con el formato `- [ ] docs/tasks/NNN-identificador.md — título breve`, donde el identificador es una versión en kebab-case del título. El destino es la agrupación correspondiente si la tarea pertenece a una agrupación existente, o la sección `## General` si es una tarea suelta sin agrupación propia; si la sección no existe, crearla antes de la primera agrupación. Si el destino no está claro, inferirlo del contexto de la solicitud y, si aun así hay duda, preguntar al usuario.
+6. **Añadir las entradas a `TODO.md`** con el formato `- [ ] docs/tasks/NNN-identificador.md — título breve`, donde el identificador es una versión en kebab-case del título. El destino es la agrupación correspondiente si la tarea pertenece a una agrupación existente, o la sección `## General` si es una tarea suelta sin agrupación propia; si la sección no existe, crearla antes de la primera agrupación. Si el destino no está claro, inferirlo del contexto de la solicitud y, si aun así hay duda, preguntar al usuario.
 7. **Informar al usuario** de las tareas creadas.
 
 ## Finalización
 
 El skill ha terminado cuando:
 
-- Los archivos de tarea están creados en `docs/tasks/` con sus entradas en `TODO.txt`.
+- Los archivos de tarea están creados en `docs/tasks/` con sus entradas en `TODO.md`.
 - El usuario aprobó la descomposición antes de la creación.
 
 ## Referencias

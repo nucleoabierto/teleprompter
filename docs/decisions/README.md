@@ -133,3 +133,10 @@ decisión antes de actuar.
     selección, índice, `install`, `origin`, lock, `update`,
     `src/manifest.js`, `src/cli.js`
   - Estado: Aceptada
+- [D020-todo-md-como-indice-de-tareas.md](D020-todo-md-como-indice-de-tareas.md)
+  — el índice de tareas se llama `TODO.md`, el valor por defecto del
+  catálogo de convenciones del paquete de skills.
+  - Disparadores: `TODO.md`, índice de tareas, `convenciones.sh`,
+    `indice_tareas`, convenciones, personalización, factory,
+    `consultar-artefactos`, `actualizar-artefactos`
+  - Estado: Aceptada

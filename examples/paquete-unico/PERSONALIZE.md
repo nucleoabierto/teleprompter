@@ -6,7 +6,7 @@ tu primera sesión sobre el proyecto.
 
 ## Qué adaptar
 
-1. **Índice de tareas.** Los skills esperan `TODO.txt` en la raíz del
+1. **Índice de tareas.** Los skills esperan `TODO.md` en la raíz del
    repositorio, con secciones markdown (`## General` para tareas
    sueltas). Si no existe, créalo con esa estructura mínima.
 2. **Archivos de tarea.** Las tareas viven en
@@ -34,5 +34,5 @@ tu primera sesión sobre el proyecto.
 - El formato de los archivos de tarea (secciones `Estado`, `Tipo`,
   `Revisión`) es el contrato del ciclo: cámbialo solo si estás
   dispuesto a mantener el desvío.
-- Las marcas de `TODO.txt` (`[ ]`, `[~]`, `[x]`, `[!]`, `[p]`) las
+- Las marcas de `TODO.md` (`[ ]`, `[~]`, `[x]`, `[!]`, `[p]`) las
   interpreta el ciclo, no el sistema de archivos: no las redefinas.

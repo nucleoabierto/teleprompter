@@ -3,7 +3,7 @@
 # valores que difieren de la convención del paquete. Los scripts cargan este
 # archivo al arrancar; una clave ausente rige por el valor por defecto
 # embebido en el script.
-export INDICE_TAREAS="TODO.txt"
+export INDICE_TAREAS="TODO.md"
 export DIR_TAREAS="docs/tasks"
 export DIR_PROPUESTAS="docs/proposals"
 export ARCHIVO_PROPUESTA="propuesta.md"
