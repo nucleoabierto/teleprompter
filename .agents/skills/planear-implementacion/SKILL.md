@@ -30,21 +30,21 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 
 ## Entrada
 
-- El archivo de la tarea de desarrollo a planear (`docs/tasks/NNN-slug.md`), con su objetivo y criterios de calidad.
-- La sección `## Contexto` de la tarea, recopilada por `recopilar-contexto`. Si la tarea no la tiene, invocar `recopilar-contexto` antes de empezar.
+- El archivo de la tarea de desarrollo a planear, con su objetivo y criterios de calidad.
+- La sección de contexto de la tarea, recopilada por `recopilar-contexto`. Si la tarea no la tiene, invocar `recopilar-contexto` antes de empezar.
 - El plan técnico de la épica que agrupa la tarea, si existe, como guía de arquitectura.
 - El código base del subsistema afectado.
 
 ## Salida
 
-- Dos secciones agregadas al archivo de la tarea, antes de la sección Revisión:
-  - `## Plan técnico`: el entendimiento del subsistema como contexto general —incluidas las decisiones transversales que aplican a varias acciones— y la checklist de acciones a nivel conceptual. Cada acción es un ítem `- [ ]` con sub-bullets: `Aporta:` —cómo contribuye al desarrollo— y, solo cuando omitirlo haría probable un error, `Contexto:` —lo que un ejecutor sin contexto previo necesita y no está en el código ni en la tarea. Ejemplo de ítem:
+- Dos secciones agregadas al archivo de la tarea, antes de la sección de revisión:
+  - El plan técnico: el entendimiento del subsistema como contexto general —incluidas las decisiones transversales que aplican a varias acciones— y la checklist de acciones a nivel conceptual. Cada acción es un ítem `- [ ]` con sub-bullets: `Aporta:` —cómo contribuye al desarrollo— y, solo cuando omitirlo haría probable un error, `Contexto:` —lo que un ejecutor sin contexto previo necesita y no está en el código ni en la tarea. Ejemplo de ítem:
     ```
     - [ ] Relajar `Storage.loadTasks` para devolver el valor parseado sin exigir array
       - Aporta: la persistencia tolera corrupción sin conocer la forma; la validación es del modelo
       - Contexto: la validación de forma vive en `isValidTask`; no duplicarla en la capa de almacenamiento
     ```
-  - `## Suite de pruebas esperada`: las expectativas sobre lo que el sistema hace, cada una trazable a un caso de uso y anotada con la letra ZOMBIE que la derivó cuando aplica.
+  - La suite de pruebas esperada: las expectativas sobre lo que el sistema hace, cada una trazable a un caso de uso y anotada con la letra ZOMBIE que la derivó cuando aplica.
 
 ## Principios rectores
 
@@ -62,8 +62,8 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 ### 1. Entender el subsistema
 
 1. **Leer el archivo de la tarea** para fijar objetivo, alcance y criterios de calidad.
-2. **Leer el plan técnico de la épica**, si la tarea figura bajo un encabezado con épica enlazada en el índice —la operación `grupos` de `consultar-artefactos` resuelve los encabezados y sus enlaces— o referencia una épica; esa guía de arquitectura es el marco del plan.
-3. **Apoyarse en la sección `## Contexto` de la tarea:** lo ya recopilado por `recopilar-contexto` es el punto de partida. Completar la exploración solo donde el contexto tenga vacíos respecto a lo que el plan necesita —una pieza del subsistema no cubierta, un patrón dudoso—, sin repetir desde cero lo ya recopilado.
+2. **Leer el plan técnico de la épica**, si la tarea figura bajo un encabezado con épica enlazada en el índice —la consulta «las agrupaciones del índice con su épica» de `consultar-artefactos` resuelve los encabezados y sus enlaces— o referencia una épica; esa guía de arquitectura es el marco del plan.
+3. **Apoyarse en la sección de contexto de la tarea:** lo ya recopilado por `recopilar-contexto` es el punto de partida. Completar la exploración solo donde el contexto tenga vacíos respecto a lo que el plan necesita —una pieza del subsistema no cubierta, un patrón dudoso—, sin repetir desde cero lo ya recopilado.
 4. **Resolver la incertidumbre activa con `prueba-concepto`:** si al entender el subsistema o al redactar las acciones el plan queda colgado de una hipótesis que el código puede responder —si una API soporta el caso, si un enfoque rinde, si dos piezas encajan como el plan supone—, invocar `prueba-concepto` con la hipótesis y la decisión que depende de su resultado, e incorporar la conclusión antes de redactar el plan: en el resumen del subsistema o en el `Contexto:` de la acción afectada. La evidencia teórica —mejores prácticas, comparación documental— corresponde a `investigar`.
 5. **Redactar el resumen del subsistema** en dos o tres frases: qué hace, qué patrón sigue y dónde encaja el cambio. Si la lectura revela un malentendido en la propia tarea, plantearlo al usuario antes de seguir.
 
@@ -75,7 +75,7 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 
 ### 3. Redactar la suite de pruebas esperada
 
-9. **Tomar los casos de uso del PRD del conjunto:** si la épica tiene PRD —`docs/prd/NNN-slug.md`—, los casos de uso que la tarea toca se extraen de él, no se inventan desde el objetivo; cada expectativa de la suite traza a su `CU-N`. Si la tarea necesita un caso de uso que el PRD no declara, es una laguna: se eleva al usuario o se actualiza el PRD, nunca se inventa. Si el conjunto no tiene PRD, extraer los casos de uso del objetivo y los criterios de calidad de la tarea.
+9. **Tomar los casos de uso del PRD del conjunto:** si la épica tiene PRD, los casos de uso que la tarea toca se extraen de él, no se inventan desde el objetivo; cada expectativa de la suite traza a su `CU-N`. Si la tarea necesita un caso de uso que el PRD no declara, es una laguna: se eleva al usuario o se actualiza el PRD, nunca se inventa. Si el conjunto no tiene PRD, extraer los casos de uso del objetivo y los criterios de calidad de la tarea.
 10. **Generar casos con ZOMBIE como guía interna:** para cada comportamiento, recorrer el eje de progresión (*zero, one, many*) y el de bordes (*boundary, interface, exception*), empezando por el caso más simple y actualizando la lista de forma iterativa.
 11. **Expresar cada caso como expectativa de comportamiento:** qué hace el sistema ante qué estímulo, con el resultado observable; sin nombrar funciones, clases ni detalles internos. La expectativa termina con la letra ZOMBIE que la derivó entre paréntesis —`(Z)`, `(O)`, `(M)`, `(B)`, `(I)` o `(E)`— cuando un parámetro ZOMBIE aplicó de verdad; las pruebas de regresión o de arnés van sin anotar.
 12. **Trazar cada prueba a su caso de uso:** cada expectativa indica de qué caso de uso deriva; si una prueba no encuentra anclaje, se descarta o se plantea el caso de uso que falta.
@@ -87,7 +87,7 @@ Instrucciones para que un agente produzca el plan de una tarea de desarrollo ant
 
 ### 5. Materializar el plan
 
-15. **Agregar las dos secciones al archivo de la tarea** con `tarea.sh insertar-seccion` de `actualizar-artefactos` —cada una queda inmediatamente antes de `## Revisión`—: `## Plan técnico` con el resumen del subsistema y la checklist de acciones con sus `Aporta:` y `Contexto:`, y `## Suite de pruebas esperada` con las expectativas trazadas.
+15. **Agregar las dos secciones al archivo de la tarea** —«insertar la sección `plan` en la tarea» e «insertar la sección `suite` en la tarea», delegadas en `actualizar-artefactos`; cada una queda inmediatamente antes de la de revisión—: el plan técnico con el resumen del subsistema y la checklist de acciones con sus `Aporta:` y `Contexto:`, y la suite de pruebas esperada con las expectativas trazadas.
 16. **Informar al usuario** de que el plan quedó en el archivo de la tarea, listo para la fase de ejecución.
 
 ## Finalización
@@ -96,7 +96,7 @@ El skill ha terminado cuando:
 
 - El subsistema afectado quedó resumido y los malentendidos se resolvieron con el usuario.
 - El usuario aprobó el plan técnico y la suite.
-- El archivo de la tarea contiene las secciones `## Plan técnico` y `## Suite de pruebas esperada`, o se informó del rechazo sin escribir nada.
+- El archivo de la tarea contiene las secciones de plan y de suite, o se informó del rechazo sin escribir nada.
 
 ## Referencias
 

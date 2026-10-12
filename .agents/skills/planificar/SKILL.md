@@ -1,10 +1,10 @@
 ---
 name: planificar
 description: >
-  Produce la épica de un conjunto de trabajo: el documento en
-  docs/epics/ que declara objetivo, alcance, piezas y plan técnico
+  Produce la épica de un conjunto de trabajo: el documento que
+  declara objetivo, alcance, piezas y plan técnico
   (guía de arquitectura), y refleja el conjunto como agrupación en
-  TODO.txt. Tiene dos modos: en la promoción, invocado por el
+  el índice de tareas. Tiene dos modos: en la promoción, invocado por el
   orquestador del flujo de idea a tarea tras materializar los
   borradores de una propuesta, y bajo demanda, para agrupar tareas
   ya creadas.
@@ -16,7 +16,7 @@ description: >
 
 # Planificar
 
-Instrucciones para que un agente produzca la épica de un conjunto de trabajo: el documento que declara el objetivo, el alcance, las piezas y la guía de arquitectura del conjunto, reflejado en `TODO.txt` como su agrupación visible. El skill tiene dos modos que comparten un núcleo común y se bifurcan solo en la entrada: el modo promoción, invocado por el orquestador del flujo de idea a tarea como cierre de la planeación tras materializar los borradores de una propuesta, y el modo bajo demanda, para agrupar tareas ya creadas.
+Instrucciones para que un agente produzca la épica de un conjunto de trabajo: el documento que declara el objetivo, el alcance, las piezas y la guía de arquitectura del conjunto, reflejado en el índice de tareas como su agrupación visible. El skill tiene dos modos que comparten un núcleo común y se bifurcan solo en la entrada: el modo promoción, invocado por el orquestador del flujo de idea a tarea como cierre de la planeación tras materializar los borradores de una propuesta, y el modo bajo demanda, para agrupar tareas ya creadas.
 
 ## Cuándo usar
 
@@ -33,16 +33,16 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 
 ## Entrada
 
-- **Modo promoción:** la propuesta aprobada en `docs/proposals/NNN-slug/` y las tareas definitivas recién creadas a partir de sus borradores por `crear-tareas`, comunicadas por el orquestador del flujo de idea a tarea.
-- **Modo bajo demanda:** una intención de conjunto del usuario y la lista de tareas existentes a agrupar (sus números o archivos en `docs/tasks/`).
-- `TODO.txt` como índice actual de tareas.
+- **Modo promoción:** la propuesta aprobada y las tareas definitivas recién creadas a partir de sus borradores por `crear-tareas`, comunicadas por el orquestador del flujo de idea a tarea.
+- **Modo bajo demanda:** una intención de conjunto del usuario y la lista de tareas existentes a agrupar (sus números o referencias).
+- El índice de tareas del proyecto.
 - `assets/epica.md` como plantilla del documento de épica.
 
 ## Salida
 
-- Un documento de épica nuevo en `docs/epics/NNN-slug.md` con estado `Planificada`, o una épica existente actualizada con las piezas nuevas.
-- La agrupación correspondiente en `TODO.txt`: un encabezado con el título de la épica, las líneas de las tareas bajo él y un comentario `<!-- épica: docs/epics/NNN-slug.md -->` que enlaza la agrupación con el documento.
-- Las líneas de las tareas agrupadas se mueven bajo el encabezado de la épica desde su ubicación anterior (en modo promoción, `## General`; en modo bajo demanda, su sección previa).
+- Un documento de épica nuevo en el directorio de épicas de la convención (`convencion dir_epicas` de `consultar-artefactos`) con estado `planificada`, o una épica existente actualizada con las piezas nuevas.
+- La agrupación correspondiente en el índice: un encabezado con el título de la épica, las líneas de las tareas bajo él y el comentario de enlace a la épica que la vincula con el documento.
+- Las líneas de las tareas agrupadas se mueven bajo el encabezado de la épica desde su ubicación anterior (en modo promoción, las tareas sueltas; en modo bajo demanda, su agrupación previa).
 
 ## Principios rectores
 
@@ -62,8 +62,8 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 
 2. **Identificar las tareas del conjunto.** En modo promoción, son las tareas recién creadas de la propuesta; en modo bajo demanda, son las que el usuario lista.
 3. **Leer los archivos de tarea** para extraer objetivos, dependencias y resultados esperados. El plan se construye sobre ese contenido real.
-4. **Decidir si el conjunto amerita épica.** Si es trivial (pocas piezas, sin decisiones transversales), informar al usuario y agrupar bajo un encabezado ligero —`todo.sh encabezado` de `actualizar-artefactos` crea el `## Hito N: título` sin comentario de enlace y `todo.sh mover` lleva las entradas de las tareas bajo él—; terminar. En caso de duda, preguntar al usuario.
-5. **Determinar si existe una épica destino.** Revisar `docs/epics/` y los encabezados de `TODO.txt`. Si el conjunto pertenece a una épica existente, el procedimiento actualiza esa épica en lugar de crear una nueva; en caso de duda, preguntar al usuario.
+4. **Decidir si el conjunto amerita épica.** Si es trivial (pocas piezas, sin decisiones transversales), informar al usuario y agrupar bajo un encabezado ligero —la acción «crear la agrupación «`<título>`»» de `actualizar-artefactos` crea el encabezado sin enlace a épica y «mover `<ref>` bajo `<agrupación>`» lleva las entradas de las tareas bajo él—; terminar. En caso de duda, preguntar al usuario.
+5. **Determinar si existe una épica destino.** Revisar el directorio de épicas de la convención y las agrupaciones del índice —consulta «las agrupaciones del índice con su épica» de `consultar-artefactos`—. Si el conjunto pertenece a una épica existente, el procedimiento actualiza esa épica en lugar de crear una nueva; en caso de duda, preguntar al usuario.
 
 ### 3. Redactar el borrador de épica
 
@@ -78,13 +78,13 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 
 ### 4. Puerta humana
 
-9. **Presentar el borrador de la épica y el PRD al usuario** para aprobación —la misma puerta para ambos: el PRD declara el qué que la épica guía—. Si solicita cambios, ajustar y repetir desde el paso 6. Si lo rechaza, no crear ni modificar el documento de épica ni el PRD y terminar. En modo promoción, las entradas de las tareas ya figuran en `## General` desde la promoción; informar de que el conjunto queda sin agrupar.
+9. **Presentar el borrador de la épica y el PRD al usuario** para aprobación —la misma puerta para ambos: el PRD declara el qué que la épica guía—. Si solicita cambios, ajustar y repetir desde el paso 6. Si lo rechaza, no crear ni modificar el documento de épica ni el PRD y terminar. En modo promoción, las entradas de las tareas ya figuran como sueltas desde la promoción; informar de que el conjunto queda sin agrupar.
 
 ### 5. Materializar la épica
 
-10. **Si es épica nueva:** asignar el siguiente número disponible en `docs/epics/` —operación `siguiente` de `consultar-artefactos`—, crear `docs/epics/NNN-slug.md` con estado `Planificada` y registrar la aprobación en su sección Revisión con `tarea.sh registrar-revision` de `actualizar-artefactos`.
-11. **Si es épica existente:** añadir las piezas nuevas a su lista, actualizar objetivo, alcance o plan técnico solo si el conjunto nuevo lo exige, extender su PRD con los casos de uso nuevos vía `mantener-prd` y registrar la incorporación en su sección Revisión con `tarea.sh registrar-revision`.
-12. **Reflejar la agrupación en `TODO.txt`** con `todo.sh` de `actualizar-artefactos`: si el encabezado de la épica no existe, `encabezado` crea el `## Hito N: título de la épica` —numera con el siguiente de la serie y escribe el comentario `<!-- épica: docs/epics/NNN-slug.md -->` cuando se le pasa la ruta del documento—; si ya existe, se reutiliza. `añadir` crea bajo el encabezado las líneas de las tareas del conjunto que no figuren en el índice y `mover` traslada bajo él las que ya figuran.
+10. **Si es épica nueva:** asignar el siguiente número de la serie del directorio de épicas —consulta «el siguiente número de la serie» de `consultar-artefactos`—, crear el documento de la épica siguiendo `assets/epica.md` con estado `planificada` y registrar la aprobación en su sección de revisión con la acción «registrar el veredicto» de `actualizar-artefactos`.
+11. **Si es épica existente:** añadir las piezas nuevas a su lista, actualizar objetivo, alcance o plan técnico solo si el conjunto nuevo lo exige, extender su PRD con los casos de uso nuevos vía `mantener-prd` y registrar la incorporación en su sección de revisión con la acción «registrar el veredicto».
+12. **Reflejar la agrupación en el índice** con `actualizar-artefactos`: si la agrupación de la épica no existe, la acción «crear la agrupación «`<título>`» [con épica `<ref>`]» la crea —numera con el siguiente de la serie y escribe el comentario de enlace a la épica cuando se le pasa la referencia del documento—; si ya existe, se reutiliza. «dar de alta la tarea» crea bajo la agrupación las líneas de las tareas del conjunto que no figuren en el índice y «mover `<ref>` bajo `<agrupación>`» traslada bajo él las que ya figuran.
 13. **Informar al usuario** de la épica creada o actualizada, del PRD y de la agrupación resultante.
 
 ## Finalización
@@ -92,11 +92,11 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 El skill ha terminado cuando:
 
 - El usuario aprobó el borrador de la épica y el PRD.
-- El documento existe en `docs/epics/` (o la épica existente quedó actualizada) con estado `Planificada`, y el PRD del conjunto existe en `docs/prd/` con los casos de uso identificados —o se declaró que el conjunto no lo amerita—.
-- `TODO.txt` refleja la agrupación con su encabezado, el comentario de enlace a la épica y las tareas bajo él.
+- El documento existe en el directorio de épicas (o la épica existente quedó actualizada) con estado `planificada`, y el PRD del conjunto existe en el directorio de PRD de la convención (`convencion dir_prd`) con los casos de uso identificados —o se declaró que el conjunto no lo amerita—.
+- El índice refleja la agrupación con su encabezado, el comentario de enlace a la épica y las tareas bajo él.
 
 ## Referencias
 
-- `assets/epica.md` — Plantilla del documento de épica. Leer antes de redactar el borrador.
+- `assets/epica.md` — Plantilla del documento de épica; reproduce los nombres convencionales configurables. Leer antes de redactar el borrador.
 - `docs/decisions/D019-epica-como-artefacto-de-planeacion.md` — Formato, ubicación y lugar de la épica en el flujo.
-- `docs/decisions/D008-organizacion-por-hitos-en-todo.md` — Convención de encabezados de agrupación en `TODO.txt`.
+- `docs/decisions/D008-organizacion-por-hitos-en-todo.md` — Convención de encabezados de agrupación en el índice.

@@ -66,7 +66,7 @@ Antes de presentar el enunciado al usuario, verificar cada punto:
 
 **Mal enunciado (con lenguaje de solución):**
 
-> El proyecto necesita un script que genere el índice de lecciones automáticamente. Sin ese script, el índice se desactualiza. Hay que implementarlo para que `docs/lessons/README.md` refleje siempre las notas existentes.
+> El proyecto necesita un script que genere el índice de lecciones automáticamente. Sin ese script, el índice se desactualiza. Hay que implementarlo para que el índice refleje siempre las notas existentes.
 
 **Buen enunciado (sin lenguaje de solución):**
 

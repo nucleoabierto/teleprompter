@@ -33,7 +33,7 @@ Instrucciones para que un agente realice una investigación: descubra, analice y
 ## Entrada
 
 - La pregunta o tema a investigar, formulada por el usuario o por la tarea que la motiva.
-- El directorio de investigaciones del proyecto, acordado con el usuario o inferido de la convención del proyecto, para consultar investigaciones existentes y evitar duplicar trabajo.
+- El directorio de investigaciones del proyecto —resuelto con `convencion dir_investigaciones` de `consultar-artefactos`—, para consultar investigaciones existentes y evitar duplicar trabajo.
 - Acceso a búsqueda web y recuperación de páginas para recopilar fuentes.
 
 ## Salida

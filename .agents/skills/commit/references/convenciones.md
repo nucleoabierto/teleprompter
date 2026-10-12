@@ -154,7 +154,7 @@ La regla de los asuntos autodescriptivos se extiende al cuerpo: toda referencia 
 
 ### Criterios
 
-- **Describir el artefacto, no solo nombrarlo.** «D017 decide eliminar los hitos completados» exige abrir el registro de decisiones; mejor: «la limpieza de hitos completados (decisión registrada en docs/decisions/)…» o directamente describir la decisión sin nombrarla.
-- **La referencia resoluble es opcional; si se incluye, debe ser estable.** Si se cita un artefacto, usar su ruta (`docs/tasks/NNN-…`, `docs/decisions/…`) o un hash de commit, nunca referencias relativas como «los últimos commits» o «la tarea anterior».
-- **Evitar la jerga de sesión.** Términos como «la prueba externa», «la semilla» o marcadores internos (`[p]`, `[r]`) solo tienen sentido dentro del proyecto; en el cuerpo se describen («la prueba del flujo con una app externa al sistema») o se omiten.
+- **Describir el artefacto, no solo nombrarlo.** «D017 decide eliminar los hitos completados» exige abrir el registro de decisiones; mejor: «la limpieza de hitos completados (D017, en el registro de decisiones)…» o directamente describir la decisión sin nombrarla.
+- **La referencia resoluble es opcional; si se incluye, debe ser estable.** Si se cita un artefacto, usar su referencia —la ruta de su archivo— o un hash de commit, nunca referencias relativas como «los últimos commits» o «la tarea anterior».
+- **Evitar la jerga de sesión.** Términos como «la prueba externa», «la semilla» o los marcadores internos del índice de tareas solo tienen sentido dentro del proyecto; en el cuerpo se describen («la prueba del flujo con una app externa al sistema») o se omiten.
 - **La numeración interna acompaña, no sustituye.** «La tarea de limpieza del índice (docs/tasks/048-…)» es resoluble; «la tarea 048» sola, no.

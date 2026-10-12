@@ -6,6 +6,14 @@
 # exit 0 éxito (incluido el vacío legítimo), exit 2 entrada ausente.
 set -euo pipefail
 
+# Convenciones: el instalador escribe los valores del proyecto en
+# convenciones.sh; una clave ausente rige por el valor por defecto.
+conv="$(dirname "$0")/convenciones.sh"
+if [ -f "$conv" ]; then
+  . "$conv" 2>/dev/null || { echo "indice.sh: convenciones malformadas: $conv" >&2; exit 2; }
+fi
+export CAMPOS_INDICE_DISPARADORES=${CAMPOS_INDICE_DISPARADORES:-'Disparadores|Resumen|Estado'}
+
 uso() {
   cat >&2 <<'EOF'
 uso: indice.sh <indice.md> coincidencias <término> [término…]
@@ -22,6 +30,7 @@ f=$1; op=$2; shift 2
 
 terminos=$(printf '%s\t' "$@")
 awk -v terminos="$terminos" '
+  BEGIN { split(ENVIRON["CAMPOS_INDICE_DISPARADORES"], cf, "|") }
   function evaluar(  low, n, i) {
     if (entrada == "") return
     low = tolower(disp)
@@ -32,12 +41,20 @@ awk -v terminos="$terminos" '
         return
       }
   }
-  /<!--/ { encom=1; next }
+  /<!--/ { if ($0 !~ /-->/) encom=1; next }
   /-->/ { encom=0; next }
   encom { next }
   /^- [^ ]/ { evaluar(); entrada=$2; disp=""; resumen=""; estado=""; next }
-  /^  - Disparadores:/ { disp=$0; next }
-  /^  - Resumen:/ { resumen=$0; sub(/^  - Resumen:[[:space:]]*/, "", resumen); next }
-  /^  - Estado:/ { estado=$0; sub(/^  - Estado:[[:space:]]*/, "", estado); next }
+  index($0, "  - " cf[1] ":") == 1 { disp=$0; next }
+  index($0, "  - " cf[2] ":") == 1 {
+    resumen = substr($0, length(cf[2]) + 6)
+    sub(/^[[:space:]]+/, "", resumen)
+    next
+  }
+  index($0, "  - " cf[3] ":") == 1 {
+    estado = substr($0, length(cf[3]) + 6)
+    sub(/^[[:space:]]+/, "", estado)
+    next
+  }
   END { evaluar() }
 ' "$f"

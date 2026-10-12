@@ -16,7 +16,7 @@ description: >
 
 # Mantener roadmap
 
-Instrucciones para que un agente mantenga el `ROADMAP.md` del proyecto evaluado fiel a la ejecución real. El roadmap decide la dirección y el índice de tareas la ejecuta: este skill es el reflejo mecánico que mantiene ambos coherentes. Al cerrar una tarea reconstruye el estado real de cada línea comprometida del roadmap desde el índice y las épicas, actualiza el campo «Estado» de cada línea y retira las completadas. Cuando detecta divergencia de dirección —trabajo comprometido sin línea, un horizonte comprometido agotado con sucesores esperando, una épica completada aún listada— invoca `planificar-roadmap`, cuya puerta humana sigue decidiendo la dirección. El skill nunca reordena líneas, cambia horizontes ni reescribe justificaciones.
+Instrucciones para que un agente mantenga el roadmap del proyecto evaluado fiel a la ejecución real. El roadmap decide la dirección y el índice de tareas la ejecuta: este skill es el reflejo mecánico que mantiene ambos coherentes. Al cerrar una tarea reconstruye el estado real de cada línea comprometida del roadmap desde el índice y las épicas, actualiza el campo «Estado» de cada línea y retira las completadas. Cuando detecta divergencia de dirección —trabajo comprometido sin línea, un horizonte comprometido agotado con sucesores esperando, una épica completada aún listada— invoca `planificar-roadmap`, cuya puerta humana sigue decidiendo la dirección. El skill nunca reordena líneas, cambia horizontes ni reescribe justificaciones.
 
 ## Cuándo usar
 
@@ -26,15 +26,15 @@ Instrucciones para que un agente mantenga el `ROADMAP.md` del proyecto evaluado 
 ## Cuándo no usar
 
 - Para crear el roadmap o replantear la dirección —horizontes, orden y justificaciones—: eso corresponde a `planificar-roadmap`, que este skill invoca cuando detecta divergencia.
-- Para cerrar los conjuntos agotados del índice —marcar la épica `Completada` y eliminar la agrupación—: eso corresponde a `cerrar-conjunto`.
+- Para cerrar los conjuntos agotados del índice —marcar la épica completada y eliminar la agrupación—: eso corresponde a `cerrar-conjunto`.
 - Cuando el proyecto evaluado no tiene roadmap: el skill emite «roadmap ausente» y no crea el documento; crearlo es decidir dirección.
 
 ## Entrada
 
 - La tarea recién completada, comunicada por el ciclo de tareas en su punto de cierre, o la solicitud de sincronización del usuario.
-- El índice de tareas del proyecto evaluado —`TODO.txt` en la convención; si el proyecto lo ubica en otra parte, esa ubicación es un dato de entrada— como fuente de verdad del estado de ejecución: qué trabajo está comprometido y en qué estado está cada tarea.
-- El directorio de épicas del proyecto evaluado —`docs/epics/` en la convención; si el proyecto lo ubica en otra parte, esa ubicación es un dato de entrada— como fuente del estado de las líneas-épica.
-- El roadmap del proyecto evaluado: `ROADMAP.md` en la raíz es la convención; si el proyecto lo ubica en otra parte, esa ubicación es un dato de entrada. El formato esperado es el que produce `planificar-roadmap`: horizontes Now, Next, Later y No ahora, con campo «Estado» por línea en Now.
+- El índice de tareas del proyecto evaluado como fuente de verdad del estado de ejecución: qué trabajo está comprometido y en qué estado está cada tarea. Sus consultas se delegan en `consultar-artefactos`, que resuelve su ubicación desde la configuración.
+- Las épicas del proyecto evaluado como fuente del estado de las líneas-épica; su inventario y su estado también se consultan delegando en `consultar-artefactos`.
+- El roadmap del proyecto evaluado —su ubicación es la convención `archivo_roadmap`, resoluble con la operación `convencion` de `consultar-artefactos`—; este skill lo lee y lo escribe directamente. El formato esperado es el que produce `planificar-roadmap`: horizontes Now, Next, Later y No ahora, con campo «Estado» por línea en Now.
 
 ## Salida
 
@@ -47,19 +47,19 @@ Instrucciones para que un agente mantenga el `ROADMAP.md` del proyecto evaluado 
 2. **Reflejo mecánico, no dirección:** el skill actualiza estados y retira líneas completadas; no reordena líneas, no mueve trabajo entre horizontes y no reescribe justificaciones. Todo lo que huele a decisión de dirección es entrada para `planificar-roadmap`, no para este skill.
 3. **La divergencia dispara replanificación, no se informa sola:** detectar que la dirección ya no refleja la ejecución invoca `planificar-roadmap`, cuya puerta humana decide; un roadmap divergente sin replanificar es un roadmap que miente.
 4. **Sensor con veredicto:** cuando el roadmap ya es fiel emite «sin cambios» y cuando no existe emite «roadmap ausente»; no toca el documento por tocarlo.
-5. **Genérico sobre el proyecto evaluado:** las rutas del índice, de las épicas y del roadmap son datos de entrada; el procedimiento es el mismo en cualquier proyecto que use estas convenciones.
+5. **Genérico sobre el proyecto evaluado:** el skill nunca nombra una ubicación —el índice y las épicas se consultan delegando y el roadmap se localiza por la convención—; el procedimiento es el mismo en cualquier proyecto que use estas convenciones.
 
 ## Procedimiento
 
-1. **Localizar el roadmap.** Buscar `ROADMAP.md` en la raíz del proyecto evaluado, o la ubicación que el proyecto use. Si no existe, emitir «roadmap ausente» y terminar sin crear ni invocar nada.
-2. **Reconstruir el estado real de cada línea de Now.** Resolver cada línea del horizonte Now al trabajo que referencia y leer su estado real —las consultas mecánicas se delegan en `consultar-artefactos`: `grupos` resuelve los encabezados y sus épicas enlazadas, `estado-grupo` los estados presentes bajo un encabezado y `estado` el marcador de un archivo de tarea—. Una línea que referencia un documento de épica o un encabezado del índice resuelve a la agrupación entera —la agrupación enlazada a la épica por el comentario `<!-- épica: ruta -->` o las tareas bajo el encabezado ligero—; una línea que referencia un archivo de tarea resuelve a esa tarea concreta, esté suelta en el índice o dentro de una agrupación. El estado se evalúa en el orden de la lista:
-   - **Completada:** la épica referenciada está marcada `Completada`, o el trabajo de la línea ya no figura en el índice por haberse cerrado —para una tarea, su archivo declara «Estado» completada—, o todas las líneas de tarea del trabajo están `[x]`.
-   - **Bloqueada:** alguna de sus tareas está marcada `[!]`; las bloqueantes se leen de la sublista que el marcador declara en el índice.
-   - **En curso:** alguna de sus tareas ya se ejecutó o se está ejecutando —estado `[~]`, `[r]` o `[x]`— sin estar el trabajo completado ni bloqueado.
-   - **Pendiente de arrancar:** todas sus tareas siguen pendientes `[ ]`.
+1. **Localizar el roadmap.** Resolver su ubicación con la operación `convencion archivo_roadmap` de `consultar-artefactos` y buscar el archivo. Si no existe, emitir «roadmap ausente» y terminar sin crear ni invocar nada.
+2. **Reconstruir el estado real de cada línea de Now.** Resolver cada línea del horizonte Now al trabajo que referencia y leer su estado real —las consultas mecánicas se delegan en `consultar-artefactos`: «las agrupaciones del índice con su épica» resuelve los encabezados y sus épicas enlazadas, «el estado de la agrupación» los estados presentes bajo un encabezado y «el estado de la tarea» el estado que su archivo declara—. Una línea que referencia un documento de épica o un encabezado del índice resuelve a la agrupación entera —la agrupación enlazada a la épica en el índice o las tareas bajo el encabezado ligero—; una línea que referencia un archivo de tarea resuelve a esa tarea concreta, esté suelta en el índice o dentro de una agrupación. El estado se evalúa en el orden de la lista:
+   - **Completada:** la épica referenciada está completada, o el trabajo de la línea ya no figura en el índice por haberse cerrado —para una tarea, su archivo declara completada—, o todas las líneas de tarea del trabajo están completadas.
+   - **Bloqueada:** alguna de sus tareas está bloqueada; las bloqueantes se leen de la declaración de bloqueo que la acompaña en el índice.
+   - **En curso:** alguna de sus tareas ya se ejecutó o se está ejecutando —en progreso, en revisión o completada— sin estar el trabajo completado ni bloqueado.
+   - **Pendiente de arrancar:** todas sus tareas siguen pendientes.
    - **Irresoluble:** el trabajo de la línea no se localiza ni en el índice ni en las épicas, o se localiza sin presencia ejecutable ni marca de cierre —una épica planificada cuya agrupación ya no está en el índice, una tarea ausente del índice cuyo archivo no está completada—, o la línea no sigue el formato esperado; se trata como divergencia de dirección, no como estado.
 3. **Escribir solo las diferencias.** Actualizar el campo «Estado» de cada línea de Now con el vocabulario canónico —`en curso`, `pendiente de arrancar`, `bloqueada por …` seguido de las bloqueantes— solo cuando el estado real difiera del declarado, y retirar la línea completa —con su «Estado» y su «Justificación»— cuando su trabajo esté completado, renumerando las líneas restantes si el roadmap las enumera: la renumeración es reflejo, no reordenado. No tocar nada más: ni el orden de las líneas, ni los horizontes, ni las justificaciones, ni las secciones sin estado.
-4. **Detectar divergencia de dirección.** Tras el reflejo, comprobar si la ejecución diverge de la dirección declarada —los casos esperados son, sin agotar la lista: el horizonte Now quedó vacío teniendo Next líneas pobladas; hay agrupaciones o tareas sueltas comprometidas en el índice sin línea en el roadmap; una épica marcada `Completada` sigue referenciada en cualquier sección; o alguna línea de Now resultó irresoluble en el paso 2. Si hay divergencia, invocar `planificar-roadmap` con las condiciones detectadas como contexto: la decisión de dirección es suya, con su puerta humana.
+4. **Detectar divergencia de dirección.** Tras el reflejo, comprobar si la ejecución diverge de la dirección declarada —los casos esperados son, sin agotar la lista: el horizonte Now quedó vacío teniendo Next líneas pobladas; hay agrupaciones o tareas sueltas comprometidas en el índice sin línea en el roadmap; una épica completada sigue referenciada en cualquier sección; o alguna línea de Now resultó irresoluble en el paso 2. Si hay divergencia, invocar `planificar-roadmap` con las condiciones detectadas como contexto: la decisión de dirección es suya, con su puerta humana.
 5. **Informar del resultado:** las líneas actualizadas o retiradas y la divergencia detectada con la replanificación invocada, o el veredicto «sin cambios» o «roadmap ausente».
 
 ## Finalización

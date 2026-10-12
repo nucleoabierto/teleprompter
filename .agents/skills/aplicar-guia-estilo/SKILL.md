@@ -3,12 +3,12 @@ name: aplicar-guia-estilo
 description: >
   Aplica la guía de estilo del proyecto evaluado al escribir o
   modificar frontend y valida que el resultado la cumple: todo
-  valor visual proviene de los tokens declarados en el
-  DESIGN.md y el cambio se verifica con evidencia —estática y,
+  valor visual proviene de los tokens declarados en la
+  guía y el cambio se verifica con evidencia —estática y,
   cuando el proyecto es servible, renderizada— antes de darse
   por conforme.
   Usar cuando un trabajo toque CSS, HTML o componentes visuales
-  de un proyecto con DESIGN.md, o cuando se quiera validar que
+  de un proyecto con guía de estilo, o cuando se quiera validar que
   un cambio de frontend cumple la guía.
   Sinónimos: aplicar guía de estilo, validar diseño, cumplir
   DESIGN.md, revisar frontend, tokens antes que literales.
@@ -16,23 +16,23 @@ description: >
 
 # Aplicar guía de estilo
 
-Instrucciones para que un agente escriba frontend conforme a la guía de estilo del proyecto evaluado y verifique el cumplimiento antes de dar el trabajo por terminado. El `DESIGN.md` del proyecto es el contrato: se carga al contexto cuando la tarea toca frontend, sus tokens (`:root`) son la única fuente de valores visuales, y el resultado se valida con evidencia, no con la impresión del ejecutor.
+Instrucciones para que un agente escriba frontend conforme a la guía de estilo del proyecto evaluado y verifique el cumplimiento antes de dar el trabajo por terminado. La guía del proyecto es el contrato: se carga al contexto cuando la tarea toca frontend, sus tokens (`:root`) son la única fuente de valores visuales, y el resultado se valida con evidencia, no con la impresión del ejecutor.
 
 ## Cuándo usar
 
-- Al escribir o modificar frontend —CSS, HTML con estilos, componentes visuales— en un proyecto que tiene `DESIGN.md`.
+- Al escribir o modificar frontend —CSS, HTML con estilos, componentes visuales— en un proyecto que tiene guía de estilo.
 - Cuando se quiera validar que un cambio de frontend ya hecho cumple la guía.
 - Cuando la revisión de una tarea con frontend necesite una verificación de diseño explícita.
 
 ## Cuándo no usar
 
-- En proyectos sin `DESIGN.md`: la guía se crea con `documentar-guia-estilo`, no se improvisa aquí.
+- En proyectos sin guía de estilo: la guía se crea con `documentar-guia-estilo`, no se improvisa aquí.
 - Para actualizar la guía o resolver decisiones de diseño: eso corresponde a `documentar-guia-estilo`. Este skill consume el contrato vigente; si el trabajo exige una decisión que la guía no cubre, se reporta como deriva o laguna y se eleva al usuario, no se inventa.
 - Para la revisión técnica del diff (convenciones, patrones del código): eso corresponde a `revisar-implementacion` o la revisión general del ciclo.
 
 ## Entrada
 
-- `DESIGN.md` en la raíz del proyecto evaluado, como contrato vigente.
+- La guía de estilo del proyecto evaluado —su ubicación es la convención `archivo_design`, resoluble con la operación `convencion` de `consultar-artefactos`—, como contrato vigente.
 - El trabajo de frontend a realizar o el diff ya producido a validar.
 - `references/rubrica-y-validacion.md` — la rúbrica de revisión y las estrategias de validación por niveles.
 
@@ -53,7 +53,7 @@ Instrucciones para que un agente escriba frontend conforme a la guía de estilo 
 
 ## Procedimiento
 
-1. **Cargar la guía.** Leer el `DESIGN.md` del proyecto antes de escribir una línea de frontend; extraer los tokens disponibles y los anti-patrones vetados. Si no existe, detenerse y proponer `documentar-guia-estilo`.
+1. **Cargar la guía.** Leer la guía de estilo del proyecto antes de escribir una línea de frontend; extraer los tokens disponibles y los anti-patrones vetados. Si no existe, detenerse y proponer `documentar-guia-estilo`.
 2. **Escribir con la guía.** Todo valor visual referencia un token; los componentes reutilizan los patrones declarados; los anti-patrones están vetados. Ante un componente o decisión que la guía no describe, derivar el estilo con su sección «Orientación para decisiones nuevas» y sus principios —informando qué se derivó y qué principio lo arbitró—; elevar como laguna solo lo que ni la guía ni la orientación resuelven, típicamente un valor que falta. Si el trabajo exige contradecir la guía, parar y elevar la laguna al usuario.
 3. **Validar estáticamente.** Verificar en el código producido que no hay valores literales fuera de `:root` (con linter si el proyecto lo tiene, con búsqueda ad hoc si no), que se cumplen las garantías del contrato de experiencia de la guía —foco visible, presupuestos de transición, áreas de toque, salidas de estado: cada una con la comprobación que declara— y repasar el diff contra la rúbrica fija de `references/rubrica-y-validacion.md`.
 4. **Validar renderizado cuando sea posible.** Si el proyecto es servible, capturar el resultado (screenshot por estado y breakpoint relevante) y confrontarlo con la guía y la rúbrica. Si no lo es, declararlo y no simular la evidencia.

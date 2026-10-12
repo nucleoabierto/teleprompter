@@ -4,7 +4,7 @@ Criterios de evaluación y catálogo de patrones y antipatrones para `revisar-ar
 
 ## Criterios de evaluación
 
-Cada criterio se evalúa con evidencia del código y de `docs/domains/`, y recibe un veredicto: correcto, mejorable, deficiente o no evaluable, con su nivel de confianza.
+Cada criterio se evalúa con evidencia del código y de la documentación del dominio, y recibe un veredicto: correcto, mejorable, deficiente o no evaluable, con su nivel de confianza.
 
 ### Lenguaje ubicuo
 

@@ -1,6 +1,6 @@
 # Formato y política de agregación del changelog
 
-Material de referencia del skill `mantener-changelog`: la estructura del archivo, la plantilla de inicialización, los criterios para decidir si un cambio merece entrada y la política de agregación por agrupación.
+Material de referencia del skill `mantener-changelog`: la estructura del archivo, los criterios para decidir si un cambio merece entrada y la política de agregación por agrupación. La escritura de esa estructura —inicialización, sección y categorías— es mecánica delegada en `operar-changelog`; esta referencia sostiene el juicio de qué registrar y cómo redactarlo.
 
 ## Estructura del archivo
 
@@ -21,21 +21,6 @@ Dentro de cada sección, las entradas se agrupan en las seis categorías fijas, 
 - `Security` — corrección de vulnerabilidades.
 
 Las categorías no crecen a propósito: el tipo de cambio va en la categoría y el porqué importa va en la redacción de la línea.
-
-## Plantilla de inicialización
-
-Cuando el proyecto evaluado no tiene changelog y hay un cambio que registrar, se crea `CHANGELOG.md` en su raíz con esta forma. El preámbulo se redacta en el idioma del proyecto; el texto de la plantilla es orientativo:
-
-```markdown
-# Changelog
-
-Todos los cambios notables de este proyecto se documentan en este archivo.
-
-El formato sigue [Keep a Changelog](https://keepachangelog.com/en/2.0.0/)
-y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-```
 
 ## Criterios de notabilidad
 

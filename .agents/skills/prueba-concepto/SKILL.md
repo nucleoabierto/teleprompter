@@ -27,7 +27,7 @@ Instrucciones para que un agente ejecute una prueba de concepto: formule la hip�
 
 - Para evidencia teórica —mejores prácticas, comparación documental, estado del arte—: eso corresponde a `investigar`.
 - Para entender el subsistema al planear: eso corresponde a `recopilar-contexto`; la prueba de concepto valida hipótesis, no describe el terreno.
-- Para las pruebas de la suite de la tarea: esas las define la `## Suite de pruebas esperada` y las escribe la ejecución; la prueba de concepto es previa y desechable.
+- Para las pruebas de la suite de la tarea: esas las define la suite de pruebas esperada de su planeación y las escribe la ejecución; la prueba de concepto es previa y desechable.
 - Para implementar la solución: el código de la prueba no entra al producto; la implementación corresponde a `ejecutar-implementacion`.
 
 ## Entrada
@@ -67,7 +67,7 @@ Instrucciones para que un agente ejecute una prueba de concepto: formule la hip�
 
 6. **Ejecutar la prueba y registrar lo observado**, no lo esperado: salidas reales, mediciones, errores completos.
 7. **Concluir** dentro del presupuesto: confirmada, refutada o matizada —con las condiciones bajo las que vale—. Si el presupuesto se agota sin respuesta, concluir «no resuelta» y declarar qué falta para resolverla.
-8. **Ajustar la planeación con la conclusión:** la acción del plan o el borrador afectado se reescriben con lo aprendido —o la decisión que dependía de la hipótesis se replantea—. En la propuesta, el resultado se referencia en «Investigaciones de apoyo»; en el plan, en el resumen del subsistema o en el `Contexto:` de la acción afectada.
+8. **Ajustar la planeación con la conclusión:** la acción del plan o el borrador afectado se reescriben con lo aprendido —o la decisión que dependía de la hipótesis se replantea—. En la propuesta, el resultado se referencia en sus investigaciones de apoyo; en el plan, en el resumen del subsistema o en el contexto de la acción afectada.
 
 ### 4. Cerrar
 

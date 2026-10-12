@@ -2,7 +2,7 @@
 
 Índice de las lecciones que el proyecto destiló de sus correcciones.
 Cada lección vive en un archivo `<tema>.md` de este directorio y es
-producida por el skill `consolidar-lecciones` a partir de las entradas
+producida por el skill `destilar-lecciones` a partir de las entradas
 de `EXPERIENCIAS.md`.
 
 Cada entrada del índice declara el archivo, un resumen de una frase y

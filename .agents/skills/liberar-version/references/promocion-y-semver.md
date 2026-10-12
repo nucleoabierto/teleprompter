@@ -1,6 +1,6 @@
 # Promoción de versiones y correspondencia semver
 
-Material de referencia del skill `liberar-version`: la lista de curación previa a la promoción, la correspondencia entre categorías de entrada y bump de versión, y la mecánica de la materialización en el changelog.
+Material de referencia del skill `liberar-version`: la lista de curación previa a la promoción y la correspondencia entre categorías de entrada y bump de versión. La materialización en el changelog —sección nueva, no liberados vacíos, enlaces comparativos, marcado de retiradas— es mecánica delegada en `operar-changelog`; esta referencia sostiene el juicio de la curación y la propuesta.
 
 ## Curación previa a la promoción
 
@@ -32,9 +32,6 @@ Reglas de aplicación:
 - En versiones `0.x`, la convención extendida trata los cambios incompatibles como minor; si el proyecto la sigue, la propuesta lo declara explícitamente.
 - La justificación nombra las categorías presentes que producen la propuesta —por ejemplo, «minor: hay `Added` y `Changed`, sin rupturas»—, para que el usuario pueda auditarla sin rehacer el análisis.
 
-## Mecánica de la promoción
+## Materialización delegada
 
-1. Renombrar el encabezado `## [Unreleased]` a `## [X.Y.Z] - YYYY-MM-DD` con la fecha del día en formato ISO.
-2. Crear encima una sección `## [Unreleased]` vacía, lista para el siguiente ciclo.
-3. Si el archivo mantiene enlaces de referencia al pie —`[Unreleased]:`, `[X.Y.Z]:`— actualizarlos: el nuevo `[Unreleased]` compara la nueva versión con HEAD (`<base>/compare/X.Y.Z...HEAD` en el host del repositorio) y la entrada de la nueva versión compara con la versión anterior (`<base>/compare/A.B.C...X.Y.Z`). Cuando es la primera versión del archivo no hay versión anterior que comparar; el enlace se omite o apunta a la raíz del historial según lo que el host soporte. Si no hay enlaces o el host no los soporta, se omiten.
-4. Las versiones retiradas no se ocultan: si el proyecto retira una versión ya publicada, su encabezado se marca `[X.Y.Z] [YANKED]` en lugar de borrarse.
+La mecánica de escribir la promoción —la nueva sección de versión con su fecha, los no liberados vacíos encima, los enlaces comparativos del pie y el marcado de retiradas— corre a cargo de `operar-changelog`, cuyo catálogo declara las operaciones `promover` e `yank` con sus casos borde: primera versión sin versión anterior que comparar, archivo sin enlaces y no liberados vacíos.

@@ -24,18 +24,18 @@ Instrucciones para que un agente contraste lo que una tarea de desarrollo asume 
 
 ## Cuándo no usar
 
-- Antes de recopilar el contexto: el gate se apoya en la sección `## Contexto` de la tarea, no en una exploración propia.
+- Antes de recopilar el contexto: el gate se apoya en la sección de contexto de la tarea, no en una exploración propia.
 - Para decidir si la tarea está bien formulada o priorizada: eso corresponde al ciclo de tareas y a la revisión del usuario.
 - Para tareas que no modifican código: la conectividad técnica evalúa supuestos sobre el codebase.
 
 ## Entrada
 
-- El archivo de la tarea (`docs/tasks/NNN-slug.md`) con su objetivo, entrada, resultado esperado y la sección `## Contexto` recopilada por `recopilar-contexto`.
+- El archivo de la tarea con su objetivo, entrada, resultado esperado y la sección de contexto recopilada por `recopilar-contexto`.
 - El codebase del subsistema afectado, ya identificado en el contexto.
 
 ## Salida
 
-- Una sección `## Conectividad` agregada al archivo de la tarea, antes de la sección Revisión, con el veredicto (`conectada`, `parcialmente conectada` o `desconectada`) y su justificación breve; si aplica, qué falta y qué tarea puente la desbloquea.
+- La sección de conectividad agregada al archivo de la tarea, antes de la sección de revisión, con el veredicto (`conectada`, `parcialmente conectada` o `desconectada`) y su justificación breve; si aplica, qué falta y qué tarea puente la desbloquea.
 - El veredicto comunicado al invocador, que decide si el sub-flujo continúa o se detiene.
 
 ## Principios rectores
@@ -47,13 +47,13 @@ Instrucciones para que un agente contraste lo que una tarea de desarrollo asume 
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y su sección `## Contexto` —cuya presencia se verifica con la operación `secciones` de `consultar-artefactos`— para fijar qué asume la tarea: archivos, módulos, interfaces o patrones que el objetivo presupone.
+1. **Leer el archivo de la tarea** y su sección de contexto —cuya presencia se verifica con «las secciones de la tarea» de `consultar-artefactos`— para fijar qué asume la tarea: archivos, módulos, interfaces o patrones que el objetivo presupone.
 2. **Contrastar cada supuesto con el codebase:** para cada elemento que la tarea necesita, verificar que existe y tiene la forma que la tarea espera, usando los archivos ya identificados en el contexto.
 3. **Emitir el veredicto:**
    - `Conectada`: todo lo que la tarea asume existe en el codebase; el sub-flujo puede continuar a la planeación.
    - `Parcialmente conectada`: falta algo. Si lo que falta es absorbible por la propia tarea —un elemento pequeño que la implementación puede crear dentro de su alcance—, se declara en la justificación y el sub-flujo continúa. Si no lo es, el veredicto registrado es `desconectada`.
    - `Desconectada`: la tarea depende de capacidad base que no existe y no es absorbible; el sub-flujo no debe planear.
-4. **Registrar la sección `## Conectividad`** en el archivo de la tarea con `tarea.sh insertar-seccion` de `actualizar-artefactos` —queda antes de `## Revisión`—: el veredicto, la justificación breve y, en los veredictos parcial o desconectado, qué falta.
+4. **Registrar la sección de conectividad** en el archivo de la tarea —«insertar la sección `conectividad` en la tarea», delegada en `actualizar-artefactos`; queda antes de la de revisión—: el veredicto, la justificación breve y, en los veredictos parcial o desconectado, qué falta.
 5. **Si el veredicto es desconectada**, identificar la capacidad base faltante y devolver al invocador la descripción de la tarea puente que la cubriría; el invocador la da de alta con `crear-tareas` y declara la dependencia en la tarea actual.
 6. **Informar al invocador** del veredicto y, cuando aplique, de la tarea puente necesaria.
 
@@ -61,5 +61,5 @@ Instrucciones para que un agente contraste lo que una tarea de desarrollo asume 
 
 El skill ha terminado cuando:
 
-- El archivo de la tarea contiene la sección `## Conectividad` con el veredicto y su justificación.
+- El archivo de la tarea contiene la sección de conectividad con el veredicto y su justificación.
 - En veredicto desconectada, la tarea puente quedó descrita para que el invocador la registre.

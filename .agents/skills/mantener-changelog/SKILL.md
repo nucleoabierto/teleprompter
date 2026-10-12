@@ -24,15 +24,15 @@ Instrucciones para que un agente mantenga el changelog del proyecto evaluado. El
 ## Cuándo no usar
 
 - Para liberar una versión —promover los no liberados a `X.Y.Z`, calcular el bump o actualizar los enlaces comparativos—: eso corresponde a `liberar-version`.
-- Para registrar decisiones de diseño, correcciones del usuario o documentación de dominio y producto: corresponde a `decisiones-diseno`, `registrar-experiencias`, `documentar-dominio` y `documentar-producto`.
+- Para registrar decisiones de diseño, correcciones del usuario o documentación de dominio y producto: corresponde a `decisiones-diseno`, `destilar-lecciones`, `documentar-dominio` y `documentar-producto`.
 - Para cambios sin impacto observable: el skill los evalúa y emite el veredicto «sin entrada», no los registra.
 
 ## Entrada
 
 - La ubicación de los cambios a registrar —árbol de trabajo sin commitear o rango de commits de la tarea—: el skill reconstruye el diff con git a partir de ella, no lo recibe ya materializado.
-- El changelog del proyecto evaluado: `CHANGELOG.md` en la raíz es la convención; si el proyecto lo ubica en otra parte o usa otro nombre, esa ubicación es un dato de entrada. Si no existe, se inicializa solo cuando hay algo que registrar.
+- El changelog del proyecto evaluado, si ya existe; su ubicación la resuelve `operar-changelog` desde la configuración de la instalación.
 - Los artefactos de agrupación del sistema de tareas del proyecto evaluado, cuando existen —épicas, propuestas, encabezados del índice de tareas—, para resolver la agregación.
-- `references/formato-y-agregacion.md`: la estructura del formato, la plantilla de inicialización, los criterios de notabilidad y la política de agregación. Cargarlo al inicializar el changelog o al redactar y fusionar entradas.
+- `references/formato-y-agregacion.md`: la estructura del formato, los criterios de notabilidad y la política de agregación. Cargarlo al redactar y fusionar entradas.
 
 ## Salida
 
@@ -50,10 +50,10 @@ Instrucciones para que un agente mantenga el changelog del proyecto evaluado. El
 ## Procedimiento
 
 1. **Evaluar la notabilidad.** Reconstruir el diff con git a partir de la ubicación indicada —`git status` y `git diff` en el árbol de trabajo, o el rango de commits por sus hashes— y decidir si el cambio tiene impacto observable para el consumidor —funcionalidad nueva, comportamiento cambiado, corrección, eliminación, deprecación o seguridad— según los criterios de la referencia. Si no aplica, emitir «sin entrada» y terminar sin modificar archivos.
-2. **Localizar o inicializar el changelog.** Buscar `CHANGELOG.md` en la raíz del proyecto evaluado; si no está, localizar el archivo equivalente que el proyecto use. Si no existe, crearlo con la plantilla de `references/formato-y-agregacion.md`.
-3. **Resolver la agregación.** Determinar si el cambio pertenece a una agrupación —épica, propuesta o encabezado ligero— y si esa agrupación ya tiene entrada en los no liberados: si la tiene, fusionar el cambio en ella reformulando la línea si la nueva contribución la amplía, o no escribir nada si ya está cubierta; si no la tiene y el conjunto es notable como unidad, crear la entrada de la agrupación; si el cambio no pertenece a ninguna agrupación —o su agrupación no es notable como unidad—, crear entrada propia. El enlace de la entrada apunta al artefacto de la agrupación cuando existe, no a cada tarea.
+2. **Localizar el changelog.** Delegar en `operar-changelog` la localización del archivo; si no existe, se creará al anotar —inicializar solo cuando haya algo que registrar.
+3. **Resolver la agregación.** Determinar si el cambio pertenece a una agrupación —épica, propuesta o encabezado ligero— y consultar si esa agrupación ya tiene entrada en los no liberados con la operación `buscar` de `operar-changelog` —la referencia a su artefacto la identifica—: si la tiene, fusionar el cambio en ella reformulando la línea si la nueva contribución la amplía —reescritura directa de esa línea, sin mecánica de secciones—, o no escribir nada si ya está cubierta; si no la tiene y el conjunto es notable como unidad, crear la entrada de la agrupación; si el cambio no pertenece a ninguna agrupación —o su agrupación no es notable como unidad—, crear entrada propia. El enlace de la entrada apunta al artefacto de la agrupación cuando existe, no a cada tarea.
 4. **Clasificar y redactar.** Asignar la categoría —`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed` o `Security`— y prefijar con `**Breaking:**` en línea cuando el cambio sea incompatible con la interfaz pública que el proyecto declare. Redactar una línea autodescriptiva en el idioma del changelog, con la referencia al artefacto de origen entre paréntesis.
-5. **Escribir en los no liberados.** Añadir la entrada bajo su categoría —crear el encabezado de categoría solo cuando tiene entradas— o dejar la fusión hecha. No tocar las secciones de versiones ya liberadas.
+5. **Escribir en los no liberados.** Delegar la operación `anotar` de `operar-changelog` con la categoría decidida y la entrada redactada, salvo que la fusión del paso 3 ya haya reescrito la línea existente. No tocar las secciones de versiones ya liberadas.
 6. **Informar del resultado:** «sin entrada», entrada registrada, entrada fusionada o changelog inicializado.
 
 ## Finalización
@@ -65,5 +65,6 @@ El skill ha terminado cuando se cumple una de las dos ramas:
 
 ## Referencias
 
-- `references/formato-y-agregacion.md` — Estructura Keep a Changelog, plantilla de inicialización, criterios de notabilidad, política de agregación y correspondencia con semver. Leer al inicializar el changelog y al redactar o fusionar entradas.
+- `references/formato-y-agregacion.md` — Estructura Keep a Changelog, criterios de notabilidad, política de agregación y correspondencia con semver. Leer al redactar o fusionar entradas.
+- `operar-changelog` — Ejecuta las operaciones mecánicas delegadas: localizar el archivo, buscar en los no liberados y anotar la entrada.
 - `docs/research/2026-09-changelog-y-versionado-semantico.md` — Investigación que motiva el skill: modelo de dos momentos, formato recomendado y justificación de la agregación por agrupación.

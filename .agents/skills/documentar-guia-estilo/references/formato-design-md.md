@@ -1,6 +1,6 @@
-# Formato de DESIGN.md
+# Formato de la guía de estilo
 
-Plantilla y reglas de redacción de la guía de estilo como contrato verificable. El `DESIGN.md` vive en la raíz del proyecto evaluado y lo consume el agente cada vez que escribe frontend (vía `aplicar-guia-estilo`). Para ver la expectativa de cada sección —un ejemplo completo que cumple estas reglas, con el mapeo sección→regla—, leer `ejemplo-design-md.md` junto a esta plantilla.
+Plantilla y reglas de redacción de la guía de estilo como contrato verificable. La guía vive en la raíz del proyecto evaluado —su ubicación es la convención `archivo_design`— y la consume el agente cada vez que escribe frontend (vía `aplicar-guia-estilo`). Para ver la expectativa de cada sección —un ejemplo completo que cumple estas reglas, con el mapeo sección→regla—, leer `ejemplo-design-md.md` junto a esta plantilla.
 
 ## Reglas de redacción
 
@@ -125,7 +125,7 @@ Prohibido:
 
 ## Notas de aplicación
 
-- La guía declara las custom properties; su declaración vive en `:root` del archivo de estilos principal del proyecto y los valores del `DESIGN.md` deben coincidir con los del código.
+- La guía declara las custom properties; su declaración vive en `:root` del archivo de estilos principal del proyecto y los valores de la guía deben coincidir con los del código.
 - Los principios y las razones fundamentan el contrato sin sustituirlo: los valores siguen siendo la parte verificable y deben coincidir con el código; una razón que contradiga un valor vigente es un error de redacción, no una decisión.
 - Un componente decidido pero aún sin implementar se marca «(pendiente de implementación)»: la guía documenta la decisión aprobada sin afirmar que el código la materializa; el validador la trata como brecha que el código debe alcanzar, no como deriva del código.
 - Si el proyecto tiene varios temas (claro/oscuro), cada rol declara sus valores por tema en la misma sección.

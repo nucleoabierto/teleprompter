@@ -1,12 +1,12 @@
 ---
 name: planificar-roadmap
 description: >
-  Produce el roadmap del producto: el documento ROADMAP.md en la
-  raíz del repositorio que declara las líneas de trabajo —épicas,
-  hitos ligeros y tareas sueltas— organizadas en horizontes de
-  confianza (Now, Next, Later, No ahora), con justificación de
-  posición dentro de los horizontes comprometidos, y refleja esos
-  horizontes en TODO.txt. Es el nivel por encima de la épica: decide
+  Produce el roadmap del producto: el documento que declara las
+  líneas de trabajo —épicas, hitos ligeros y tareas sueltas—
+  organizadas en horizontes de confianza (Now, Next, Later,
+  No ahora), con justificación de posición dentro de los
+  horizontes comprometidos, y refleja esos horizontes en el
+  índice de tareas. Es el nivel por encima de la épica: decide
   dirección y prioridad, no estado.
   Usar cuando haya que ordenar varias líneas de trabajo abiertas,
   posicionar trabajo suelto respecto a las épicas, o revisar la
@@ -17,7 +17,7 @@ description: >
 
 # Planificar roadmap
 
-Instrucciones para que un agente produzca el roadmap de un producto: el documento `ROADMAP.md` en la raíz del repositorio que declara las líneas de trabajo abiertas organizadas en horizontes de confianza —Now (comprometido y en vuelo), Next (validado y próximo), Later (dirección sin compromiso) y No ahora (aparcado con su razón)—, con justificación de posición dentro de Now y Next. Es el nivel por encima de la épica: donde la épica da objetivo y guía a un conjunto, el roadmap decide qué conjunto —y qué trabajo suelto— va primero y por qué.
+Instrucciones para que un agente produzca el roadmap de un producto: el documento —ubicado según la convención `archivo_roadmap`, en la raíz del repositorio por defecto— que declara las líneas de trabajo abiertas organizadas en horizontes de confianza —Now (comprometido y en vuelo), Next (validado y próximo), Later (dirección sin compromiso) y No ahora (aparcado con su razón)—, con justificación de posición dentro de Now y Next. Es el nivel por encima de la épica: donde la épica da objetivo y guía a un conjunto, el roadmap decide qué conjunto —y qué trabajo suelto— va primero y por qué.
 
 ## Cuándo usar
 
@@ -30,23 +30,23 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 - Para ordenar las tareas dentro de un conjunto: eso es el plan técnico de la épica, producido por `planificar`.
 - Para una sola línea de trabajo: sin varias líneas no hay orden que decidir.
-- Para ejecutar el trabajo ordenado: eso corresponde a `ejecutar-tareas` sobre `TODO.txt`.
-- Para registrar dependencias duras entre tareas: eso es el marcador de bloqueo `[!]` del índice; el roadmap declara orden preferente justificado, no bloqueos.
+- Para ejecutar el trabajo ordenado: eso corresponde a `ejecutar-tareas` sobre el índice de tareas.
+- Para registrar dependencias duras entre tareas: eso es la declaración de bloqueo del índice; el roadmap declara orden preferente justificado, no bloqueos.
 
 ## Entrada
 
 - La visión o documento de dirección del producto, si existe, como ancla de la trazabilidad.
-- `docs/epics/` y `TODO.txt` como inventario de líneas de trabajo abiertas: épicas planificadas, hitos ligeros y tareas sueltas pendientes.
+- El inventario de líneas de trabajo abiertas del proyecto —épicas planificadas, hitos ligeros y tareas sueltas pendientes—, que `consultar-artefactos` produce sin que el consumidor nombre las ubicaciones.
 - `assets/roadmap.md` como plantilla del documento.
 
 ## Salida
 
-- `ROADMAP.md` en la raíz del repositorio del producto con las líneas asignadas a su horizonte, la justificación de cada posición en Now y Next, y estado por línea en Now. Es un documento vivo único: se actualiza in situ y su historia la preserva git; no hay serie de roadmaps ni fechas comprometidas.
-- `TODO.txt` reflejando los horizontes comprometidos: las líneas de Now y Next aparecen en el índice reordenadas si divergían, sin tocar el estado de ninguna tarea. Later y No ahora viven solo en el roadmap, su hogar natural como documento de dirección; una propuesta `[p]` del índice no es una línea del roadmap hasta que se aprueba y planifica.
+- El documento de roadmap en la ubicación de la convención `archivo_roadmap`, con las líneas asignadas a su horizonte, la justificación de cada posición en Now y Next, y estado por línea en Now. Es un documento vivo único: se actualiza in situ y su historia la preserva git; no hay serie de roadmaps ni fechas comprometidas.
+- El índice de tareas reflejando los horizontes comprometidos: las líneas de Now y Next aparecen en el índice reordenadas si divergían, sin tocar el estado de ninguna tarea. Later y No ahora viven solo en el roadmap, su hogar natural como documento de dirección; una propuesta en revisión del índice no es una línea del roadmap hasta que se aprueba y planifica.
 
 ## Principios rectores
 
-1. **El roadmap decide, el índice ejecuta:** `ROADMAP.md` es la fuente de verdad de prioridad y dirección; `TODO.txt` es la fuente de verdad de ejecución y estado. El índice refleja mecánicamente los horizontes comprometidos (Now y Next), igual que la agrupación por hitos lo es de la épica; Later y No ahora no tienen reflejo en el índice.
+1. **El roadmap decide, el índice ejecuta:** el roadmap es la fuente de verdad de prioridad y dirección; el índice de tareas es la fuente de verdad de ejecución y estado. El índice refleja mecánicamente los horizontes comprometidos (Now y Next), igual que la agrupación por hitos lo es de la épica; Later y No ahora no tienen reflejo en el índice.
 2. **Horizontes de confianza, no fechas:** cada línea declara su nivel de compromiso —Now acotado (3-5 líneas) y con estado, Next próximo, Later dirección sin orden interno, No ahora aparcado con razón— porque la confianza comunica más honestidad que una secuencia única y da hogar a lo descartado sin perderlo.
 3. **Orden justificado, no solo declarado:** dentro de Now y Next cada línea lleva la razón de su posición —impacto sobre otras líneas, dependencias, costo evitado— porque la justificación es lo que comunica los efectos cruzados y lo que permite revisar el orden cuando cambian las condiciones.
 4. **Orden preferente, no bloqueo:** el roadmap posiciona líneas por conveniencia; si una línea no puede empezar sin otra, la dependencia se declara como bloqueo en el índice, no como posición en el roadmap.
@@ -58,13 +58,13 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 ### 1. Reunir las líneas
 
-1. **Inventariar las líneas de trabajo abiertas** con la operación `inventario` de `consultar-artefactos`, que devuelve las épicas con su estado, las agrupaciones del índice —con o sin épica enlazada— y las tareas sueltas no completadas de `## General`.
+1. **Inventariar las líneas de trabajo abiertas** delegando la consulta «las líneas de trabajo abiertas» en `consultar-artefactos`, que devuelve las épicas con su estado, las agrupaciones del índice —con o sin épica enlazada— y las tareas sueltas no completadas.
 2. **Leer el contenido real de cada línea:** los planes técnicos de las épicas y los objetivos de las tareas sueltas, buscando las interacciones —qué línea cambia el costo de qué otra, qué formato o estructura asume una forma del sistema que otra línea todavía puede alterar.
 3. **Si hay una sola línea abierta**, informar de que no hay orden que decidir y terminar sin crear el documento.
 
 ### 2. Redactar el borrador
 
-4. **Asignar cada línea a su horizonte** según el nivel de compromiso: Now para lo decidido y en vuelo (3-5 líneas, con estado), Next para lo validado que sigue, Later para la dirección sin compromiso (temas sin orden) y No ahora para lo aparcado, con la razón. Las propuestas `[p]` del índice no entran: una propuesta no es línea hasta que se aprueba y planifica.
+4. **Asignar cada línea a su horizonte** según el nivel de compromiso: Now para lo decidido y en vuelo (3-5 líneas, con estado), Next para lo validado que sigue, Later para la dirección sin compromiso (temas sin orden) y No ahora para lo aparcado, con la razón. Las propuestas en revisión del índice no entran: una propuesta no es línea hasta que se aprueba y planifica.
 5. **Ordenar Now y Next** por secuencia de ejecución y redactar la justificación de cada posición: qué la hace conveniente ahí y qué pasaría si ocupara otra. Later se agrupa por tema sin orden interno.
 6. **Redactar la dirección** a partir de la visión del producto: el objetivo que este conjunto de líneas sirve; toda línea del documento debe remitir a ella.
 7. **Aplicar revisión de redacción y pulido mecánico en modo preventivo.** Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura`; de lo contrario, realizar el equivalente manualmente.
@@ -75,8 +75,8 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 ### 4. Materializar el roadmap
 
-9. **Crear o actualizar `ROADMAP.md`** en la raíz del repositorio siguiendo `assets/roadmap.md`, registrando la aprobación en su sección Revisión con `tarea.sh registrar-revision` de `actualizar-artefactos`. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
-10. **Reflejar los horizontes comprometidos en `TODO.txt`:** recolocar las agrupaciones —encabezados de hito y tareas sueltas— para que el orden del índice coincida con el declarado en Now y Next, componiendo la reordenación con `todo.sh recolocar` de `actualizar-artefactos`, que mueve bloques sin tocar el estado de ninguna tarea. Later y No ahora no aparecen en el índice. Si el índice ya coincide, no tocarlo.
+9. **Crear o actualizar el documento de roadmap** en la ubicación de la convención `archivo_roadmap` —resoluble con la operación `convencion` de `consultar-artefactos`— siguiendo `assets/roadmap.md`, registrando la aprobación en su sección de revisión con la acción «registrar el veredicto» de `actualizar-artefactos`. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
+10. **Reflejar los horizontes comprometidos en el índice:** recolocar las agrupaciones y las tareas sueltas para que el orden del índice coincida con el declarado en Now y Next, componiendo la reordenación con la acción «recolocar» de `actualizar-artefactos`, que mueve bloques sin tocar el estado de ninguna tarea. Later y No ahora no aparecen en el índice. Si el índice ya coincide, no tocarlo.
 11. **Informar al usuario** del roadmap producido y del orden reflejado en el índice.
 
 ## Finalización
@@ -84,8 +84,8 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 El skill ha terminado cuando:
 
 - El usuario aprobó los horizontes, el orden y las justificaciones.
-- `ROADMAP.md` existe en la raíz con las líneas asignadas a su horizonte y justificadas en Now y Next.
-- `TODO.txt` refleja Now y Next sin cambios de estado.
+- El documento de roadmap existe en su ubicación con las líneas asignadas a su horizonte y justificadas en Now y Next.
+- El índice de tareas refleja Now y Next sin cambios de estado.
 
 ## Referencias
 

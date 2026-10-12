@@ -18,7 +18,7 @@ Instrucciones para que un agente ejecute la mitad de planeación del flujo de de
 
 ## Cuándo usar
 
-- Cuando una tarea de tipo `desarrollo` o `mantenimiento (refactoring)` no tiene `## Plan técnico` y `## Suite de pruebas esperada` aprobados: en el ciclo, `ejecutar-tareas` la enruta aquí.
+- Cuando una tarea de tipo `desarrollo` o `mantenimiento (refactoring)` no tiene el plan y la suite aprobados: en el ciclo, `ejecutar-tareas` la enruta aquí.
 - Cuando el usuario pida planear una tarea concreta sin ejecutarla —planeación en paralelo de varias tareas o planeación incremental encadenada.
 - Cuando una tarea planeada quedó interrumpida y hay que completar las secciones que falten.
 
@@ -30,14 +30,14 @@ Instrucciones para que un agente ejecute la mitad de planeación del flujo de de
 
 ## Entrada
 
-- El archivo de la tarea (`docs/tasks/NNN-slug.md`), marcada en progreso por el ejecutor general.
+- El archivo de la tarea, marcada en progreso por el ejecutor general.
 - El plan técnico de la épica que agrupa la tarea, si existe, como guía de arquitectura.
 - Los planes aprobados de las tareas de las que esta depende, si las hay —aunque aún no se hayan ejecutado— como base de la planeación.
 - Las capacidades internas: `recopilar-contexto`, `evaluar-conectividad` y `planear-implementacion`.
 
 ## Salida
 
-- El archivo de la tarea con `## Contexto`, `## Conectividad`, `## Plan técnico` y `## Suite de pruebas esperada` completos y aprobados, listo para `desarrollar-tarea`.
+- El archivo de la tarea con las secciones de contexto, conectividad, plan y suite completas y aprobadas, listo para `desarrollar-tarea`.
 - O la conclusión de que la tarea no puede planearse —desconectada, plan rechazado—, comunicada al invocador.
 
 ## Principios rectores
@@ -49,11 +49,11 @@ Instrucciones para que un agente ejecute la mitad de planeación del flujo de de
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y comprobar el estado de planeación con la operación `planeacion` de `consultar-artefactos`: si ya contiene `## Plan técnico` y `## Suite de pruebas esperada` aprobados, informar de que la tarea ya está planeada y terminar sin tocar nada.
-2. **Revisar las dependencias declaradas** —la operación `dependencias` de `consultar-artefactos` las devuelve—. Para cada tarea bloqueante: si está ejecutada, nada que hacer; si tiene plan aprobado sin ejecutar, leer su `## Plan técnico` y tratarlo como base asumida —el contexto y la conectividad de esta tarea se recopilan sobre el mundo que ese plan describe—; si no tiene plan aprobado, la dependencia bloquea la planeación: informar al invocador y terminar.
-3. **Invocar `recopilar-contexto`** con el archivo de la tarea —y los planes base de las dependencias, si los hay—, que registra `## Contexto`.
-4. **Invocar `evaluar-conectividad`**, que registra `## Conectividad`. Si el veredicto es `desconectada`, dar de alta la tarea puente con `crear-tareas`, declararla como dependencia en la tarea actual —`tarea.sh añadir-linea` de `actualizar-artefactos` sobre la sección `## Dependencias`— e informar al invocador —que la marcará `[!]` en `TODO.txt`— sin llegar a planear.
-5. **Invocar `planear-implementacion`**, que produce `## Plan técnico` y `## Suite de pruebas esperada` y los somete a la puerta humana. Si el usuario rechaza el plan, informar al invocador y terminar.
+1. **Leer el archivo de la tarea** y comprobar el estado de planeación delegando en `consultar-artefactos` la consulta «si la planeación de la tarea está completa»: si ya contiene el plan y la suite aprobados, informar de que la tarea ya está planeada y terminar sin tocar nada.
+2. **Revisar las dependencias declaradas** —la consulta «las dependencias de la tarea» de `consultar-artefactos` las devuelve—. Para cada tarea bloqueante: si está ejecutada, nada que hacer; si tiene plan aprobado sin ejecutar, leer su plan técnico y tratarlo como base asumida —el contexto y la conectividad de esta tarea se recopilan sobre el mundo que ese plan describe—; si no tiene plan aprobado, la dependencia bloquea la planeación: informar al invocador y terminar.
+3. **Invocar `recopilar-contexto`** con el archivo de la tarea —y los planes base de las dependencias, si los hay—, que registra la sección de contexto.
+4. **Invocar `evaluar-conectividad`**, que registra la sección de conectividad. Si el veredicto es `desconectada`, dar de alta la tarea puente con `crear-tareas`, declararla como dependencia en la tarea actual —«añadir la línea a la sección `dependencias` de la tarea», delegada en `actualizar-artefactos`— e informar al invocador —que la declarará bloqueada— sin llegar a planear.
+5. **Invocar `planear-implementacion`**, que produce el plan técnico y la suite de pruebas esperada y los somete a la puerta humana. Si el usuario rechaza el plan, informar al invocador y terminar.
 6. **Informar al invocador** de que la tarea quedó planeada: secciones aprobadas registradas, lista para `desarrollar-tarea` en esta iteración o en otra sesión.
 
 ## Finalización

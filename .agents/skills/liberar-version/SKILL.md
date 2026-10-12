@@ -29,9 +29,9 @@ Instrucciones para que un agente libere una versión del proyecto evaluado. La l
 
 ## Entrada
 
-- El changelog del proyecto evaluado: `CHANGELOG.md` en la raíz es la convención; otra ubicación o nombre es un dato de entrada.
+- El changelog del proyecto evaluado; su ubicación la resuelve `operar-changelog` desde la configuración de la instalación.
 - La fuente de verdad de la versión actual —la última versión del changelog, el manifiesto del proyecto u otra que el proyecto use—: se detecta o se pregunta al usuario, nunca se asume ni se fija a un gestor concreto.
-- `references/promocion-y-semver.md`: la lista de curación previa a la promoción, la correspondencia entre categorías y bump, y la mecánica de la materialización. Cargarlo al proponer el bump y al promover.
+- `references/promocion-y-semver.md`: la lista de curación previa a la promoción y la correspondencia entre categorías y bump. Cargarlo al proponer el bump.
 
 ## Salida
 
@@ -50,14 +50,14 @@ Instrucciones para que un agente libere una versión del proyecto evaluado. La l
 
 ## Procedimiento
 
-Si lo pedido es retirar una versión ya publicada —no liberar una nueva—, el procedimiento es directo: confirmar la retirada con el usuario y añadir el marcador `[YANKED]` al encabezado de su sección sin borrarla. Los pasos siguientes no aplican.
+Si lo pedido es retirar una versión ya publicada —no liberar una nueva—, el procedimiento es directo: confirmar la retirada con el usuario y marcar la versión como retirada delegando la operación `yank` de `operar-changelog`, que conserva su contenido. Los pasos siguientes no aplican.
 
-1. **Localizar el changelog y los no liberados.** Buscar el changelog del proyecto evaluado; si no existe, o si no tiene sección de no liberados o la tiene vacía, informar «nada que liberar» y terminar sin modificar archivos.
-2. **Determinar la versión actual.** Leer la última versión anotada en el changelog y contrastarla con la fuente de verdad del proyecto cuando exista. Si no se puede determinar o las fuentes divergen, preguntar al usuario.
-3. **Curar en borrador los no liberados.** Producir la versión curada de las entradas sin escribirla todavía en el archivo —la escritura ocurre en el paso 6, tras la confirmación— aplicando la lista de curación de `references/promocion-y-semver.md`: fusionar duplicados, eliminar lo que se anula en el mismo periodo, quitar detalle interno sin impacto, reformular lo poco claro, corregir categorías y marcar las rupturas con `**Breaking:**`.
-4. **Proponer el bump con justificación.** Clasificar los cambios curados por categoría y aplicar la correspondencia semver de la referencia: la señal más fuerte presente fija major, minor o patch. Presentar al usuario la versión propuesta, la justificación —las categorías que la producen— y la curación propuesta.
+1. **Localizar el changelog y los no liberados.** Delegar en `operar-changelog` la localización del archivo y el reporte de su estado —presencia y vacuidad de los no liberados—; si no existe, o los no liberados están ausentes o vacíos, informar «nada que liberar» y terminar sin modificar archivos.
+2. **Determinar la versión actual.** Leer la última versión que reporta el estado del changelog y contrastarla con la fuente de verdad del proyecto cuando exista. Si no se puede determinar o las fuentes divergen, preguntar al usuario.
+3. **Curar en borrador los no liberados.** Volcar el cuerpo de los no liberados con `operar-changelog` y producir la versión curada de las entradas sin escribirla todavía en el archivo —la escritura ocurre en el paso 6, tras la confirmación— aplicando la lista de curación de `references/promocion-y-semver.md`: fusionar duplicados, eliminar lo que se anula en el mismo periodo, quitar detalle interno sin impacto, reformular lo poco claro, corregir categorías y marcar las rupturas con `**Breaking:**`.
+4. **Proponer el bump con justificación.** Obtener la señal bruta con la operación `bump` de `operar-changelog` —la categoría más fuerte presente— e interpretarla según la correspondencia semver de la referencia: la convención sobre versiones `0.x` y la interfaz pública declarada del proyecto la aporta este skill. Presentar al usuario la versión propuesta, la justificación —las categorías que la producen— y la curación propuesta.
 5. **Confirmar con el usuario.** Esperar su decisión: acepta el número propuesto, indica otro —con el que se continúa— o cancela la liberación. Nada se promueve sin esta confirmación.
-6. **Materializar la promoción.** Escribir en el archivo las entradas curadas, renombrar `## [Unreleased]` a `## [X.Y.Z] - <fecha ISO del día>`, abrir una sección `## [Unreleased]` vacía encima y actualizar los enlaces comparativos del pie cuando el archivo los tenga: el nuevo `Unreleased` compara la nueva versión con HEAD.
+6. **Materializar la promoción.** Delegar la operación `promover` de `operar-changelog` con la versión confirmada y el cuerpo curado: la operación escribe las entradas bajo la nueva sección, abre los no liberados vacíos encima y actualiza los enlaces comparativos cuando el archivo los tiene —todo en una sola mutación.
 7. **Actualizar la versión del proyecto si hay herramientas detectables.** Opcional y solo cuando el proyecto lo permite: si la fuente de verdad detectada en el paso 2 es un artefacto que materializa la versión —un manifiesto del proyecto o una herramienta propia de versionado—, actualizarla a la nueva versión con los medios del propio proyecto. Si no se detecta ninguna, el paso se omite y el changelog basta como anotación.
 8. **Informar del resultado:** versión liberada —con la fuente del proyecto actualizada si procedía—, «nada que liberar» o liberación cancelada. Al liberar, recordar que etiquetar, publicar y desplegar son pasos posteriores propios de cada proyecto.
 
@@ -72,6 +72,7 @@ El skill ha terminado cuando se cumple una de las cuatro ramas:
 
 ## Referencias
 
-- `references/promocion-y-semver.md` — Lista de curación previa a la promoción, correspondencia entre categorías y bump semver, y mecánica de la materialización con enlaces comparativos. Leer al proponer el bump y al promover.
+- `references/promocion-y-semver.md` — Lista de curación previa a la promoción y correspondencia entre categorías y bump semver. Leer al curar y al proponer el bump.
+- `operar-changelog` — Ejecuta las operaciones mecánicas delegadas: localización, estado, volcado, propuesta bruta de bump, promoción y marcado de retiradas.
 - `docs/research/2026-09-changelog-y-versionado-semantico.md` — Investigación que motiva el skill: modelo de dos momentos, correspondencia semver y ciclo de vida de los no liberados.
 - `.agents/skills/mantener-changelog/` — Skill hermano que produce el material en borrador que este skill promueve.

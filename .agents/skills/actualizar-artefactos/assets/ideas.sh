@@ -5,6 +5,14 @@
 # una mutación ante formato no parseado falla sin escribir.
 set -euo pipefail
 
+# Convenciones: el instalador escribe los valores del proyecto en
+# convenciones.sh; una clave ausente rige por el valor por defecto.
+conv="$(dirname "$0")/convenciones.sh"
+if [ -f "$conv" ]; then
+  . "$conv" 2>/dev/null || { echo "ideas.sh: convenciones malformadas: $conv" >&2; exit 2; }
+fi
+export CAMPO_PROCESADA=${CAMPO_PROCESADA:-'> **Procesada en:** %s'}
+
 uso() {
   cat >&2 <<'EOF'
 uso: ideas.sh <archivo-de-idea> <operación> [argumentos]
@@ -27,8 +35,9 @@ case "$op" in
   procesada)
     [ $# -ge 1 ] || uso
     destino=$1
-    grep -q 'Procesada en' "$f" && { echo "ideas.sh: la idea ya está procesada: $f" >&2; exit 1; }
-    if awk -v destino="$destino" '
+    marca_p=${CAMPO_PROCESADA%%%s*}
+    grep -qF "$marca_p" "$f" && { echo "ideas.sh: la idea ya está procesada: $f" >&2; exit 1; }
+    if awk -v destino="$destino" -v marca="$marca_p" '
       { l[NR] = $0; if (!fin && /^## /) fin = NR }
       END {
         limite = fin ? fin : NR + 1
@@ -37,7 +46,7 @@ case "$op" in
         if (!pos) exit 1
         for (i = 1; i <= NR; i++) {
           print l[i]
-          if (i == pos) print "> **Procesada en:** " destino
+          if (i == pos) print marca destino
         }
       }
     ' "$f" > "$tmp"; then

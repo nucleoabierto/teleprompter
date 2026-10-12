@@ -12,7 +12,7 @@ description: >
 
 # Desarrollar tarea
 
-Instrucciones para que un agente ejecute la mitad de ejecución del flujo de desarrollo dentro de una tarea: toma una tarea cuyo `## Plan técnico` y `## Suite de pruebas esperada` están aprobados en su archivo —planeada en esta sesión o en otra—, invoca `ejecutar-implementacion` y devuelve el diff con el registro de desviaciones al invocador.
+Instrucciones para que un agente ejecute la mitad de ejecución del flujo de desarrollo dentro de una tarea: toma una tarea cuyo plan técnico y suite de pruebas esperada están aprobados en su archivo —planeada en esta sesión o en otra—, invoca `ejecutar-implementacion` y devuelve el diff con el registro de desviaciones al invocador.
 
 ## Cuándo usar
 
@@ -21,31 +21,31 @@ Instrucciones para que un agente ejecute la mitad de ejecución del flujo de des
 
 ## Cuándo no usar
 
-- Cuando la tarea no tiene `## Plan técnico` y `## Suite de pruebas esperada` aprobados en su archivo: corresponde primero `planear-tarea`.
+- Cuando la tarea no tiene plan técnico ni suite de pruebas aprobados en su archivo: corresponde primero `planear-tarea`.
 - Para tareas de otro tipo o sin tipo declarado: no pasan por el pipeline de desarrollo.
 - Para revisar la implementación: eso es `revisar-implementacion`, invocado por el ejecutor en su paso de revisión.
 
 ## Entrada
 
-- El archivo de la tarea (`docs/tasks/NNN-slug.md`) con `## Plan técnico` y `## Suite de pruebas esperada` aprobados —la planeación es un estado registrado, no un recuerdo de sesión.
+- El archivo de la tarea con el plan y la suite aprobados —la planeación es un estado registrado, no un recuerdo de sesión.
 - El plan técnico de la épica que agrupa la tarea, si existe, como guía de arquitectura vigente.
 - La capacidad interna: `ejecutar-implementacion`.
 
 ## Salida
 
 - El diff de los cambios que implementan la tarea, devuelto al invocador.
-- El `## Plan técnico` del archivo de la tarea con las acciones marcadas y, si las hubo, la sección `## Desviaciones del plan`.
+- El plan técnico del archivo de la tarea con las acciones marcadas y, si las hubo, la sección de desviaciones.
 - O la conclusión de que la tarea no puede ejecutarse —sin plan aprobado, desviación mayor no confirmada—, comunicada al invocador.
 
 ## Principios rectores
 
 1. **La entrada se valida, no se presume:** el plan aprobado es el contrato; una tarea sin él no se ejecuta, se deriva a `planear-tarea`.
 2. **Las puertas humanas se respetan:** la confirmación de desviaciones mayores pertenece al usuario.
-3. **Acotado a una tarea:** no gestiona estado de la tarea en `TODO.txt`, ni revisión dual, ni commit; eso sigue siendo del ejecutor general.
+3. **Acotado a una tarea:** no gestiona el estado de la tarea en el índice, ni la revisión ni el pull request; eso sigue siendo del ejecutor general.
 
 ## Procedimiento
 
-1. **Leer el archivo de la tarea** y validar la entrada con la operación `planeacion` de `consultar-artefactos`: `## Plan técnico` y `## Suite de pruebas esperada` presentes y aprobados. Si falta alguna, informar al invocador de que la tarea requiere `planear-tarea` primero y terminar sin ejecutar.
+1. **Leer el archivo de la tarea** y validar la entrada delegando en `consultar-artefactos` la consulta «si la planeación de la tarea está completa»: plan técnico y suite de pruebas esperada presentes y aprobados. Si falta alguna, informar al invocador de que la tarea requiere `planear-tarea` primero y terminar sin ejecutar.
 2. **Invocar `ejecutar-implementacion`** con el archivo de la tarea: implementa el plan, marca la checklist, cubre la suite esperada y registra las desviaciones; escala al usuario las que cambian objetivo, alcance o guía de la épica. Si el usuario no confirma una desviación mayor, informar al invocador y terminar.
 3. **Devolver el control al invocador** informando del diff producido y de las desviaciones registradas.
 

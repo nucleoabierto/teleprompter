@@ -23,18 +23,17 @@ Instrucciones para que un agente recupere las lecciones aprendidas que aplican a
 
 ## Cuándo no usar
 
-- Para registrar correcciones nuevas: eso corresponde a `registrar-experiencias`.
-- Para agrupar experiencias en notas de lecciones: eso corresponde a `consolidar-lecciones`.
+- Para registrar o destilar correcciones del usuario en lecciones: eso corresponde a `destilar-lecciones`.
 - Cuando el trabajo no toca el proyecto ni sus artefactos (por ejemplo, una pregunta conversacional).
 
 ## Entrada
 
 - Una descripción del trabajo a realizar: archivos o rutas que se tocarán, comandos que se ejecutarán, tipo de acción y palabras clave de la actividad.
-- `docs/lessons/README.md`, índice de temas cuyos disparadores son el contrato de descubrimiento.
+- El índice de lecciones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de lecciones que fija la convención (`convencion dir_lecciones` de `consultar-artefactos`).
 
 ## Salida
 
-- Las notas de `docs/lessons/` cuyos disparadores coinciden con el trabajo, traídas al contexto para que el agente las aplique.
+- Las notas de lecciones cuyos disparadores coinciden con el trabajo, traídas al contexto para que el agente las aplique.
 - Si ninguna lección aplica, esa conclusión explícita; no se inventan lecciones ni se fuerza la coincidencia.
 
 ## Principios rectores
@@ -46,9 +45,9 @@ Instrucciones para que un agente recupere las lecciones aprendidas que aplican a
 
 ## Procedimiento
 
-1. **Leer `docs/lessons/README.md`** para obtener el índice de temas con sus disparadores.
+1. **Leer el índice de lecciones** para obtener los temas con sus disparadores —el índice del directorio de lecciones que resuelve la convención (`convencion dir_lecciones` de `consultar-artefactos`)—.
 2. **Cotejar los disparadores con el trabajo** delegando en `consultar-artefactos`: la operación `coincidencias` del índice devuelve `archivo`, `estado` y `resumen` de cada entrada cuyos disparadores contienen alguno de los términos del trabajo —archivos, comandos o palabras clave—.
-3. **Leer las notas aplicables** en `docs/lessons/<tema>.md` y traerlas al contexto.
+3. **Leer las notas aplicables** —los archivos que devolvió el cotejo— y traerlas al contexto.
 4. **Informar brevemente** de qué lecciones aplican (o que ninguna aplica) y seguir con el trabajo.
 
 ## Finalización

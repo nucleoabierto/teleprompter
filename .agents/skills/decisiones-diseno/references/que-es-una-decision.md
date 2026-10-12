@@ -10,7 +10,7 @@ Son decisiones de diseño:
 
 No son decisiones de diseño:
 
-- El registro de una tarea completada (vive en `TODO.txt` y en el archivo de tarea).
+- El registro de una tarea completada (vive en el índice de tareas y en el archivo de tarea).
 - La descripción de cómo se implementó algo (vive en el commit y en el código).
 - Un documento de visión o un README (describen el proyecto, no justifican una elección concreta).
 - Una regla operativa permanente (vive en `AGENTS.md`).

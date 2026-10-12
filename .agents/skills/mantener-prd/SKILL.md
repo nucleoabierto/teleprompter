@@ -1,11 +1,11 @@
 ---
 name: mantener-prd
 description: >
-  Crea y mantiene el PRD de un conjunto de trabajo —el documento de
-  producto en docs/prd/ que declara los casos de uso con su ID y el
-  comportamiento esperado antes de que las tareas se planeen—, lo
-  sincroniza con las desviaciones de la ejecución al cerrar cada
-  tarea y lo conserva como registro al agotarse el conjunto.
+  Crea y mantiene el PRD de un conjunto de trabajo —el documento
+  que declara los casos de uso con su ID y el comportamiento
+  esperado antes de que las tareas se planeen—, lo sincroniza
+  con las desviaciones de la ejecución al cerrar cada tarea y lo
+  conserva como registro al agotarse el conjunto.
   Usar al crear una épica o un conjunto con comportamiento de
   producto, al cerrar una tarea que lo desvíe, o cuando se pida
   crear o actualizar el PRD de un conjunto.
@@ -38,7 +38,7 @@ Instrucciones para que un agente cree y mantenga el PRD de un conjunto de trabaj
 
 ## Salida
 
-- `docs/prd/NNN-slug.md` creado o actualizado, con los casos de uso identificados como `CU-N` y el comportamiento esperado por área de funcionalidad.
+- El PRD del conjunto creado o actualizado en el directorio de PRDs —serie numerada de la convención—, con los casos de uso identificados como `CU-N` y el comportamiento esperado por área de funcionalidad.
 - O el veredicto «sin impacto»: el diff no desvía ningún comportamiento declarado.
 - O una laguna elevada al usuario: la tarea necesita un caso de uso que el PRD no declara.
 
@@ -48,17 +48,17 @@ Instrucciones para que un agente cree y mantenga el PRD de un conjunto de trabaj
 2. **Los casos de uso tienen dueño antes de planear:** el planner de una tarea los extrae del PRD y los baja; una necesidad no cubierta es una laguna que se eleva o una actualización del PRD, nunca una invención silenciosa. La propagación de los requisitos es de vocabulario y comportamiento —la suite traza al `CU-N`; la documentación de producto redacta desde el mismo lenguaje de negocio con su texto público limpio de identificadores internos: la remontada al PRD corre por el ancla a la prueba—.
 3. **Compacto por diseño:** el PRD compite por el contexto del agente con el código; cada sección declara lo que la planeación necesita y nada más.
 4. **Vivo mientras el conjunto vive:** las desviaciones de ejecución que cambian comportamiento actualizan el PRD en el mismo cierre; un PRD desactualizado es peor que ninguno, porque ancla la planeación a una intención caducada.
-5. **Registro, no ciclo propio:** el PRD no lleva Estado ni Revisión propios —su vigencia es la de la épica que lo porta y su aprobación la da la puerta humana de la épica—; al agotarse el conjunto queda como registro histórico, y el comportamiento vivo lo documenta `documentar-producto`.
+5. **Registro, no ciclo propio:** el PRD no lleva ciclo de estados ni revisión propios —su vigencia es la de la épica que lo porta y su aprobación la da la puerta humana de la épica—; al agotarse el conjunto queda como registro histórico, y el comportamiento vivo lo documenta `documentar-producto`.
 
 ## Procedimiento
 
 ### Creación (invocado por `planificar` al crear la épica)
 
 1. **Reunir el enmarcado:** de la propuesta aprobada, el problema, la oportunidad y el fuera de alcance; de las piezas, los objetivos y resultados esperados. Sin propuesta, partir de la intención del conjunto y las piezas.
-2. **Redactar el PRD** siguiendo `assets/prd.md`: problema y objetivo de producto; usuarios; casos de uso como `CU-N` en lenguaje de negocio —quién busca qué y qué ocurre—, con sus variantes y bordes; comportamiento esperado por área de funcionalidad, observable y sin nombrar funciones ni archivos; criterios de éxito a nivel producto; fuera de alcance de producto.
+2. **Redactar el PRD** siguiendo `assets/prd.md`: problema y objetivo de producto; usuarios; casos de uso identificados con el prefijo de la convención —`convencion prefijo_caso_uso` de `consultar-artefactos`; `CU-N` bajo la convención por defecto— en lenguaje de negocio —quién busca qué y qué ocurre—, con sus variantes y bordes; comportamiento esperado por área de funcionalidad, observable y sin nombrar funciones ni archivos; criterios de éxito a nivel producto; fuera de alcance de producto.
 3. **Aplicar revisión de redacción y pulido mecánico en modo preventivo** —`revisar-redaccion` y `pulir-escritura` si el arnés lo permite—.
 4. **Presentar el PRD junto con el borrador de épica** en la misma puerta humana: el usuario aprueba o pide cambios de ambos a la vez. Si lo rechaza, no crear el archivo.
-5. **Materializar** `docs/prd/NNN-slug.md` con el número de la épica que lo porta, e informar de su ruta para que las piezas lo referencien.
+5. **Materializar** el PRD en el directorio de PRDs que resuelve la convención (`convencion dir_prd` de `consultar-artefactos`), con el número de la épica que lo porta en la serie, e informar de su ruta para que las piezas lo referencien.
 
 ### Sensor de cierre (invocado por el ciclo al cerrar una tarea del conjunto)
 
@@ -68,13 +68,13 @@ Instrucciones para que un agente cree y mantenga el PRD de un conjunto de trabaj
 
 ### Cierre del conjunto
 
-9. **Al agotarse la agrupación** —invocado por `cerrar-conjunto`—, el PRD queda como registro histórico en `docs/prd/`: no se archiva a otro directorio ni se reescribe; el comportamiento vivo del producto lo documenta `documentar-producto` desde ese momento.
+9. **Al agotarse la agrupación** —invocado por `cerrar-conjunto`—, el PRD queda como registro histórico en el directorio de PRDs: no se archiva a otro directorio ni se reescribe; el comportamiento vivo del producto lo documenta `documentar-producto` desde ese momento.
 
 ## Finalización
 
 El skill ha terminado cuando:
 
-- **Creación:** el PRD existe en `docs/prd/` con los casos de uso identificados, aprobado junto con la épica.
+- **Creación:** el PRD existe con los casos de uso identificados, aprobado junto con la épica.
 - **Sensor:** se emitió «sin impacto» o el PRD quedó actualizado con la desviación.
 - **Cierre:** el PRD quedó como registro y se informó de ello.
 

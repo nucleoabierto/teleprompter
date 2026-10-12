@@ -17,7 +17,7 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 
 ## Cuándo usar
 
-- Al comenzar un trabajo del proyecto que pueda estar regido por una decisión ya tomada: ejecutar una tarea, crear o editar un skill, modificar artefactos del sistema (`TODO.txt`, propuestas, épicas, roadmap, documentación de dominio o de producto).
+- Al comenzar un trabajo del proyecto que pueda estar regido por una decisión ya tomada: ejecutar una tarea, crear o editar un skill, modificar artefactos del sistema (el índice de tareas, propuestas, épicas, roadmap, documentación de dominio o de producto).
 - Cuando el usuario pida revisar si hay decisiones que apliquen a algo.
 - Cada vez que cambie el trabajo en curso y aparezcan archivos o acciones nuevos no contemplados en una consulta anterior.
 
@@ -30,11 +30,11 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 ## Entrada
 
 - Una descripción del trabajo a realizar: archivos o rutas que se tocarán, comandos que se ejecutarán, tipo de acción y palabras clave de la actividad.
-- `docs/decisions/README.md`, índice de decisiones cuyos disparadores son el contrato de descubrimiento.
+- El índice de decisiones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de decisiones que fija la convención (`convencion dir_decisiones` de `consultar-artefactos`).
 
 ## Salida
 
-- Las decisiones de `docs/decisions/` cuyos disparadores coinciden con el trabajo, traídas al contexto para que el agente las respete.
+- Las decisiones cuyos disparadores coinciden con el trabajo, traídas al contexto para que el agente las respete.
 - Si ninguna decisión aplica, esa conclusión explícita; no se inventan decisiones ni se fuerza la coincidencia.
 
 ## Principios rectores
@@ -47,10 +47,10 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 
 ## Procedimiento
 
-1. **Leer `docs/decisions/README.md`** para obtener el índice de decisiones con sus disparadores.
+1. **Leer el índice de decisiones** para obtener las entradas con sus disparadores —el índice del directorio de decisiones que resuelve la convención (`convencion dir_decisiones` de `consultar-artefactos`)—.
 2. **Cotejar los disparadores con el trabajo** delegando en `consultar-artefactos`: la operación `coincidencias` del índice devuelve `archivo`, `estado` y `resumen` de cada entrada cuyos disparadores contienen alguno de los términos del trabajo —archivos, comandos o palabras clave—.
 3. **Descartar las no vigentes:** las entradas cuyo estado sea `Sustituida` u `Obsoleta` no aplican; si la sustituta existe y aplica, es la que se trae.
-4. **Leer las decisiones aplicables** en `docs/decisions/DNNN-slug.md` y traerlas al contexto.
+4. **Leer las decisiones aplicables** —los archivos que devolvió el cotejo— y traerlas al contexto.
 5. **Informar brevemente** de qué decisiones aplican (o que ninguna aplica) y seguir con el trabajo.
 
 ## Finalización

@@ -12,7 +12,7 @@ faltante o una línea de más.]
 [Líneas comprometidas y en vuelo: trabajo ya decidido y acotado —3 a 5 líneas
 como máximo, para forzar priorización—. Orden justificado y estado por línea.]
 
-- 1. docs/epics/NNN-slug.md — [título de la línea]
+- 1. [referencia de la línea: documento de épica, encabezado de agrupación o archivo de tarea] — [título de la línea]
   - Estado: [en curso | pendiente de arrancar | bloqueada por …]
   - Justificación: [por qué ocupa esta posición dentro de Now: impacto sobre
     otras líneas, dependencias, costo evitado.]
@@ -22,7 +22,7 @@ como máximo, para forzar priorización—. Orden justificado y estado por líne
 [Líneas validadas y próximas: el trabajo que sigue cuando Now se vacía. Orden
 preferente justificado; sin estado de ejecución, que aún no corre.]
 
-- 1. docs/tasks/NNN-slug.md — [título de la tarea suelta o hito ligero]
+- 1. [referencia de la línea: archivo de tarea o encabezado de agrupación] — [título de la línea]
   - Justificación: [por qué está en Next y en esta posición.]
 
 ## Later

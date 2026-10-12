@@ -61,7 +61,7 @@ Antes de presentar la forma de solución, verificar cada punto:
 
 **Mala forma de solución (baja de nivel):**
 
-> Crear un script en Python que recorra `docs/lessons/`, analice cada nota con expresiones regulares y regenere `README.md` invocándolo desde un hook de git.
+> Crear un script en Python que recorra el directorio de notas de lecciones, analice cada nota con expresiones regulares y regenere el índice invocándolo desde un hook de git.
 
 Menciona lenguaje, mecanismo de parseo y mecanismo de ejecución: son decisiones de implementación que corresponden al refinamiento.
 

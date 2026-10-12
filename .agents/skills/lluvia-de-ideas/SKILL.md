@@ -4,8 +4,9 @@ description: >
   Acompaña al usuario en una conversación de lluvia de ideas: escucha
   la propuesta, detecta si describe una idea única o varias ideas
   distinguibles —funcionalidades, flujos de trabajo, iteraciones o
-  épicas implícitas— y genera un archivo por idea en docs/ideas/ del
-  proyecto evaluado, listo para alimentar el flujo de idea a tarea.
+  épicas implícitas— y genera un archivo por idea en el directorio
+  de ideas del proyecto evaluado, listo para alimentar el flujo de
+  idea a tarea.
   Usar cuando el usuario traiga una propuesta rica con varias líneas
   de trabajo posibles, o quiera explorar ideas antes de comprometerlas.
   Sinónimos: lluvia de ideas, brainstorming, tormenta de ideas, tengo
@@ -14,7 +15,7 @@ description: >
 
 # Lluvia de ideas
 
-Instrucciones para que un agente acompañe al usuario en una conversación de lluvia de ideas y convierta el resultado en archivos de idea persistidos en `docs/ideas/` del proyecto evaluado. El skill escucha la propuesta, la madura en diálogo sin convertirla aún en solución, detecta si contiene una idea única o varias ideas distinguibles y —tras confirmación del usuario— escribe un archivo por idea con el formato que el flujo de idea a tarea consume.
+Instrucciones para que un agente acompañe al usuario en una conversación de lluvia de ideas y convierta el resultado en archivos de idea persistidos en el directorio de ideas del proyecto evaluado. El skill escucha la propuesta, la madura en diálogo sin convertirla aún en solución, detecta si contiene una idea única o varias ideas distinguibles y —tras confirmación del usuario— escribe un archivo por idea con el formato que el flujo de idea a tarea consume.
 
 ## Cuándo usar
 
@@ -32,12 +33,12 @@ Instrucciones para que un agente acompañe al usuario en una conversación de ll
 ## Entrada
 
 - Una propuesta del usuario en lenguaje libre, posiblemente rica y con varias líneas de trabajo implícitas.
-- `docs/ideas/` del proyecto evaluado como directorio de destino —se crea en la primera idea si no existe— y `references/formato-idea.md` como plantilla del archivo.
+- El directorio de ideas de la convención (`convencion dir_ideas` de `consultar-artefactos`) como destino —se crea en la primera idea si no existe— y `references/formato-idea.md` como plantilla del archivo.
 - `references/deteccion-multiplicidad.md` como guía para distinguir idea única de conjunto de ideas.
 
 ## Salida
 
-- Un archivo `docs/ideas/NNN-slug.md` por idea confirmada —un solo archivo cuando la propuesta resulta ser una idea única— con el formato de `references/formato-idea.md`.
+- Un archivo por idea confirmada en el directorio de ideas —numerada con la serie de la convención, y un solo archivo cuando la propuesta resulta ser una idea única— con el formato de `references/formato-idea.md`.
 - Cuando la propuesta produce varias ideas, el conjunto se presenta al usuario con un orden sugerido, que queda persistido en la cabecera de cada archivo («Orden sugerido»), y las referencias cruzadas entre ideas del mismo origen quedan en la sección «Tensión que introduce en el roadmap» de cada archivo.
 - O la conclusión de que la propuesta no madura a idea —no hay problema real ni oportunidad—, comunicada sin escribir archivos.
 
@@ -45,7 +46,7 @@ Instrucciones para que un agente acompañe al usuario en una conversación de ll
 
 1. **Explorar, no comprometer:** la conversación madura la propuesta —qué problema hay detrás, qué desbloquea— sin formular solución ni descomponer en tareas; eso pertenece al flujo de idea a tarea.
 2. **Multiplicidad explícita:** la descomposición en varias ideas se propone al usuario con criterios declarados y se escribe solo tras su confirmación; el agente no decide solo cuántas ideas hay.
-3. **Un archivo por idea:** cada idea distinguible vive en su propio `NNN-slug.md`; una idea única produce exactamente un archivo. Los archivos de idea son artefactos vivos que se conservan incluso si la idea no se procesa de inmediato.
+3. **Un archivo por idea:** cada idea distinguible vive en su propio archivo numerado de la serie; una idea única produce exactamente un archivo. Los archivos de idea son artefactos vivos que se conservan incluso si la idea no se procesa de inmediato.
 4. **Entrada del flujo, no suplantación:** el archivo de idea aporta el problema y la oportunidad que `descubrir-problema` necesita para arrancar; no produce propuesta ni borradores.
 5. **El usuario manda en la frontera:** si la descomposición sugerida no le convence, se ajusta o se descarta; una propuesta que no madura termina sin escribir archivos.
 
@@ -63,16 +64,16 @@ Instrucciones para que un agente acompañe al usuario en una conversación de ll
 
 ### 3. Escribir los archivos de idea
 
-5. **Crear `docs/ideas/` si no existe** y asignar a cada idea el siguiente número disponible de la serie del directorio —operación `siguiente` de `consultar-artefactos`— (`001`, `002`, …).
+5. **Crear el directorio de ideas si no existe** y asignar a cada idea el siguiente número de la serie —consulta «el siguiente número de la serie» de `consultar-artefactos` sobre el directorio de ideas de la convención—.
 6. **Redactar cada archivo** con el formato de `references/formato-idea.md`: cabecera con tipo y fecha, Problema, Qué desbloquea, Flujos de trabajo que se hacen viables, Ventajas como producto y Tensión que introduce en el roadmap. En las ideas del mismo origen, la tensión referencia a las hermanas por su slug y la cabecera declara el «Orden sugerido» confirmado.
 7. **Revisar la redacción y pulir mecánicamente** cada archivo. Si el arnés lo permite, invocar `revisar-redaccion` y, con su salida, `pulir-escritura` en modo preventivo; de lo contrario, realizar el equivalente manualmente.
-8. **Presentar los archivos al usuario** e informar del encaje: cada idea puede entrar al flujo invocando `idea-a-tarea`, que las consume desde `docs/ideas/` en el orden sugerido.
+8. **Presentar los archivos al usuario** e informar del encaje: cada idea puede entrar al flujo invocando `idea-a-tarea`, que las consume desde el directorio de ideas en el orden sugerido.
 
 ## Finalización
 
 El skill ha terminado cuando ocurre una de estas dos cosas:
 
-- Los archivos de idea confirmados están escritos en `docs/ideas/` —uno o varios— y el usuario conoce el orden sugerido y cómo procesarlos.
+- Los archivos de idea confirmados están escritos en el directorio de ideas —uno o varios— y el usuario conoce el orden sugerido y cómo procesarlos.
 - La propuesta no maduró a idea o el usuario decidió no persistirla, y la conclusión quedó comunicada sin escribir nada.
 
 ## Referencias

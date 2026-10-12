@@ -1,4 +1,4 @@
-# Ejemplo de DESIGN.md
+# Ejemplo de guía de estilo
 
 Ejemplo completo de una guía que cumple las reglas de `formato-design-md.md`, para un proyecto ficticio —una libreta de notas—. Es la expectativa: lo que cada sección muestra aquí es lo que se espera de esa sección en cualquier proyecto. Al final, «Qué demuestra cada parte» mapea las secciones con las reglas de redacción. No se copia en proyectos: se lee junto a la plantilla.
 

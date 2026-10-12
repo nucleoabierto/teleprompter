@@ -7,6 +7,35 @@
 # opciones con la vigente en negrita, marcador y etiqueta incluidos.
 set -euo pipefail
 
+# Convenciones: el instalador escribe los valores del proyecto en
+# convenciones.sh; una clave ausente rige por el valor por defecto.
+conv="$(dirname "$0")/convenciones.sh"
+if [ -f "$conv" ]; then
+  . "$conv" 2>/dev/null || { echo "tarea.sh: convenciones malformadas: $conv" >&2; exit 2; }
+fi
+export MARCA_PENDIENTE=${MARCA_PENDIENTE:-" "}
+export MARCA_EN_PROGRESO=${MARCA_EN_PROGRESO:-"~"}
+export MARCA_EN_REVISION=${MARCA_EN_REVISION:-r}
+export MARCA_COMPLETADA=${MARCA_COMPLETADA:-x}
+export MARCA_BLOQUEADA=${MARCA_BLOQUEADA:-"!"}
+export MARCA_PROPUESTA=${MARCA_PROPUESTA:-p}
+export MARCA_APROBADA=${MARCA_APROBADA:-a}
+export MARCA_DESCARTADA=${MARCA_DESCARTADA:-d}
+export ESTADO_PENDIENTE=${ESTADO_PENDIENTE:-Pendiente}
+export ESTADO_EN_PROGRESO=${ESTADO_EN_PROGRESO:-En progreso}
+export ESTADO_EN_REVISION=${ESTADO_EN_REVISION:-En revisión}
+export ESTADO_COMPLETADA=${ESTADO_COMPLETADA:-Completada}
+export ESTADO_BLOQUEADA=${ESTADO_BLOQUEADA:-Bloqueada}
+export ESTADO_BORRADOR=${ESTADO_BORRADOR:-Borrador}
+export ESTADO_PENDIENTE_REVISION=${ESTADO_PENDIENTE_REVISION:-Pendiente de revisión}
+export ESTADO_APROBADA=${ESTADO_APROBADA:-Aprobada}
+export ESTADO_DESCARTADA=${ESTADO_DESCARTADA:-Descartada}
+export SECCION_ESTADO=${SECCION_ESTADO:-Estado}
+export SECCION_REVISION=${SECCION_REVISION:-Revisión}
+export SECCION_DESVIACIONES=${SECCION_DESVIACIONES:-Desviaciones del plan}
+export MARCADOR_FECHA=${MARCADOR_FECHA:-'[fecha]'}
+rev_re=$(printf '%s' "$SECCION_REVISION" | sed 's/[][\.*^$/]/\\&/g')
+
 uso() {
   cat >&2 <<'EOF'
 uso: tarea.sh <archivo> <operación> [argumentos]
@@ -45,16 +74,21 @@ case "$op" in
   estado)
     [ $# -ge 1 ] || uso
     etiqueta=$1
-    linea=$(awk '/^## Estado/ { while ((getline) > 0 && $0 ~ /^[[:space:]]*$/) ; print; exit }' "$f")
-    [ -n "$linea" ] || { echo "tarea.sh: ## Estado vacío o ausente en $f" >&2; exit 1; }
+    linea=$(awk -v s="$SECCION_ESTADO" 'index($0, "## " s) == 1 { while ((getline) > 0 && $0 ~ /^[[:space:]]*$/) ; print; exit }' "$f")
+    [ -n "$linea" ] || { echo "tarea.sh: ## $SECCION_ESTADO vacío o ausente en $f" >&2; exit 1; }
     if [[ "$linea" == *"|"* ]]; then
       # línea de opciones: conservar marcadores y etiquetas, activar la pedida
       nueva=$(printf '%s' "$linea" | tr '|' '\n' | awk -v etq="$etiqueta" '
         BEGIN {
-          canon["Pendiente"]=" "; canon["En progreso"]="~"; canon["En revisión"]="r"
-          canon["Completada"]="x"; canon["Bloqueada"]="!"
-          canon["Borrador"]=" "; canon["Pendiente de revisión"]="p"
-          canon["Aprobada"]="a"; canon["Descartada"]="d"
+          canon[ENVIRON["ESTADO_PENDIENTE"]] = ENVIRON["MARCA_PENDIENTE"]
+          canon[ENVIRON["ESTADO_EN_PROGRESO"]] = ENVIRON["MARCA_EN_PROGRESO"]
+          canon[ENVIRON["ESTADO_EN_REVISION"]] = ENVIRON["MARCA_EN_REVISION"]
+          canon[ENVIRON["ESTADO_COMPLETADA"]] = ENVIRON["MARCA_COMPLETADA"]
+          canon[ENVIRON["ESTADO_BLOQUEADA"]] = ENVIRON["MARCA_BLOQUEADA"]
+          canon[ENVIRON["ESTADO_BORRADOR"]] = ENVIRON["MARCA_PENDIENTE"]
+          canon[ENVIRON["ESTADO_PENDIENTE_REVISION"]] = ENVIRON["MARCA_PROPUESTA"]
+          canon[ENVIRON["ESTADO_APROBADA"]] = ENVIRON["MARCA_APROBADA"]
+          canon[ENVIRON["ESTADO_DESCARTADA"]] = ENVIRON["MARCA_DESCARTADA"]
         }
         {
           op = $0
@@ -81,11 +115,11 @@ case "$op" in
       # forma suelta: el conjunto de opciones lo decide la etiqueta existente
       actual=$(printf '%s' "$linea" | sed -E 's/\*\*//g; s/^[[:space:]]+//; s/^ *\[.\] *//; s/[[:space:]]+$//')
       case "$actual" in
-        Pendiente|"En progreso"|"En revisión"|Completada|Bloqueada)
-          opciones="[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada" ;;
-        Borrador|"Pendiente de revisión"|Aprobada|Descartada)
-          opciones="[ ] Borrador | [p] Pendiente de revisión | [a] Aprobada | [d] Descartada" ;;
-        *) echo "tarea.sh: ## Estado no parseado en $f: $linea" >&2; exit 1 ;;
+        "$ESTADO_PENDIENTE"|"$ESTADO_EN_PROGRESO"|"$ESTADO_EN_REVISION"|"$ESTADO_COMPLETADA"|"$ESTADO_BLOQUEADA")
+          opciones="[$MARCA_PENDIENTE] $ESTADO_PENDIENTE | [$MARCA_EN_PROGRESO] $ESTADO_EN_PROGRESO | [$MARCA_EN_REVISION] $ESTADO_EN_REVISION | [$MARCA_COMPLETADA] $ESTADO_COMPLETADA | [$MARCA_BLOQUEADA] $ESTADO_BLOQUEADA" ;;
+        "$ESTADO_BORRADOR"|"$ESTADO_PENDIENTE_REVISION"|"$ESTADO_APROBADA"|"$ESTADO_DESCARTADA")
+          opciones="[$MARCA_PENDIENTE] $ESTADO_BORRADOR | [$MARCA_PROPUESTA] $ESTADO_PENDIENTE_REVISION | [$MARCA_APROBADA] $ESTADO_APROBADA | [$MARCA_DESCARTADA] $ESTADO_DESCARTADA" ;;
+        *) echo "tarea.sh: ## $SECCION_ESTADO no parseado en $f: $linea" >&2; exit 1 ;;
       esac
       nueva=$(printf '%s' "$opciones" | tr '|' '\n' | awk -v etq="$etiqueta" '
         {
@@ -104,8 +138,8 @@ case "$op" in
         }
       ') || { echo "tarea.sh: opción «$etiqueta» no válida para $f" >&2; exit 1; }
     fi
-    awk -v nueva="$nueva" '
-      /^## Estado/ { imprime = 1; print; next }
+    awk -v nueva="$nueva" -v s="$SECCION_ESTADO" '
+      index($0, "## " s) == 1 { imprime = 1; print; next }
       imprime && /^[[:space:]]*$/ { print; next }
       imprime { print nueva; imprime = 0; next }
       { print }
@@ -115,16 +149,16 @@ case "$op" in
   marcar-opcion)
     [ $# -ge 1 ] || uso
     etiqueta=$1
-    linea=$(awk '/^## Estado/ { while ((getline) > 0 && $0 ~ /^[[:space:]]*$/) ; print; exit }' "$f")
-    [ -n "$linea" ] || { echo "tarea.sh: ## Estado vacío o ausente en $f" >&2; exit 1; }
-    [[ "$linea" == *"|"* ]] || { echo "tarea.sh: ## Estado no es línea de opciones en $f: $linea" >&2; exit 1; }
+    linea=$(awk -v s="$SECCION_ESTADO" 'index($0, "## " s) == 1 { while ((getline) > 0 && $0 ~ /^[[:space:]]*$/) ; print; exit }' "$f")
+    [ -n "$linea" ] || { echo "tarea.sh: ## $SECCION_ESTADO vacío o ausente en $f" >&2; exit 1; }
+    [[ "$linea" == *"|"* ]] || { echo "tarea.sh: ## $SECCION_ESTADO no es línea de opciones en $f: $linea" >&2; exit 1; }
     nueva=$(printf '%s' "$linea" | tr '|' '\n' | awk -v etq="$etiqueta" '
       {
         op = $0
         limpio = op; gsub(/\*\*/, "", limpio)
         sub(/^[[:space:]]+/, "", limpio); sub(/[[:space:]]+$/, "", limpio)
         etiq = limpio; sub(/^ *\[.\] */, "", etiq); sub(/ *$/, "", etiq)
-        if (etiq == etq) { sub(/\[.\]/, "[x]", limpio); hecho = 1 }
+        if (etiq == etq) { sub(/\[.\]/, "[" ENVIRON["MARCA_COMPLETADA"] "]", limpio); hecho = 1 }
         salida[NR] = limpio
       }
       END {
@@ -132,8 +166,8 @@ case "$op" in
         for (i = 1; i <= NR; i++) printf "%s%s", salida[i], (i < NR ? " | " : "\n")
       }
     ') || { echo "tarea.sh: opción «$etiqueta» no encontrada en $f: $linea" >&2; exit 1; }
-    awk -v nueva="$nueva" '
-      /^## Estado/ { imprime = 1; print; next }
+    awk -v nueva="$nueva" -v s="$SECCION_ESTADO" '
+      index($0, "## " s) == 1 { imprime = 1; print; next }
       imprime && /^[[:space:]]*$/ { print; next }
       imprime { print nueva; imprime = 0; next }
       { print }
@@ -145,14 +179,14 @@ case "$op" in
     titulo=$1
     cuerpo=$(cat)
     [ -n "$cuerpo" ] || { echo "tarea.sh: cuerpo de sección vacío" >&2; exit 2; }
-    grep -q "^## ${titulo}$" "$f" && { echo "tarea.sh: la sección ya existe en $f: $titulo" >&2; exit 1; }
-    grep -q '^## Revisión' "$f" || { echo "tarea.sh: sin ## Revisión en $f" >&2; exit 1; }
-    CUERPO="$cuerpo" awk -v titulo="$titulo" '
+    grep -qxF "## $titulo" "$f" && { echo "tarea.sh: la sección ya existe en $f: $titulo" >&2; exit 1; }
+    grep -q "^## ${rev_re}" "$f" || { echo "tarea.sh: sin ## $SECCION_REVISION en $f" >&2; exit 1; }
+    CUERPO="$cuerpo" awk -v titulo="$titulo" -v desv="$SECCION_DESVIACIONES" -v rev="$SECCION_REVISION" '
       BEGIN { n = split(ENVIRON["CUERPO"], c, "\n") }
       {
         l[NR] = $0
-        if (/^## Desviaciones del plan/ && titulo != "Desviaciones del plan" && !ancla) ancla = NR
-        if (/^## Revisión/ && !ancla_rev) ancla_rev = NR
+        if (index($0, "## " desv) == 1 && titulo != desv && !ancla) ancla = NR
+        if (index($0, "## " rev) == 1 && !ancla_rev) ancla_rev = NR
       }
       END {
         a = ancla ? ancla : ancla_rev
@@ -175,11 +209,11 @@ case "$op" in
     esac
     autor=$(printf '%s' "$linea" | sed -n 's/^- \([^:]*\):.*/\1/p')
     [ -n "$autor" ] || { echo "tarea.sh: línea de revisión mal formada: $linea" >&2; exit 2; }
-    grep -q '^## Revisión' "$f" || { echo "tarea.sh: sin ## Revisión en $f" >&2; exit 1; }
-    if awk -v autor="$autor" -v nueva="$linea" '
-      /^## Revisión/ { dentro = 1; print; next }
+    grep -q "^## ${rev_re}" "$f" || { echo "tarea.sh: sin ## $SECCION_REVISION en $f" >&2; exit 1; }
+    if awk -v autor="$autor" -v nueva="$linea" -v rev="$SECCION_REVISION" -v mf="$MARCADOR_FECHA" '
+      index($0, "## " rev) == 1 { dentro = 1; print; next }
       /^## / { dentro = 0 }
-      dentro && index($0, "- " autor ":") == 1 && index($0, "[fecha]") {
+      dentro && index($0, "- " autor ":") == 1 && index($0, mf) {
         print nueva; hecho = 1; next
       }
       { print }
@@ -188,8 +222,8 @@ case "$op" in
       mv "$tmp" "$f"
     else
       # sin placeholder del autor: añadir al final de la sección
-      awk -v nueva="$linea" '
-        { l[NR] = $0; if (/^## Revisión/) h = NR }
+      awk -v nueva="$linea" -v rev="$SECCION_REVISION" '
+        { l[NR] = $0; if (index($0, "## " rev) == 1) h = NR }
         END {
           fin = NR + 1
           for (i = h + 1; i <= NR; i++) if (l[i] ~ /^## /) { fin = i; break }
@@ -197,7 +231,7 @@ case "$op" in
           while (pos > h + 1 && l[pos - 1] ~ /^[[:space:]]*$/) pos--
           for (i = 1; i < pos; i++) print l[i]
           print nueva; print ""
-          for (i = pos; i <= NR; i++) print l[i]
+          for (i = fin; i <= NR; i++) print l[i]
         }
       ' "$f" > "$tmp" && mv "$tmp" "$f"
     fi
@@ -216,7 +250,7 @@ case "$op" in
         while (pos > h + 1 && l[pos - 1] ~ /^[[:space:]]*$/) pos--
         for (i = 1; i < pos; i++) print l[i]
         print nueva; print ""
-        for (i = pos; i <= NR; i++) print l[i]
+        for (i = fin; i <= NR; i++) print l[i]
       }
     ' "$f" > "$tmp"; then
       mv "$tmp" "$f"
@@ -231,10 +265,10 @@ case "$op" in
     if awk -v seccion="$seccion" -v texto="$texto" '
       $0 == "## " seccion { dentro = 1; print; next }
       /^## / { dentro = 0 }
-      dentro && index($0, "- [ ] ") == 1 && index($0, texto) {
-        print "- [x] " substr($0, 7); hecho = 1; next
+      dentro && index($0, "- [" ENVIRON["MARCA_PENDIENTE"] "] ") == 1 && index($0, texto) {
+        print "- [" ENVIRON["MARCA_COMPLETADA"] "] " substr($0, 7); hecho = 1; next
       }
-      dentro && index($0, "- [x] ") == 1 && index($0, texto) { hecho = 1 }
+      dentro && index($0, "- [" ENVIRON["MARCA_COMPLETADA"] "] ") == 1 && index($0, texto) { hecho = 1 }
       { print }
       END { if (!hecho) exit 1 }
     ' "$f" > "$tmp"; then
