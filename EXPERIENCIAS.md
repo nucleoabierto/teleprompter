@@ -23,7 +23,7 @@ en `docs/lessons/` las marca como `consolidada`.
     ejecutar comandos (perfil subagent_general), aunque no
     modifique archivos; la lectura directa no sustituye al diff
     real ni a la ejecución de la suite.
-  Estado: pendiente
+  Estado: consolidada
 - Id: 20261004T004549
   Tarea: docs/tasks/027-cadena-de-release.md
   Esperado: el documento de la cadena de release contiene solo la
@@ -34,7 +34,7 @@ en `docs/lessons/` las marca como `consolidada`.
     relevante en el contexto de largo plazo»—; los detalles
     históricos puntuales van en la decisión (D018) o quedan fuera
     de la documentación viva.
-  Estado: pendiente
+  Estado: consolidada
 - Id: 20261004T010000
   Tarea: docs/epics/006-colecciones.md (planeación del hito 7)
   Esperado: las tareas promocionadas toman el siguiente número libre
@@ -44,4 +44,4 @@ en `docs/lessons/` las marca como `consolidada`.
     secciones Estado/Revisión duplicadas a esas tareas ajenas.
   Corrección: consultar los números ocupados en `docs/tasks/` antes
     de asignar y acotar los globs a los archivos propios.
-  Estado: pendiente
+  Estado: consolidada

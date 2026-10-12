@@ -20,4 +20,17 @@ Formato de entrada del índice:
 
 ## Lecciones
 
-- Sin lecciones todavía.
+- [revision-tecnica-subagente.md](revision-tecnica-subagente.md) —
+  la revisión técnica independiente necesita un subagente que pueda
+  ejecutar comandos.
+  - Disparadores: `revisar-implementacion`, subagente, `git diff`,
+    revisión técnica, suite de pruebas, pull request
+- [documentacion-viva.md](documentacion-viva.md) — la documentación
+  de largo plazo no registra acciones puntuales históricas.
+  - Disparadores: `docs/`, documentación, manual, changelog,
+    detalle histórico, acción puntual
+- [promocion-de-tareas.md](promocion-de-tareas.md) — al promocionar
+  tareas, verificar los números ocupados y acotar los globs a los
+  archivos propios.
+  - Disparadores: `docs/tasks/`, numeración, promoción, propuesta,
+    borradores, glob, serie
