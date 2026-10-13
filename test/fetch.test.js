@@ -51,6 +51,13 @@ const toBody = (buf) => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.by
 const okResponse = (buf) => ({ ok: true, arrayBuffer: async () => toBody(buf) });
 const notFound = { ok: false, status: 404 };
 
+// The resolution call precedes every download: this canned
+// response answers it with the commit the suite pins the
+// download URLs to.
+const RESOLVED = 'f'.repeat(40);
+const commitResponse = (sha = RESOLVED) => ({ ok: true, json: async () => ({ sha }) });
+const commitsUrl = (repo, ref) => `https://api.github.com/repos/${repo}/commits/${ref}`;
+
 function spyFetch(behaviors) {
   const urls = [];
   const impl = async (url, opts) => {
@@ -101,39 +108,59 @@ test('fetchRepoTree downloads from codeload and extracts under {tmp}/{repo}', as
     'teleprompter.json': '{}',
     'skills/x/SKILL.md': '# x\n',
   });
-  const { urls, fetch } = spyFetch([okResponse(buf)]);
+  const { urls, fetch } = spyFetch([commitResponse(), okResponse(buf)]);
   const tmpBase = tmp();
   const res = await fetchRepoTree({ owner: 'o', name: 'mi-paquete', ref: null }, { fetch, tmpBase });
 
   assert.equal(res.ok, true);
+  assert.equal(res.commit, RESOLVED);
   assert.equal(path.basename(res.dir), 'mi-paquete');
   assert.equal(path.dirname(path.dirname(res.dir)), tmpBase);
   assert.ok(fs.existsSync(path.join(res.dir, 'teleprompter.json')));
   assert.ok(fs.existsSync(path.join(res.dir, 'skills/x/SKILL.md')));
-  assert.deepEqual(urls, ['https://codeload.github.com/o/mi-paquete/tar.gz/HEAD']);
+  assert.deepEqual(urls, [
+    commitsUrl('o/mi-paquete', 'HEAD'),
+    `https://codeload.github.com/o/mi-paquete/tar.gz/${RESOLVED}`,
+  ]);
 
   res.cleanup();
   assert.deepEqual(fs.readdirSync(tmpBase), []);
 });
 
-test('fetchRepoTree asks for the ref in the URL when given', async () => {
+test('fetchRepoTree resolves the given ref and downloads by its commit', async () => {
   const buf = await makeTarball('o-r-def', { 'a.txt': 'a' });
-  const { urls, fetch } = spyFetch([okResponse(buf)]);
+  const { urls, fetch } = spyFetch([commitResponse(), okResponse(buf)]);
   const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: 'v9' }, { fetch, tmpBase: tmp() });
   assert.equal(res.ok, true);
-  assert.deepEqual(urls, ['https://codeload.github.com/o/r/tar.gz/v9']);
+  assert.equal(res.commit, RESOLVED);
+  assert.deepEqual(urls, [
+    commitsUrl('o/r', 'v9'),
+    `https://codeload.github.com/o/r/tar.gz/${RESOLVED}`,
+  ]);
+  res.cleanup();
+});
+
+test('fetchRepoTree takes a full SHA as resolved without an API call', async () => {
+  const sha = 'a'.repeat(39) + 'F';
+  const buf = await makeTarball('o-r-sha', { 'a.txt': 'a' });
+  const { urls, fetch } = spyFetch([okResponse(buf)]);
+  const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: sha }, { fetch, tmpBase: tmp() });
+  assert.equal(res.ok, true);
+  assert.equal(res.commit, sha.toLowerCase());
+  assert.deepEqual(urls, [`https://codeload.github.com/o/r/tar.gz/${sha.toLowerCase()}`]);
   res.cleanup();
 });
 
 test('fetchRepoTree falls back to the API endpoint when codeload fails', async () => {
   for (const first of [notFound, () => { throw new Error('red caída'); }]) {
     const buf = await makeTarball('o-r-x', { 'a.txt': 'a' });
-    const { urls, fetch } = spyFetch([first, okResponse(buf)]);
+    const { urls, fetch } = spyFetch([commitResponse(), first, okResponse(buf)]);
     const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: 'v1' }, { fetch, tmpBase: tmp() });
     assert.equal(res.ok, true);
     assert.deepEqual(urls, [
-      'https://codeload.github.com/o/r/tar.gz/v1',
-      'https://api.github.com/repos/o/r/tarball/v1',
+      commitsUrl('o/r', 'v1'),
+      `https://codeload.github.com/o/r/tar.gz/${RESOLVED}`,
+      `https://api.github.com/repos/o/r/tarball/${RESOLVED}`,
     ]);
     res.cleanup();
   }
@@ -146,6 +173,22 @@ test('fetchRepoTree reports not found when every endpoint answers HTTP error', a
   assert.equal(res.ok, false);
   assert.match(res.error, /no encontrados.*o\/privado/);
   assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree diagnoses download failures after a successful resolution', async () => {
+  for (const [status, pattern] of [
+    [404, /no encontrados.*o\/r/],
+    [403, /acceso denegado.*o\/r/],
+    [500, /error de servidor.*o\/r/],
+    [418, /HTTP 418.*o\/r/],
+  ]) {
+    const { fetch } = spyFetch([commitResponse(), { ok: false, status }]);
+    const tmpBase = tmp();
+    const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase });
+    assert.equal(res.ok, false);
+    assert.match(res.error, pattern, `status ${status}`);
+    assert.deepEqual(fs.readdirSync(tmpBase), []);
+  }
 });
 
 test('fetchRepoTree reports unreachable when every request throws', async () => {
@@ -175,7 +218,7 @@ test('fetchRepoTree distinguishes server errors from not-found', async () => {
 });
 
 test('fetchRepoTree reports server error when endpoints disagree', async () => {
-  const { fetch } = spyFetch([{ ok: false, status: 404 }, { ok: false, status: 500 }]);
+  const { fetch } = spyFetch([commitResponse(), { ok: false, status: 404 }, { ok: false, status: 500 }]);
   const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase: tmp() });
   assert.equal(res.ok, false);
   assert.match(res.error, /error de servidor/);
@@ -183,13 +226,13 @@ test('fetchRepoTree reports server error when endpoints disagree', async () => {
 
 test('fetchRepoTree tries the next endpoint when a request times out', async () => {
   const buf = await makeTarball('o-r-t', { 'a.txt': 'a' });
-  const { urls, fetch } = spyFetch([hangUntilAbort, okResponse(buf)]);
+  const { urls, fetch } = spyFetch([commitResponse(), hangUntilAbort, okResponse(buf)]);
   const res = await fetchRepoTree(
     { owner: 'o', name: 'r', ref: null },
     { fetch, tmpBase: tmp(), timeoutMs: 25 },
   );
   assert.equal(res.ok, true);
-  assert.equal(urls.length, 2);
+  assert.equal(urls.length, 3);
   res.cleanup();
 });
 
@@ -228,7 +271,7 @@ test('fetchRepoTree reports an unexpected response without a status', async () =
 
 test('fetchRepoTree rejects an oversized declared length without reading the body', async () => {
   let bodyRead = false;
-  const impl = async () => ({
+  const impl = async (url) => url.includes('/commits/') ? commitResponse() : ({
     ok: true,
     headers: { get: () => '1048576' },
     arrayBuffer: async () => { bodyRead = true; return new ArrayBuffer(0); },
@@ -245,7 +288,7 @@ test('fetchRepoTree rejects an oversized declared length without reading the bod
 });
 
 test('fetchRepoTree rejects an oversized body without declared length', async () => {
-  const { fetch } = spyFetch([bigResponse(0, Buffer.alloc(2048))]);
+  const { fetch } = spyFetch([commitResponse(), bigResponse(0, Buffer.alloc(2048))]);
   const tmpBase = tmp();
   const res = await fetchRepoTree(
     { owner: 'o', name: 'r', ref: null },
@@ -258,7 +301,7 @@ test('fetchRepoTree rejects an oversized body without declared length', async ()
 
 test('fetchRepoTree accepts a body exactly at the size limit', async () => {
   const buf = await makeTarball('o-r-b', { 'a.txt': 'a' });
-  const { fetch } = spyFetch([okResponse(buf)]);
+  const { fetch } = spyFetch([commitResponse(), okResponse(buf)]);
   const res = await fetchRepoTree(
     { owner: 'o', name: 'r', ref: null },
     { fetch, tmpBase: tmp(), maxBytes: buf.byteLength },
@@ -268,7 +311,7 @@ test('fetchRepoTree accepts a body exactly at the size limit', async () => {
 });
 
 test('fetchRepoTree reports a body-read failure and a mid-download timeout', async () => {
-  const failing = (error) => async () => ({
+  const failing = (error) => async (url) => url.includes('/commits/') ? commitResponse() : ({
     ok: true,
     arrayBuffer: async () => { throw error; },
   });
@@ -300,7 +343,7 @@ test('fetchRepoTree reports a temp-dir failure instead of throwing', async () =>
 });
 
 test('fetchRepoTree reports extraction failure on a corrupt archive', async () => {
-  const { fetch } = spyFetch([okResponse(Buffer.from('no es un tar.gz'))]);
+  const { fetch } = spyFetch([commitResponse(), okResponse(Buffer.from('no es un tar.gz'))]);
   const tmpBase = tmp();
   const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase });
   assert.equal(res.ok, false);
@@ -309,7 +352,7 @@ test('fetchRepoTree reports extraction failure on a corrupt archive', async () =
 });
 
 test('fetchRepoTree does not let a hostile entry escape the temp dir', async () => {
-  const { fetch } = spyFetch([okResponse(hostileTarball())]);
+  const { fetch } = spyFetch([commitResponse(), okResponse(hostileTarball())]);
   const tmpBase = tmp();
   const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase });
   if (res.ok) {
@@ -317,4 +360,53 @@ test('fetchRepoTree does not let a hostile entry escape the temp dir', async () 
     res.cleanup();
   }
   assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('fetchRepoTree reports a nonexistent ref from the resolution call', async () => {
+  const { urls, fetch } = spyFetch([{ ok: false, status: 422 }]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: 'no-existe' },
+    { fetch, tmpBase: tmp() },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /no encontrados.*o\/r@no-existe/);
+  assert.deepEqual(urls, [commitsUrl('o/r', 'no-existe')]);
+});
+
+test('fetchRepoTree aborts before any download when resolution fails', async () => {
+  for (const behavior of [
+    { ok: false, status: 422 },
+    () => { throw new Error('red caída'); },
+    { ok: true, json: async () => ({ sha: 'no-es-un-sha' }) },
+    { ok: true, json: async () => ({}) },
+  ]) {
+    const { urls, fetch } = spyFetch([behavior]);
+    const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase: tmp() });
+    assert.equal(res.ok, false);
+    assert.equal(urls.length, 1, `sin descarga tras ${JSON.stringify(res.error)}`);
+    assert.ok(urls[0].includes('/commits/'));
+  }
+});
+
+test('fetchRepoTree reports an unexpected resolution response', async () => {
+  for (const behavior of [
+    { ok: true, json: async () => ({ sha: 'no-es-un-sha' }) },
+    { ok: true, json: async () => { throw new Error('JSON.parse'); } },
+    { ok: true },
+  ]) {
+    const { fetch } = spyFetch([behavior]);
+    const res = await fetchRepoTree({ owner: 'o', name: 'r', ref: null }, { fetch, tmpBase: tmp() });
+    assert.equal(res.ok, false);
+    assert.match(res.error, /respuesta inesperada.*o\/r/);
+  }
+});
+
+test('fetchRepoTree reports the resolution timeout as unreachable', async () => {
+  const { fetch } = spyFetch([hangUntilAbort]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: 'v1' },
+    { fetch, tmpBase: tmp(), timeoutMs: 25 },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /tiempo máximo excedido.*o\/r@v1/);
 });

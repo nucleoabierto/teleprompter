@@ -24,10 +24,14 @@ mecánica detallada, en la [referencia](referencia-install.md).
   `test/cli.test.js`, «--path installs the local package without any
   HTTP request»
 - **La referencia se elige con `@ref` o `--ref`;** declarar ambas es un
-  error de invocación. — módulos `test/cli.test.js` («the ref reaches
-  the download URL via @ref or --ref», «declaring @ref and --ref at
-  once is a usage error») y `test/fetch.test.js` («fetchRepoTree asks
-  for the ref in the URL when given»)
+  error de invocación. La obtención resuelve la referencia al commit
+  exacto y descarga el árbol de ese commit —sin indicación, el que la
+  rama por defecto resolvía en ese momento—. — módulos
+  `test/cli.test.js` («the ref reaches the resolution URL and the
+  download anchors to its commit», «declaring @ref and --ref at once
+  is a usage error») y `test/fetch.test.js` («fetchRepoTree resolves
+  the given ref and downloads by its commit», «fetchRepoTree takes a
+  full SHA as resolved without an API call»)
 - **Un repositorio inaccesible o una referencia inexistente abortan
   con código 5 sin escribir nada.** — módulo `test/cli.test.js` («a
   missing repository exits 5 and writes nothing», «a network failure

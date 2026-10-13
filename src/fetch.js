@@ -25,14 +25,20 @@ export function parseRepoSpec(spec) {
   return { owner, name, ref };
 }
 
-function repoUrls({ owner, name, ref }) {
+const isFullSha = (ref) => /^[0-9a-f]{40}$/i.test(ref);
+
+// Downloading is anchored to the resolved commit rather than the
+// requested ref: the extracted tree is exactly the commit the
+// caller learns about, so a branch moving mid-fetch cannot fork
+// what was recorded from what was installed.
+const repoUrls = ({ owner, name }, sha) => {
   const o = encodeURIComponent(owner);
   const r = encodeURIComponent(name);
   return [
-    `https://codeload.github.com/${o}/${r}/tar.gz/${ref ?? 'HEAD'}`,
-    `https://api.github.com/repos/${o}/${r}/tarball${ref ? `/${ref}` : ''}`,
+    `https://codeload.github.com/${o}/${r}/tar.gz/${sha}`,
+    `https://api.github.com/repos/${o}/${r}/tarball/${sha}`,
   ];
-}
+};
 
 // Download budgets: each endpoint gets its own timeout (a hung
 // codeload says nothing about the API) and the archive is bounded
@@ -44,6 +50,49 @@ const isAbort = (error) => error?.name === 'TimeoutError' || error?.name === 'Ab
 
 const specLabel = ({ owner, name, ref }) => `${owner}/${name}${ref ? `@${ref}` : ''}`;
 
+// Resolving the requested ref to the commit it points at is what
+// anchors provenance: a branch or tag moves, a SHA does not. A
+// full 40-hex ref is already resolved — no API call —; otherwise
+// the commits endpoint answers the exact SHA, and commits/HEAD
+// returns the default branch head, so one endpoint covers both
+// explicit refs and the absent ref. The call runs under the same
+// timeout and injected fetch as the download that follows it.
+async function resolveCommit(spec, { fetchImpl, timeoutMs }) {
+  if (spec.ref !== null && isFullSha(spec.ref)) return { ok: true, sha: spec.ref.toLowerCase() };
+  const o = encodeURIComponent(spec.owner);
+  const r = encodeURIComponent(spec.name);
+  const url = `https://api.github.com/repos/${o}/${r}/commits/${spec.ref ?? 'HEAD'}`;
+  let res;
+  try {
+    res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    const why = isAbort(error)
+      ? `no se pudo contactar con GitHub: tiempo máximo excedido (${timeoutMs} ms)`
+      : 'no se pudo contactar con GitHub';
+    return { ok: false, error: `${why}: ${specLabel(spec)}` };
+  }
+  if (!res.ok) {
+    const s = res.status;
+    // A nonexistent ref answers 422 «No commit found», not 404 —
+    // both mean the requested tree is not there.
+    const why = s === 404 || s === 422 ? 'repositorio o referencia no encontrados'
+      : s === 401 || s === 403 ? 'acceso denegado o límite de peticiones'
+        : typeof s === 'number' && s >= 500 ? 'GitHub responde con error de servidor'
+          : typeof s === 'number' ? `GitHub responde con HTTP ${s}` : 'respuesta inesperada de GitHub';
+    return { ok: false, error: `${why}: ${specLabel(spec)}` };
+  }
+  let sha;
+  try {
+    sha = (await res.json()).sha;
+  } catch {
+    sha = undefined;
+  }
+  if (typeof sha !== 'string' || !isFullSha(sha)) {
+    return { ok: false, error: `respuesta inesperada de GitHub: ${specLabel(spec)}` };
+  }
+  return { ok: true, sha };
+}
+
 // Downloads the public archive of a GitHub repository — no git, no
 // credentials — and extracts it under a temp dir as {tmp}/{repo},
 // so the package directory basename matches the manifest name rule.
@@ -51,7 +100,8 @@ const specLabel = ({ owner, name, ref }) => `${owner}/${name}${ref ? `@${ref}` :
 // it for tests); the extracted tree is remote content, so `tar`
 // sanitization (no "..", no absolute paths, no symlink escapes) is
 // the security boundary, not a courtesy.
-// Returns { ok: true, dir, cleanup } or { ok: false, error }.
+// Returns { ok: true, dir, cleanup, commit } — the commit the tree
+// was fetched at — or { ok: false, error }.
 export async function fetchRepoTree(spec, {
   fetch: fetchImpl,
   tmpBase,
@@ -71,12 +121,19 @@ export async function fetchRepoTree(spec, {
   const cleanup = () => fs.rmSync(root, { recursive: true, force: true });
   const dir = path.join(root, spec.name);
 
+  const resolved = await resolveCommit(spec, { fetchImpl, timeoutMs });
+  if (!resolved.ok) {
+    cleanup();
+    return resolved;
+  }
+  const commit = resolved.sha;
+
   let response = null;
   let unreachable = true;
   let thrown = 0;
   let timedOut = 0;
   const statuses = [];
-  for (const url of repoUrls(spec)) {
+  for (const url of repoUrls(spec, commit)) {
     try {
       const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
       if (res.ok) {
@@ -132,5 +189,5 @@ export async function fetchRepoTree(spec, {
     cleanup();
     return { ok: false, error: `no se pudo extraer el archivo: ${error.message}` };
   }
-  return { ok: true, dir, cleanup };
+  return { ok: true, dir, cleanup, commit };
 }

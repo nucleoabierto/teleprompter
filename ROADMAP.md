@@ -17,7 +17,7 @@ reconstruir el destino.
 - 1. **Pin de obtención remota** — conservar el commit exacto detrás
   de cada instalación y hacer determinista la re-obtención (idea
   `docs/ideas/010-pin-de-obtencion-remota.md`).
-  - Estado: pendiente de arrancar
+  - Estado: en curso
   - Justificación: es de tamaño tarea y comparte superficie con el
     endurecimiento ya materializado —`fetch` y la semántica de
     `origin`—; su

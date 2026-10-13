@@ -19,9 +19,10 @@ la forma corta.
   directorio temporal y usa la raíz del árbol como paquete. El
   temporal se elimina al terminar, también en error y en `--dry-run`.
   La referencia se elige con `@ref` o `--ref` —declarar ambas es un
-  error de invocación—; sin indicación se descarga la rama por
-  defecto. Un repositorio inaccesible o una referencia inexistente
-  abortan con código `5`.
+  error de invocación—; la obtención la resuelve al commit exacto
+  que apuntaba en ese momento y descarga el árbol de ese commit —
+  sin indicación, el de la rama por defecto—. Un repositorio
+  inaccesible o una referencia inexistente abortan con código `5`.
 - `--path <paquete>`: usa el directorio local como origen y el
   argumento posicional `user/repo` no se procesa —de declararse, se
   interpreta como `destino`.

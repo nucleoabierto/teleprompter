@@ -7,6 +7,10 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Changed
+
+- La obtención remota resuelve la referencia pedida al commit exacto y descarga el árbol de ese commit: la instalación queda anclada a un árbol concreto en lugar de a la rama móvil —pin de obtención remota (docs/epics/007-pin-de-obtencion-remota.md).
+
 ## [0.4.0] - 2026-10-12
 
 ### Changed

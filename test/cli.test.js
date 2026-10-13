@@ -218,7 +218,7 @@ test('--package on a remote collection resolves inside the fetched tree', async 
   ]);
   const archive = path.join(work, 'a.tgz');
   await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
-  const spy = spyFetch(okResponse(fs.readFileSync(archive)));
+  const spy = spyFetch(remoteOk(fs.readFileSync(archive)));
   const { code, stderr } = await run(
     ['o/familia', dest, '--package', 'beta'],
     { tmpBase, fetch: spy.fetch },
@@ -461,6 +461,14 @@ const okResponse = (buf) => ({
   arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
 });
 
+// A remote fetch resolves the ref before downloading: the spy
+// routes the commits-API call to the commit response and every
+// other call to the tarball.
+const remoteOk = (buf) => (url) =>
+  url.includes('/commits/')
+    ? { ok: true, json: async () => ({ sha: 'f'.repeat(40) }) }
+    : okResponse(buf);
+
 function spyFetch(behavior = () => okResponse(Buffer.alloc(0))) {
   const spy = { urls: [], calls: 0 };
   spy.fetch = async (url) => {
@@ -476,7 +484,7 @@ const remotePkg = () => repoTarball('mi-paquete', validManifest('mi-paquete'), {
 test('user/repo without OUT installs into the working directory', async () => {
   const cwd = tmp();
   const tmpBase = tmp();
-  const spy = spyFetch(await remotePkg().then(okResponse));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code, stdout, stderr } = await run(['o/mi-paquete'], { cwd, tmpBase, fetch: spy.fetch });
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   assert.match(stdout.join('\n'), /obteniendo: o\/mi-paquete/);
@@ -487,7 +495,7 @@ test('user/repo without OUT installs into the working directory', async () => {
 
 test('user/repo with OUT installs into it', async () => {
   const dest = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code, stderr } = await run(['o/mi-paquete', dest], { fetch: spy.fetch });
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
@@ -496,7 +504,7 @@ test('user/repo with OUT installs into it', async () => {
 test('install is an alias of the short form', async () => {
   const dest = tmp();
   const tmpBase = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code } = await run(['install', 'o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
@@ -514,12 +522,13 @@ test('--path installs the local package without any HTTP request', async () => {
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
 });
 
-test('the ref reaches the download URL via @ref or --ref', async () => {
+test('the ref reaches the resolution URL and the download anchors to its commit', async () => {
   for (const argv of [['o/mi-paquete@v9', tmp()], ['o/mi-paquete', tmp(), '--ref', 'v9']]) {
-    const spy = spyFetch(okResponse(await remotePkg()));
+    const spy = spyFetch(remoteOk(await remotePkg()));
     const { code } = await run(argv, { fetch: spy.fetch });
     assert.equal(code, EXIT_OK);
-    assert.equal(spy.urls[0], 'https://codeload.github.com/o/mi-paquete/tar.gz/v9');
+    assert.equal(spy.urls[0], 'https://api.github.com/repos/o/mi-paquete/commits/v9');
+    assert.equal(spy.urls[1], `https://codeload.github.com/o/mi-paquete/tar.gz/${'f'.repeat(40)}`);
   }
 });
 
@@ -580,7 +589,7 @@ test('a repo without teleprompter.json exits 1 and cleans the temp dir', async (
   fs.mkdirSync(path.join(work, 'vacio-abc'));
   const archive = path.join(work, 'a.tgz');
   await tarCreate({ gzip: true, file: archive, cwd: work }, ['vacio-abc']);
-  const spy = spyFetch(okResponse(fs.readFileSync(archive)));
+  const spy = spyFetch(remoteOk(fs.readFileSync(archive)));
   const { code } = await run(['o/vacio', dest], { tmpBase, fetch: spy.fetch });
   assert.equal(code, EXIT_MANIFEST);
   assert.deepEqual(fs.readdirSync(dest), []);
@@ -598,7 +607,7 @@ test('a non-directory OUT is a usage error before any request', async () => {
 test('--dry-run with a remote origin writes nothing and cleans the temp dir', async () => {
   const dest = tmp();
   const tmpBase = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code, stdout } = await run(['o/mi-paquete', dest, '--dry-run'], { tmpBase, fetch: spy.fetch });
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'), /--dry-run/);
@@ -609,7 +618,7 @@ test('--dry-run with a remote origin writes nothing and cleans the temp dir', as
 test('--skip resolves remote conflicts like a local origin', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'contenido propio');
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code } = await run(['o/mi-paquete', dest, '--skip'], { fetch: spy.fetch });
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'contenido propio');
@@ -618,7 +627,7 @@ test('--skip resolves remote conflicts like a local origin', async () => {
 test('--force resolves remote conflicts like a local origin', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'a.txt'), 'contenido propio');
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   const { code } = await run(['o/mi-paquete', dest, '--force'], { fetch: spy.fetch });
   assert.equal(code, EXIT_OK);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
@@ -630,7 +639,7 @@ test('a remote origin delivers the guide read from the destination', async () =>
   const buf = await repoTarball('mi-paquete',
     validManifest('mi-paquete', { personalization: 'guia.md' }),
     { 'a.txt': 'a', 'guia.md': 'guía remota' });
-  const spy = spyFetch(okResponse(buf));
+  const spy = spyFetch(remoteOk(buf));
   const { code, stdout } = await run(['o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
   assert.equal(code, EXIT_OK);
   assert.match(stdout.join('\n'),
@@ -912,7 +921,7 @@ test('list warns on a corrupt lock and answers nothing installed', async () => {
 test('list reads the working directory lock whatever the install origin', async () => {
   const dest = tmp();
   const tmpBase = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
   const { code, stdout } = await run(['list'], { cwd: dest });
   assert.equal(code, EXIT_OK);
@@ -1138,7 +1147,7 @@ test('a --path install records the local origin as an absolute path', async () =
 
 test('a remote install records the repo and the used ref', async () => {
   const dest = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete@v2', dest], { tmpBase: tmp(), fetch: spy.fetch });
   assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
     { type: 'github', repo: 'o/mi-paquete', ref: 'v2' });
@@ -1146,7 +1155,7 @@ test('a remote install records the repo and the used ref', async () => {
 
 test('a remote install without a ref records the repo alone', async () => {
   const dest = tmp();
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { tmpBase: tmp(), fetch: spy.fetch });
   assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
     { type: 'github', repo: 'o/mi-paquete' });
@@ -1157,7 +1166,7 @@ test('each installed package keeps its own recorded origin', async () => {
   const pkg = path.join(tmp(), 'local');
   writePkg(pkg, validManifest('local'), { 'a.txt': 'a' });
   await run(['--path', pkg, dest]);
-  const spy = spyFetch(okResponse(await remotePkg()));
+  const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { tmpBase: tmp(), fetch: spy.fetch });
   assert.deepEqual(readEntry(dest, 'local').origin,
     { type: 'path', path: path.resolve(pkg) });
@@ -1366,11 +1375,11 @@ test('update --path overrides the recorded origin and persists it', async () => 
 
 test('update uses the recorded github ref, and --ref overrides it', async () => {
   const dest = tmp();
-  const spy1 = spyFetch(okResponse(await remotePkg()));
+  const spy1 = spyFetch(remoteOk(await remotePkg()));
   assert.equal(
     (await run(['o/mi-paquete@v1', dest], { fetch: spy1.fetch })).code, EXIT_OK,
   );
-  const spy2 = spyFetch(okResponse(
+  const spy2 = spyFetch(remoteOk(
     await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'b' }),
   ));
   const { code, stdout, stderr } = await run(
@@ -1378,40 +1387,40 @@ test('update uses the recorded github ref, and --ref overrides it', async () => 
   );
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   assert.match(stdout.join('\n'), /obteniendo: o\/mi-paquete@v1/);
-  assert.match(spy2.urls[0], /tar\.gz\/v1/);
+  assert.match(spy2.urls[0], /commits\/v1/);
 
-  const spy3 = spyFetch(okResponse(
+  const spy3 = spyFetch(remoteOk(
     await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '3.0.0' }), { 'a.txt': 'c' }),
   ));
   const { code: code2 } = await run(
     ['update', 'mi-paquete', '--ref', 'v3'], { cwd: dest, fetch: spy3.fetch },
   );
   assert.equal(code2, EXIT_OK);
-  assert.match(spy3.urls[0], /tar\.gz\/v3/);
+  assert.match(spy3.urls[0], /commits\/v3/);
 });
 
 test('update refetches the default branch when no ref was recorded', async () => {
   const dest = tmp();
-  const spy1 = spyFetch(okResponse(await remotePkg()));
+  const spy1 = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { fetch: spy1.fetch });
-  const spy2 = spyFetch(okResponse(
+  const spy2 = spyFetch(remoteOk(
     await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'b' }),
   ));
   const { code } = await run(['update', 'mi-paquete'], { cwd: dest, fetch: spy2.fetch });
   assert.equal(code, EXIT_OK);
-  assert.match(spy2.urls[0], /tar\.gz\/HEAD/);
+  assert.match(spy2.urls[0], /commits\/HEAD/);
 });
 
 test('update with a positional repo spec overrides the recorded origin', async () => {
   const { dest } = await installed(validManifest('mi-paquete'), { 'a.txt': 'viejo' });
-  const spy = spyFetch(okResponse(
+  const spy = spyFetch(remoteOk(
     await repoTarball('mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'n' }),
   ));
   const { code, stderr } = await run(
     ['update', 'mi-paquete', 'otro/mi-paquete@v2'], { cwd: dest, fetch: spy.fetch },
   );
   assert.equal(code, EXIT_OK, stderr.join('\n'));
-  assert.match(spy.urls[0], /otro\/mi-paquete.*tar\.gz\/v2/);
+  assert.match(spy.urls[0], /otro\/mi-paquete\/commits\/v2/);
   assert.deepEqual(lockOf(dest).packages['mi-paquete'].origin, {
     type: 'github', repo: 'otro/mi-paquete', ref: 'v2',
   });
@@ -1539,7 +1548,7 @@ test('update exits 4 when the recorded local origin no longer exists', async () 
 
 test('update exits 5 when the recorded remote origin is unreachable', async () => {
   const dest = tmp();
-  const spy1 = spyFetch(okResponse(await remotePkg()));
+  const spy1 = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { fetch: spy1.fetch });
   const spy2 = spyFetch(() => Promise.reject(new Error('ENOTFOUND')));
   const { code, stderr } = await run(
@@ -1771,7 +1780,7 @@ test('a remote collection with @ref records ref and package in the origin', asyn
   writeCollection(root, [{ path: 'alfa' }]);
   const archive = path.join(work, 'a.tgz');
   await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
-  const spy = spyFetch(okResponse(fs.readFileSync(archive)));
+  const spy = spyFetch(remoteOk(fs.readFileSync(archive)));
   const { code, stderr } = await run(
     ['o/familia@v2', dest, '--package', 'alfa'],
     { tmpBase, fetch: spy.fetch },
@@ -1837,9 +1846,9 @@ test('update re-fetches the recorded remote collection and updates the member', 
     await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
     return fs.readFileSync(archive);
   };
-  const spy1 = spyFetch(okResponse(await build('1.0.0', 'viejo')));
+  const spy1 = spyFetch(remoteOk(await build('1.0.0', 'viejo')));
   await run(['o/familia', dest, '--package', 'alfa'], { tmpBase, fetch: spy1.fetch });
-  const spy2 = spyFetch(okResponse(await build('2.0.0', 'nuevo')));
+  const spy2 = spyFetch(remoteOk(await build('2.0.0', 'nuevo')));
   const { code, stdout, stderr } = await run(
     ['update', 'alfa'], { cwd: dest, tmpBase, fetch: spy2.fetch },
   );
@@ -1888,14 +1897,14 @@ test('--ref overrides the ref of a recorded collection origin', async () => {
     await tarCreate({ gzip: true, file: archive, cwd: work }, ['familia-abc123']);
     return fs.readFileSync(archive);
   };
-  const spy1 = spyFetch(okResponse(await build('1.0.0')));
+  const spy1 = spyFetch(remoteOk(await build('1.0.0')));
   await run(['o/familia@v1', dest, '--package', 'alfa'], { tmpBase, fetch: spy1.fetch });
-  const spy2 = spyFetch(okResponse(await build('2.0.0')));
+  const spy2 = spyFetch(remoteOk(await build('2.0.0')));
   const { code, stderr } = await run(
     ['update', 'alfa', '--ref', 'v2'], { cwd: dest, tmpBase, fetch: spy2.fetch },
   );
   assert.equal(code, EXIT_OK, stderr.join('\n'));
-  assert.match(spy2.urls[0], /tar\.gz\/v2/);
+  assert.match(spy2.urls[0], /commits\/v2/);
   assert.deepEqual(lockOf(dest).packages.alfa.origin, {
     type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
   });

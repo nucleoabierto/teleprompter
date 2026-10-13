@@ -270,7 +270,7 @@ async function obtainPackage(io, out, err, source) {
     err(`error de obtención: ${fetched.error}`);
     return { ok: false, code: EXIT_FETCH };
   }
-  return { ok: true, pkgDir: fetched.dir, cleanup: fetched.cleanup };
+  return { ok: true, pkgDir: fetched.dir, cleanup: fetched.cleanup, commit: fetched.commit };
 }
 
 // Verification maps to output and exit codes. `expectedName` — only
