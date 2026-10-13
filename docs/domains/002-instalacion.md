@@ -52,6 +52,13 @@ instalado.
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
+  - **Commit resuelto:** el SHA exacto al que la referencia pedida
+    apuntaba en el momento de la obtención —la rama por defecto
+    cuando no hubo referencia—. Un SHA completo se toma por
+    resuelto sin consulta; la descarga del tarball se ancla a ese
+    SHA, así que el árbol extraído es siempre el commit que el
+    resultado declara, no el que la rama móvil sirva después.
+    - Ancla: `resolveCommit` y `repoUrls` en `src/fetch.js`
   - **Deriva:** el estado de un recurso registrado al confrontarlo
     con el disco —`intact` (el hash coincide), `modified` (difiere),
     `missing` (la ruta ya no existe) o `unverifiable` (sin `sha256`
@@ -160,7 +167,8 @@ instalado.
 - **Operaciones:**
   - `teleprompter [install] <user/repo[@ref]> [destino]` o
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
-    paquete (tarball público de GitHub o directorio local), verifica,
+    paquete (tarball público de GitHub anclado al commit resuelto o
+    directorio local), verifica,
     planea, resuelve, ejecuta y registra; el destino por defecto es el
     directorio de trabajo.
     - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`
@@ -267,8 +275,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-04 (épica
-  `docs/epics/006-colecciones.md`)
+- Última revisión: 2026-10-12 (épica
+  `docs/epics/007-pin-de-obtencion-remota.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
