@@ -37,6 +37,10 @@ repositorio destino.
   target»).
 - `--dry-run` muestra el plan de actualización completo sin escribir
   nada.
+- El origen remoto registrado refresca su commit con el de la
+  obtención efectiva: el registro siempre dice qué árbol produjo la
+  instalación vigente. — módulo `test/cli.test.js`, «update records
+  the commit resolved in that fetch, not the previous one»
 - Si el origen publica un paquete con otro nombre, la invocación es
   un error —no se actualiza nada—.
 

@@ -64,7 +64,8 @@ function isValidOrigin(o) {
   if (o.type === 'github') {
     return pkgOk
       && typeof o.repo === 'string'
-      && (o.ref === undefined || typeof o.ref === 'string');
+      && (o.ref === undefined || typeof o.ref === 'string')
+      && (o.commit === undefined || typeof o.commit === 'string');
   }
   if (o.type === 'path') return pkgOk && typeof o.path === 'string';
   return false;

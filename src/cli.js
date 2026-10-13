@@ -430,7 +430,7 @@ async function runUpdate(io, out, err, parsed) {
 
   const obtained = await obtainPackage(io, out, err, source);
   if (!obtained.ok) return obtained.code;
-  const { pkgDir, cleanup } = obtained;
+  const { pkgDir, cleanup, commit } = obtained;
   try {
     // A collection origin re-resolves the member through the index
     // of the freshly obtained tree — the name is the package being
@@ -483,7 +483,7 @@ async function runUpdate(io, out, err, parsed) {
 
     // The rewritten origin must stay re-resolvable: a collection
     // update keeps the member name beside the source.
-    const origin = originOf(source);
+    const origin = originOf(source, commit);
     if (fromCollection) origin.package = parsed.pkg;
     return executeAndReport(out, err, {
       pkgDir: unitDir, destDir, lock, plan, manifest, origin, verb: 'actualizado',
@@ -504,16 +504,22 @@ const isDir = (p) => {
 // The installation's origin in lock shape: what a later operation
 // needs to fetch the package again without asking. A remote source
 // records owner/repo plus the ref the user gave —absent ref means
-// the remote's default branch at fetch time—; a local --path is
-// recorded absolute, because the relative form would die with the
-// working directory of that invocation.
-function originOf(source) {
+// the remote's default branch at fetch time— and the commit the
+// ref resolved to, so the registry says which exact tree produced
+// the installation; a local --path is recorded absolute, because
+// the relative form would die with the working directory of that
+// invocation.
+function originOf(source, commit) {
   if (source.kind === 'path') {
     return { type: 'path', path: path.resolve(source.dir) };
   }
   const { owner, name, ref } = source.spec;
   const repo = `${owner}/${name}`;
-  return ref === null ? { type: 'github', repo } : { type: 'github', repo, ref };
+  const origin = ref === null
+    ? { type: 'github', repo }
+    : { type: 'github', repo, ref };
+  if (commit !== undefined) origin.commit = commit;
+  return origin;
 }
 
 // A collection origin resolves to member units selected by name; a
@@ -560,7 +566,7 @@ function selectUnits(out, err, rootDir, names) {
 // settle, execute, register, report. The lock is re-read per unit
 // because a previous unit of the same invocation already wrote its
 // own entry — writeLock builds on what it is given.
-async function installUnit(io, out, err, { source, unit, destDir, flags }) {
+async function installUnit(io, out, err, { source, unit, destDir, flags, commit }) {
   const result = verifyPackage(unit.dir, destDir);
   const invalid = checkVerified(result, out, err);
   if (invalid !== null) return invalid;
@@ -581,7 +587,7 @@ async function installUnit(io, out, err, { source, unit, destDir, flags }) {
     return EXIT_OK;
   }
 
-  const origin = { ...originOf(source) };
+  const origin = { ...originOf(source, commit) };
   if (unit.name !== undefined) origin.package = unit.name;
   return executeAndReport(out, err, {
     pkgDir: unit.dir, destDir, lock, plan, manifest, origin, verb: 'instalado',
@@ -603,12 +609,12 @@ async function runInstall(io, out, err, { source, dest, flags, packages }) {
 
   const obtained = await obtainPackage(io, out, err, source);
   if (!obtained.ok) return obtained.code;
-  const { pkgDir, cleanup } = obtained;
+  const { pkgDir, cleanup, commit } = obtained;
   try {
     const selected = selectUnits(out, err, pkgDir, packages);
     if (selected.units === undefined) return selected.code;
     for (const unit of selected.units) {
-      const code = await installUnit(io, out, err, { source, unit, destDir, flags });
+      const code = await installUnit(io, out, err, { source, unit, destDir, flags, commit });
       if (code !== EXIT_OK) return code;
     }
     return EXIT_OK;

@@ -56,7 +56,9 @@ pregunta es quitarlo, no sobrescribirlo—.
 
 Si el paquete ya está en la versión que publica el origen, responde
 `ya está en esa versión` sin escribir nada. Terminada la ejecución,
-el registro queda a la versión nueva con el origen efectivo.
+el registro queda a la versión nueva con el origen efectivo —en un
+origen de repositorio, incluido el `commit` que esa obtención
+resolvió—.
 
 ## Errores
 

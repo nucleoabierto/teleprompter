@@ -95,6 +95,14 @@ mecánica detallada, en la [referencia](referencia-install.md).
   («install copies every resource and writes the lock on an empty
   destination», «writeLock preserves records belonging to other
   packages»)
+- **El registro guarda la procedencia:** el origen remoto declara
+  el repositorio con la ref pedida —si la hubo— y el commit exacto
+  que la obtención resolvió; el origen local declara la ruta
+  absoluta sin commit. — módulo `test/cli.test.js` («a remote
+  install records the repo, the used ref and the resolved commit»,
+  «a remote install without a ref records the repo and the resolved
+  commit», «a --path install records the local origin as an absolute
+  path»)
 - **Un error a mitad de ejecución sale con código 3 e informa de lo ya
   aplicado.** — módulo `test/execute.test.js`, «a mid-execution error
   exits 3 and reports what was applied»
