@@ -5,6 +5,7 @@
 > **Orden sugerido:** 1 de 4 — decidido en la revisión del roadmap
 > 2026-10-04: se ejecuta en Now junto al endurecimiento del fetch,
 > por compartir superficie y dar base determinista a las hermanas
+> **Procesada en:** docs/proposals/008-pin-de-obtencion-remota/
 
 ## Problema
 
