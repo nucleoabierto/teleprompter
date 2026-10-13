@@ -31,9 +31,11 @@ instalado.
     con `target`, acción y `sha256` —las entradas `skip` no llevan
     hash— y `personalization` con la ruta gestionada de la guía
     cuando el manifiesto la declara; `origin` registra de dónde vino
-    la instalación —`{type:'github',repo,ref?}` o
+    la instalación —`{type:'github',repo,ref?,commit}` o
     `{type:'path',path}` absoluta—, opcional en entradas escritas
-    antes del campo; una instalación desde colección añade
+    antes del campo; `commit` es el commit resuelto de la
+    obtención, también opcional —los locks previos no lo llevan—; una
+    instalación desde colección añade
     `package` con el nombre del miembro y el origen apunta a la
     raíz de la colección. Es la memoria que distingue lo propio de
     lo ajeno.
@@ -57,8 +59,12 @@ instalado.
     cuando no hubo referencia—. Un SHA completo se toma por
     resuelto sin consulta; la descarga del tarball se ancla a ese
     SHA, así que el árbol extraído es siempre el commit que el
-    resultado declara, no el que la rama móvil sirva después.
-    - Ancla: `resolveCommit` y `repoUrls` en `src/fetch.js`
+    resultado declara, no el que la rama móvil sirva después. El
+    `commit` del origen registrado es este valor: mientras `ref`
+    expresa la intención —«seguir esta rama»—, `commit` dice qué
+    árbol produjo la instalación.
+    - Ancla: `resolveCommit` y `repoUrls` en `src/fetch.js`;
+      `originOf` en `src/cli.js` lo escribe en el origen
   - **Deriva:** el estado de un recurso registrado al confrontarlo
     con el disco —`intact` (el hash coincide), `modified` (difiere),
     `missing` (la ruta ya no existe) o `unverifiable` (sin `sha256`

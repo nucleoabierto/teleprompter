@@ -14,22 +14,6 @@ reconstruir el destino.
 
 ## Now
 
-- 1. **Pin de obtención remota** — conservar el commit exacto detrás
-  de cada instalación y hacer determinista la re-obtención (idea
-  `docs/ideas/010-pin-de-obtencion-remota.md`).
-  - Estado: en curso
-  - Justificación: es de tamaño tarea y comparte superficie con el
-    endurecimiento ya materializado —`fetch` y la semántica de
-    `origin`—; su
-    determinismo es la base honesta de las tres líneas de Next: sin
-    pin, revisar desactualizados no detecta el commit que avanzó sin
-    bump y reproducir el destino no es exacto.
-
-## Next
-
-Ideas de la lluvia de 2026-10-04 comprometidas (`docs/ideas/007–009`),
-en el orden decidido en la revisión del 2026-10-04:
-
 - 1. **Desinstalación de paquetes** — salida limpia del ciclo de
   vida: retirar un paquete y sus recursos registrados con plan
   visible (idea 007).
@@ -37,13 +21,19 @@ en el orden decidido en la revisión del 2026-10-04:
     construida —plan y registro— y es la de menor riesgo del
     conjunto; su lectura del registro es la que la reproducción
     compartirá después.
-- 2. **Revisión de desactualizados** — consultar qué paquetes
+
+## Next
+
+Ideas de la lluvia de 2026-10-04 comprometidas (`docs/ideas/007–009`),
+en el orden decidido en la revisión del 2026-10-04:
+
+- 1. **Revisión de desactualizados** — consultar qué paquetes
   ofrecen versión nueva sin actualizar, y actualizar lo revisado
   en una invocación (idea 008).
   - Justificación: `update` hoy decide a ciegas; sondea orígenes
     remotos, así que rinde mejor con el fetch endurecido y pinneado
     —puede señalar el commit que avanzó sin bump, hoy invisible—.
-- 3. **Reproducción del destino desde el registro** — reinstalar de
+- 2. **Reproducción del destino desde el registro** — reinstalar de
   una vez lo que el lock de un repo declara, desde sus orígenes
   (idea 009).
   - Justificación: la más dependiente del conjunto —consume los
@@ -110,4 +100,9 @@ en Now y el resto ordenado en Next.
   revisión de desactualizados, reproducción del destino; Later
   queda vacío y la Dirección se actualiza a cerrar el ciclo y
   hacerlo fiable)
+- Usuario: 2026-10-12 — Aprueba (hito 8 cerrado: la épica 007
+  materializó el pin de obtención remota —la obtención resuelve la
+  referencia al commit exacto, la descarga se ancla a él y el
+  registro conserva la procedencia junto al origen, en install y en
+  update—; Desinstalación de paquetes pasa a Now)
 

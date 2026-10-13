@@ -141,7 +141,11 @@ destino: un JSON pensado para versionarse con el repositorio:
           "sha256": "…"
         }
       ],
-      "origin": { "type": "github", "repo": "nucleoabierto/ciclo-tareas" }
+      "origin": {
+        "type": "github",
+        "repo": "nucleoabierto/ciclo-tareas",
+        "commit": "…"
+      }
     }
   }
 }
@@ -154,9 +158,11 @@ con su `target`, la acción realizada (`create`, `overwrite`,
 presente e idéntico—; las entradas `skip` no llevan hash.
 La entrada registra además el `origin` de la instalación: el
 repositorio `owner/name` con el ref usado —o sin él, si se obtuvo la
-rama por defecto— o la ruta absoluta de `--path`; los registros
-escritos antes de este campo carecen de él. Una instalación desde
-colección añade `package` con el nombre elegido, y el `origin`
+rama por defecto— y el `commit` que la obtención resolvió —el árbol
+exacto que produjo la instalación—; o la ruta absoluta de `--path`.
+Los registros escritos antes de estos campos carecen de ellos.
+Una instalación desde colección añade `package` con el nombre
+elegido, y el `origin`
 apunta a la raíz de la colección —así una actualización posterior
 re-resuelve el mismo paquete a través del índice.
 Los registros de otros paquetes instalados en el mismo destino se
