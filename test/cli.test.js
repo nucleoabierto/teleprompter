@@ -227,7 +227,7 @@ test('--package on a remote collection resolves inside the fetched tree', async 
   assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
   const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
   assert.deepEqual(lock.packages.beta.origin, {
-    type: 'github', repo: 'o/familia', package: 'beta',
+    type: 'github', repo: 'o/familia', commit: RESOLVED, package: 'beta',
   });
   assert.deepEqual(fs.readdirSync(tmpBase), []);
 });
@@ -464,9 +464,10 @@ const okResponse = (buf) => ({
 // A remote fetch resolves the ref before downloading: the spy
 // routes the commits-API call to the commit response and every
 // other call to the tarball.
+const RESOLVED = 'f'.repeat(40);
 const remoteOk = (buf) => (url) =>
   url.includes('/commits/')
-    ? { ok: true, json: async () => ({ sha: 'f'.repeat(40) }) }
+    ? { ok: true, json: async () => ({ sha: RESOLVED }) }
     : okResponse(buf);
 
 function spyFetch(behavior = () => okResponse(Buffer.alloc(0))) {
@@ -1145,20 +1146,20 @@ test('a --path install records the local origin as an absolute path', async () =
     { type: 'path', path: path.resolve(pkg) });
 });
 
-test('a remote install records the repo and the used ref', async () => {
+test('a remote install records the repo, the used ref and the resolved commit', async () => {
   const dest = tmp();
   const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete@v2', dest], { tmpBase: tmp(), fetch: spy.fetch });
   assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
-    { type: 'github', repo: 'o/mi-paquete', ref: 'v2' });
+    { type: 'github', repo: 'o/mi-paquete', ref: 'v2', commit: RESOLVED });
 });
 
-test('a remote install without a ref records the repo alone', async () => {
+test('a remote install without a ref records the repo and the resolved commit', async () => {
   const dest = tmp();
   const spy = spyFetch(remoteOk(await remotePkg()));
   await run(['o/mi-paquete', dest], { tmpBase: tmp(), fetch: spy.fetch });
   assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
-    { type: 'github', repo: 'o/mi-paquete' });
+    { type: 'github', repo: 'o/mi-paquete', commit: RESOLVED });
 });
 
 test('each installed package keeps its own recorded origin', async () => {
@@ -1171,7 +1172,7 @@ test('each installed package keeps its own recorded origin', async () => {
   assert.deepEqual(readEntry(dest, 'local').origin,
     { type: 'path', path: path.resolve(pkg) });
   assert.deepEqual(readEntry(dest, 'mi-paquete').origin,
-    { type: 'github', repo: 'o/mi-paquete' });
+    { type: 'github', repo: 'o/mi-paquete', commit: RESOLVED });
 });
 
 test('a lock written before the origin field stays valid', async () => {
@@ -1192,6 +1193,7 @@ test('a lock with a malformed origin degrades to no history', async () => {
     { type: 'desconocido' },
     { type: 'github' },
     { type: 'github', repo: 'o/r', ref: 5 },
+    { type: 'github', repo: 'o/r', commit: 5 },
     { type: 'path' },
     { type: 'github', repo: 'o/r', package: 7 },
     { type: 'path', path: '/x', package: 7 },
@@ -1206,6 +1208,48 @@ test('a lock with a malformed origin degrades to no history', async () => {
     assert.match(stdout.join('\n'), /aviso:.*corrupto/, JSON.stringify(origin));
     assert.match(stdout.join('\n'), /no hay paquetes instalados/);
   }
+});
+
+test('update records the commit resolved in that fetch, not the previous one', async () => {
+  const dest = tmp();
+  const spy1 = spyFetch(remoteOk(await remotePkg()));
+  await run(['o/mi-paquete', dest], { fetch: spy1.fetch });
+  assert.equal(readEntry(dest, 'mi-paquete').origin.commit, RESOLVED);
+  const buf = await repoTarball(
+    'mi-paquete', validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'b' },
+  );
+  const spy2 = spyFetch((url) => (url.includes('/commits/')
+    ? { ok: true, json: async () => ({ sha: 'e'.repeat(40) }) }
+    : okResponse(buf)));
+  const { code } = await run(['update', 'mi-paquete'], { cwd: dest, fetch: spy2.fetch });
+  assert.equal(code, EXIT_OK);
+  assert.equal(readEntry(dest, 'mi-paquete').origin.commit, 'e'.repeat(40));
+});
+
+test('a lock whose origin lacks the commit field stays valid and update fills it', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [{ target: 'a.txt' }],
+        origin: { type: 'github', repo: 'o/p' },
+      },
+    },
+  }));
+  const { code, stdout } = await run(['list'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.0\.0/);
+  const checked = await run(['check'], { cwd: dest });
+  assert.equal(checked.code, EXIT_OK);
+  const buf = await repoTarball(
+    'p', validManifest('p', { version: '2.0.0' }), { 'a.txt': 'n' },
+  );
+  const spy = spyFetch(remoteOk(buf));
+  const { code: code2 } = await run(['update', 'p'], { cwd: dest, fetch: spy.fetch });
+  assert.equal(code2, EXIT_OK);
+  assert.deepEqual(readEntry(dest, 'p').origin,
+    { type: 'github', repo: 'o/p', commit: RESOLVED });
 });
 
 // --- update: llevar un paquete a la versión que publica su origen ---
@@ -1422,7 +1466,7 @@ test('update with a positional repo spec overrides the recorded origin', async (
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   assert.match(spy.urls[0], /otro\/mi-paquete\/commits\/v2/);
   assert.deepEqual(lockOf(dest).packages['mi-paquete'].origin, {
-    type: 'github', repo: 'otro/mi-paquete', ref: 'v2',
+    type: 'github', repo: 'otro/mi-paquete', ref: 'v2', commit: RESOLVED,
   });
 });
 
@@ -1788,7 +1832,7 @@ test('a remote collection with @ref records ref and package in the origin', asyn
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
   assert.deepEqual(lock.packages.alfa.origin, {
-    type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
+    type: 'github', repo: 'o/familia', ref: 'v2', commit: RESOLVED, package: 'alfa',
   });
 });
 
@@ -1856,7 +1900,7 @@ test('update re-fetches the recorded remote collection and updates the member', 
   assert.match(stdout.join('\n'), /actualizado: alfa@2\.0\.0/);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
   assert.deepEqual(lockOf(dest).packages.alfa.origin, {
-    type: 'github', repo: 'o/familia', package: 'alfa',
+    type: 'github', repo: 'o/familia', commit: RESOLVED, package: 'alfa',
   });
   assert.deepEqual(fs.readdirSync(tmpBase), []);
 });
@@ -1906,7 +1950,7 @@ test('--ref overrides the ref of a recorded collection origin', async () => {
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   assert.match(spy2.urls[0], /commits\/v2/);
   assert.deepEqual(lockOf(dest).packages.alfa.origin, {
-    type: 'github', repo: 'o/familia', ref: 'v2', package: 'alfa',
+    type: 'github', repo: 'o/familia', ref: 'v2', commit: RESOLVED, package: 'alfa',
   });
 });
 

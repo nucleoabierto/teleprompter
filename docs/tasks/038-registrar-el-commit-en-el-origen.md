@@ -2,7 +2,7 @@
 
 ## Estado
 
-**[ ] Pendiente** | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+[ ] Pendiente | [~] En progreso | **[r] En revisión** | [x] Completada | [!] Bloqueada
 
 ## Tipo
 
@@ -66,8 +66,103 @@ resuelto, escrito al instalar y refrescado al actualizar.
   actual del origen; exponerla corresponde a la línea de revisión
   de desactualizados (fuera de alcance de esta propuesta).
 
+## Contexto
+
+- **Archivos similares:** `src/lock.js` es dueño de la forma del
+  registro —`isValidOrigin` valida el origen campo a campo y
+  `writeLock` lo persiste tal cual lo recibe—; `src/cli.js`
+  construye el origen en `originOf` y lo pasa a `executeAndReport`
+  → `writeLock` desde `installUnit` y `runUpdate`.
+- **Patrones:** los campos opcionales del origen se escriben solo
+  cuando existen —`ref` y `package` siguen esa forma— y el
+  validador los acepta opcionales para no romper locks previos;
+  `obtainPackage` devuelve `{ ok, pkgDir, cleanup, commit }` tras
+  la 037 y sus llamadores ya desestructuran lo que necesitan.
+- **Dominio:** `docs/domains/002-instalacion.md` — «commit
+  resuelto» ya es concepto del lenguaje ubicuo tras la 037; esta
+  tarea lo conecta con `origin`, la procedencia reobtenible
+  (D014).
+- **Producto:** `manual/004-actualizar-un-paquete.md` y
+  `referencia-update.md` describen la semántica de avance de
+  `update` —el commit se refresca con ella, no cambia el flujo—;
+  `referencia-install.md` describe la obtención anclada.
+- **PRD:** `docs/prd/007-pin-de-obtencion-remota.md` — CU-1
+  (instalar con procedencia registrada) es el caso central;
+  CU-2 (avanzar refrescando el commit) cubre `update`; CU-3
+  (consultar la procedencia) presupone que el registro sin el
+  campo sigue siendo legible.
+- **Lecciones:** ninguna aplica a la implementación.
+- **Decisiones:** `D014-campo-origin-del-registro.md` — el
+  origen es la memoria reobtenible de la instalación: `commit`
+  la completa, no la redefine.
+- **Restricción de forma:** `commit` es obligatorio en origen
+  `github` escrito por la obtención actual y ausente en origen
+  `path`; la validación lo acepta opcional —los locks previos no
+  se reescriben—.
+
+## Conectividad
+
+**Conectada.**
+
+Todo lo que la tarea asume existe con la forma esperada:
+
+- `obtained.commit` ya viaja en el resultado de `obtainPackage`
+  desde la 037 —los llamadores `runInstall` y `runUpdate` lo
+  tienen en scope—.
+- `isValidOrigin` en `src/lock.js` valida campo a campo con
+  opcionales: el patrón para `commit` está dado por `ref`.
+- `originOf` en `src/cli.js` es el único punto que produce el
+  origen `github`/`path`: un parámetro `commit` opcional cubre
+  ambos flujos sin tocar la firma de `writeLock`.
+- `executeAndReport` pasa `origin` intacto a `writeLock`: la
+  escritura no requiere cambio.
+- Los tests de lock y los flujos CLI con `remoteOk` ya encadenan
+  resolución + descarga: el SHA resuelto está disponible para
+  asertar contra `origin.commit`.
+
+## Plan técnico
+
+El registro lo escribe `writeLock` con el `origin` que
+`originOf(source)` construye; tras la 037 el SHA resuelto viaja
+en `obtained.commit`, al alcance de `runInstall` y `runUpdate`.
+
+- [x] **`isValidOrigin` acepta `commit` opcional** para orígenes
+   `github` (`undefined` o string).
+   - Aporta: el registro nuevo es válido y los locks previos sin
+     el campo lo siguen siendo —la compatibilidad vive en el
+     validador—.
+- [x] **`originOf(source, commit)` escribe `commit`** cuando se le
+   pasa —solo en `github`; `path` nunca lo recibe—.
+   - Aporta: un solo punto produce la forma nueva del origen.
+   - Contexto: sigue el patrón de `ref` —presente solo cuando
+     existe—.
+- [x] **`obtained.commit` llega a los dos flujos**: `runInstall` lo
+   pasa a `installUnit` (que lo da a `originOf`); `runUpdate` lo
+   pasa a su `originOf`.
+   - Aporta: install registra el commit de lo instalado; update
+     lo refresca —la semántica de avance se conserva—.
+   - Contexto: `installUnit` recibe `source`, no `obtained` —el
+     commit entra por parámetros; colección no cambia.
+- [x] **La suite cubre los caminos nuevos** y la cobertura sigue al
+   100 %.
+
+## Suite de pruebas esperada
+
+- `install user/repo` registra `origin.commit` igual al SHA que
+  el spy devolvió en la resolución (O).
+- `install user/repo@ref` registra el commit de esa ref (O).
+- `install` desde colección registra commit + `package` del
+  miembro (O).
+- `install --path` produce origen `path` sin campo `commit` (B).
+- `update` remoto registra el commit del árbol de esa obtención
+  —distinto del previo si el spy cambia el SHA— (O).
+- `update` sobre origen `path` sigue sin `commit` (B).
+- Un lock sin `commit` pasa la validación y `list`, `check` y
+  `update` operan —update reescribe el origen con commit— (B).
+- `commit` no-string hace el lock corrupto (E).
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-12 — Aprueba
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
