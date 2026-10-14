@@ -1,13 +1,13 @@
 {
   "packages": {
     "factory": {
-      "version": "0.4.0",
-      "installedAt": "2026-10-12T09:58:42.778Z",
+      "version": "0.5.0",
+      "installedAt": "2026-10-14T00:57:04.713Z",
       "files": [
         {
           "target": ".agents/skills/actualizar-artefactos",
           "action": "overwrite",
-          "sha256": "bc2702096b985fff8b101b2114ada3fe009fb2ab71b58a54dde2e0aab5c8062d"
+          "sha256": "591b9f973aca16d51781c58c896a30d0b61f5db59891f4b6712404d09332231d"
         },
         {
           "target": ".agents/skills/aplicar-guia-estilo",
@@ -20,6 +20,16 @@
           "sha256": "11697e664dae45893e5bf39e6b6cf09c66dcbad262b60598b47b4b14491ec02b"
         },
         {
+          "target": ".agents/skills/clasificar-comentarios",
+          "action": "create",
+          "sha256": "40b2811ae929ca0af176c4626e027eca8d653870545c578dcc96d4a2e61dadf6"
+        },
+        {
+          "target": ".agents/skills/comentar-pr",
+          "action": "create",
+          "sha256": "f206076c9f1af650e9e73d3650e3af15ce19003e9bb0af2d07a67c8d6a217ffe"
+        },
+        {
           "target": ".agents/skills/commit",
           "action": "overwrite",
           "sha256": "afb31b84e06f29a0f9148ca3bc42d7fc42ada1e0af2f5bd6a4462ecfb15cf6e2"
@@ -27,7 +37,7 @@
         {
           "target": ".agents/skills/consultar-artefactos",
           "action": "overwrite",
-          "sha256": "36ea22cfdf0392f5f287dc36cdd11ce4ee2c04d799cfa9fbaf798148bbfd4d99"
+          "sha256": "f764502579a4c81c2752e1034fc6a4bb959f88b12fca991cad3a43ea52d832b8"
         },
         {
           "target": ".agents/skills/consultar-decisiones",
@@ -96,8 +106,8 @@
         },
         {
           "target": ".agents/skills/gestionar-pr",
-          "action": "create",
-          "sha256": "90fd59f144fb20639dc86b68294a89f77baf6605ea56e01452cc6fcb3fd10d0f"
+          "action": "overwrite",
+          "sha256": "5d3031c0258c9719e86b0f1cc80cf30fe5bccb84afa9ac986f33b40b010cf141"
         },
         {
           "target": ".agents/skills/idea-a-tarea",
@@ -135,14 +145,19 @@
           "sha256": "35be19cc687b0694289c78316c242b98786b7410001e933973c97d18ba2280cb"
         },
         {
-          "target": ".agents/skills/operar-changelog",
+          "target": ".agents/skills/mejorar-pr",
           "action": "create",
-          "sha256": "e92c9d5bb3ee1c85125d2a0cb7e72fff8b6a22f02d8b2dcc9533d69ac30b2796"
+          "sha256": "bccc9e562b7f7b287b43cb7c0ae26596e672d2e272194943541d3c63c7069529"
+        },
+        {
+          "target": ".agents/skills/operar-changelog",
+          "action": "overwrite",
+          "sha256": "539092fb8d60d731e268aeaae60562cdae0b29d6b8c4a790ee69285029afd286"
         },
         {
           "target": ".agents/skills/operar-experiencias",
-          "action": "create",
-          "sha256": "4b3848485dc80a46c21e638c5c8256bf0232f3bece39bcdee939c1f1960d5e9c"
+          "action": "overwrite",
+          "sha256": "99f7d5fee16f7bc70a92db251fb4255c3e3042ff8e0b6afe3f14853f8e4a9174"
         },
         {
           "target": ".agents/skills/planear-implementacion",
@@ -200,6 +215,11 @@
           "sha256": "c19e04300fd5a3aa56ca8b82270401a88d957efa4e5fb5e5a5053b93ecd613c8"
         },
         {
+          "target": ".agents/skills/revisar-pr",
+          "action": "create",
+          "sha256": "cb2ab5384216093e8eb3f8746427637c304f2da3905ee0d4283735aa4dfeb9ae"
+        },
+        {
           "target": ".agents/skills/revisar-redaccion",
           "action": "create",
           "sha256": "ea4a77a7978b371d1d751bfe7f94ca5b55cb7557209d4ec4ee3889a9fce68942"
@@ -207,13 +227,14 @@
         {
           "target": ".teleprompter/factory/PERSONALIZE.md",
           "action": "overwrite",
-          "sha256": "6ab6e482907a2a473750ecbb9bb21d6b9128a4c51c134acef1fcd60baa784e6d"
+          "sha256": "26190a5642228ab1c974e3853f7d55f29540ec47944522447e4a35864eafaee3"
         }
       ],
       "personalization": ".teleprompter/factory/PERSONALIZE.md",
       "origin": {
         "type": "github",
-        "repo": "nucleoabierto/factory"
+        "repo": "nucleoabierto/factory",
+        "commit": "8acbba7d1cc3205cda4ab124c01607751564a931"
       }
     }
   }

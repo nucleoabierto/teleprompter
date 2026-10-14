@@ -63,6 +63,7 @@ Toda constante de las clases listadas vive como clave de configuración con su v
 - `dir_dominios` — `docs/domains`: documentación viva de dominios.
 - `dir_investigaciones` — `docs/research`: resultados de `investigar`.
 - `dir_revisiones_arquitectura` — `docs/architecture-reviews`: informes de `revisar-arquitectura`.
+- `dir_revisiones_pr` — `.git/factory/pr-reviews`: informes de `revisar-pr` y triages de `clasificar-comentarios`/`mejorar-pr`; estado local efímero fuera del control de versiones, que `gestionar-pr` elimina al cerrar el PR.
 - `dir_prd` — `docs/prd`: PRD de conjuntos.
 - `dir_docs_producto` — `product-docs`: documentación de producto, fuera del `docs/` de proceso.
 - `archivo_experiencias` — `EXPERIENCIAS.md`: el registro append-only.

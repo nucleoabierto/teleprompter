@@ -76,12 +76,13 @@ Instrucciones para que un agente gestione el pull request de una tarea como veh�
 2. **Empujar la rama** con `git push`, para que el merge remoto incluya los últimos commits —los veredictos de la sección de revisión entre ellos—.
 3. **Fusionar el PR** con `gh pr merge <n> --squash --delete-branch`, fijando el mensaje del commit resultante con `--subject` y `--body`: el commit del squash es el único que queda de la tarea en la rama principal, así que su mensaje se redacta con las reglas del skill `commit` —asunto convencional, el del título del PR, y cuerpo que explica el qué y el porqué del cambio completo—; sin fijarlo, el cuerpo por defecto concatena los mensajes de todos los commits de la rama, rondas y escrituras de sensores incluidas. El cuerpo termina con el pie `Closes #<n>` para que el commit conserve la referencia al PR que lo produjo. La opción `--delete-branch` borra la rama —local y remota— dejando la principal activa.
 4. **Traer el merge:** `git pull` en la rama principal.
-5. **Informar** del merge y del estado del repositorio.
+5. **Limpiar el informe local del PR:** si el PR fusionado tiene informes de `revisar-pr` en el directorio que resuelve la convención `dir_revisiones_pr` de `consultar-artefactos` —archivos `pr-<n>-*.md`—, eliminarlos; cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por el directorio git real —`git rev-parse --git-common-dir`—, que en *worktrees* y submódulos `.git` es un archivo, no un directorio. El informe es estado local efímero y no sobrevive al cierre —un merge por otra vía puede dejarlo huérfano; borrarlo a mano no tiene efecto—.
+6. **Informar** del merge y del estado del repositorio.
 
 ## Finalización
 
 - Apertura: el PR está abierto, el usuario lo aprobó tras el bucle de comentarios y el invocador recibió el número de PR y el resumen del bucle.
-- Cierre: el PR está fusionado, la rama eliminada y el repositorio local en la rama principal actualizada.
+- Cierre: el PR está fusionado, la rama eliminada, el repositorio local en la rama principal actualizada y los informes locales del PR eliminados si existían.
 
 ## Referencias
 
