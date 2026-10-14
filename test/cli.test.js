@@ -63,6 +63,71 @@ test('main exits with usage error on unknown or mutually exclusive flags', async
   assert.equal((await run(['--path', pkg, dest, '--force', '--skip'])).code, EXIT_USAGE);
 });
 
+test('a usage error prints the full formatted help on stderr', async () => {
+  const { code, stderr } = await run([]);
+  assert.equal(code, EXIT_USAGE);
+  const shown = stderr.join('\n');
+  assert.match(shown, /uso: teleprompter/);
+  assert.match(shown, /comandos:/);
+  assert.match(shown, /opciones:/);
+  assert.match(shown, /ejemplos:/);
+});
+
+test('help and --help print the general help on stdout and exit 0', async () => {
+  for (const argv of [['help'], ['--help']]) {
+    const { code, stdout, stderr } = await run(argv);
+    assert.equal(code, EXIT_OK, argv.join(' '));
+    assert.deepEqual(stderr, []);
+    const shown = stdout.join('\n');
+    for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'help']) {
+      assert.match(shown, new RegExp(`^  *${cmd} `, 'm'), cmd);
+    }
+    for (const opt of ['--path', '--package', '--force', '--skip', '--dry-run', '--ref']) {
+      assert.match(shown, new RegExp(opt.replace('-', '\\-')), opt);
+    }
+    assert.match(shown, /ejemplos:\n  teleprompter /);
+  }
+});
+
+test('help <comando> prints the synopsis of that command', async () => {
+  for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'help']) {
+    const { code, stdout, stderr } = await run(['help', cmd]);
+    assert.equal(code, EXIT_OK, cmd);
+    assert.deepEqual(stderr, []);
+    assert.match(stdout[0], new RegExp(`uso: teleprompter.*\\b${cmd}\\b`));
+  }
+});
+
+test('--help beside an invocation prints that command\'s help', async () => {
+  const cases = [
+    [['install', '--help'], 'install'],
+    [['guide', '--help'], 'guide'],
+    [['list', '--help'], 'list'],
+    [['check', '--help'], 'check'],
+    [['update', '--help'], 'update'],
+    [['help', '--help'], 'help'],
+    [['o/pkg', '--help'], 'install'],
+    [['--path', 'x', '--help'], 'install'],
+  ];
+  for (const [argv, topic] of cases) {
+    const { code, stdout, stderr } = await run(argv);
+    assert.equal(code, EXIT_OK, argv.join(' '));
+    assert.deepEqual(stderr, []);
+    assert.match(stdout[0], new RegExp(`uso: teleprompter.*\\b${topic}\\b`));
+  }
+});
+
+test('help with an unknown topic or extra arguments is a usage error', async () => {
+  for (const argv of [
+    ['help', 'wat'], ['help', 'a', 'b'], ['help', '--path'], ['--help', 'x'],
+    ['help', 'constructor'], ['help', 'toString'], ['help', '__proto__'],
+  ]) {
+    const { code, stderr } = await run(argv);
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});
+
 test('main exits with usage error and names each missing directory', async () => {
   const dest = tmp();
   const { code, stderr } = await run(['--path', path.join(dest, 'no-pkg'), path.join(dest, 'no-dest')]);
