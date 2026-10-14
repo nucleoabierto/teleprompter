@@ -26,6 +26,8 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
   verificables.
 - [Referencia de `update`](referencia-update.md) — actualizar un
   paquete instalado a la versión que publica su origen.
+- [Referencia de `help`](referencia-help.md) — consultar la ayuda
+  del CLI, general o por comando.
 
 ## Funcionalidades
 

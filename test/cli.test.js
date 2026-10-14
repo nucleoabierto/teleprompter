@@ -98,6 +98,25 @@ test('help <comando> prints the synopsis of that command', async () => {
   }
 });
 
+test('--help beside an invocation prints that command\'s help', async () => {
+  const cases = [
+    [['install', '--help'], 'install'],
+    [['guide', '--help'], 'guide'],
+    [['list', '--help'], 'list'],
+    [['check', '--help'], 'check'],
+    [['update', '--help'], 'update'],
+    [['help', '--help'], 'help'],
+    [['o/pkg', '--help'], 'install'],
+    [['--path', 'x', '--help'], 'install'],
+  ];
+  for (const [argv, topic] of cases) {
+    const { code, stdout, stderr } = await run(argv);
+    assert.equal(code, EXIT_OK, argv.join(' '));
+    assert.deepEqual(stderr, []);
+    assert.match(stdout[0], new RegExp(`uso: teleprompter.*\\b${topic}\\b`));
+  }
+});
+
 test('help with an unknown topic or extra arguments is a usage error', async () => {
   for (const argv of [
     ['help', 'wat'], ['help', 'a', 'b'], ['help', '--path'], ['--help', 'x'],

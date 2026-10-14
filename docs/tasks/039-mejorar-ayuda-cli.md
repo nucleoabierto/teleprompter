@@ -24,14 +24,15 @@ Sustituir la línea de uso monolítica actual —que comprime los cinco subcoman
 
 ## Resultado esperado
 
-- `src/cli.js` gana un comando de ayuda como cabe esperar de un CLI: `teleprompter help` y `teleprompter --help` imprimen por stdout la ayuda general formateada —descripción breve, una línea por subcomando con su sinopsis y qué hace, las opciones y ejemplos— y salen con código 0; `teleprompter help <subcomando>` imprime la ayuda de ese subcomando. La invocación inválida sigue emitiendo la ayuda por stderr con el código de uso, ahora con el texto estructurado en lugar de la línea única.
+- `src/cli.js` gana un comando de ayuda como cabe esperar de un CLI: `teleprompter help` y `teleprompter --help` imprimen por stdout la ayuda general formateada —descripción breve, una línea por subcomando con su sinopsis y qué hace, las opciones y ejemplos— y salen con código 0; `teleprompter help <subcomando>` imprime la ayuda de ese subcomando, igual que `teleprompter <subcomando> --help`. La invocación inválida sigue emitiendo la ayuda por stderr con el código de uso, ahora con el texto estructurado en lugar de la línea única.
 - `test/cli.test.js` actualizado para cubrir la nueva salida y el nuevo comando.
-- Si el manual reproduce el texto de ayuda, la referencia correspondiente queda actualizada.
+- `manual/referencia-help.md` documenta el comando y entra en los índices del manual y en la navegación del sitio; el bloque de gramática de `docs/instalador.md` enumera `help`.
 
 ## Criterios de calidad
 
 - `teleprompter help` y `teleprompter --help` muestran la ayuda general por stdout y salen con código 0.
 - `teleprompter help <subcomando>` muestra la ayuda del subcomando indicado; un nombre desconocido es error de uso.
+- `teleprompter <subcomando> --help` muestra la ayuda del subcomando invocado por stdout con código 0; en la forma corta de instalación el comando implícito es `install`.
 - La ayuda general muestra cada subcomando (`install`, `guide`, `list`, `check`, `update`) con su sinopsis en líneas separadas y legibles en terminal, las opciones (`--path`, `--package`, `--force`, `--skip`, `--dry-run`, `--ref`) y al menos un ejemplo de uso.
 - La invocación sin argumentos o inválida sigue saliendo con el código de uso y emite la ayuda estructurada por stderr.
 - `npm test` queda en verde con la cobertura exigida (100 % de líneas, funciones y ramas en `src/`).
@@ -99,6 +100,7 @@ Caso de uso: «el usuario consulta la ayuda» —derivado del objetivo; la tarea
 - `teleprompter help` imprime la ayuda general por stdout y termina con código 0 (O)
 - `teleprompter --help` imprime la misma ayuda general por stdout, código 0 (I)
 - `teleprompter help <subcomando>` para cada uno de `install`, `guide`, `list`, `check`, `update` imprime la ayuda de ese subcomando por stdout, código 0 (M)
+- `teleprompter <subcomando> --help` —incluida la forma corta de instalación, cuyo comando implícito es `install`— imprime la ayuda de ese comando por stdout, código 0 (I)
 - `teleprompter help <nombre desconocido>` es error de uso (E)
 - La invocación sin argumentos o con argumentos inválidos emite la ayuda general completa por stderr con `EXIT_USAGE`, como antes pero con el texto estructurado (regresión)
 - La ayuda general muestra los cinco subcomandos con su sinopsis, las opciones `--path`, `--package`, `--force`, `--skip`, `--dry-run`, `--ref` y al menos un ejemplo (M)

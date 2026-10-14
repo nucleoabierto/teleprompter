@@ -34,7 +34,7 @@ comandos:
   check                                   verifica los recursos instalados
   update <paquete> [<origen>]             actualiza un paquete instalado
   help [<comando>]                        muestra esta ayuda o la de un comando
-                                          —«--help» equivale a «help»—
+                                          —«--help» pide la de cada comando—
 
 opciones:
   --path <paquete>     origen local: un directorio con su teleprompter.json (install, update)
@@ -94,8 +94,10 @@ registrado en el lock o el origen explícito de la invocación—
   --force, --skip     resuelven las colisiones sin preguntar
   --dry-run           muestra el plan completo sin escribir nada`,
   help: `uso: teleprompter help [<comando>]
+     teleprompter [<comando>] --help
 
-muestra la ayuda general o la del comando indicado`,
+muestra la ayuda general o la del comando indicado; «--help» tras
+una invocación pide la ayuda de ese comando`,
 };
 const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
 const VALUE_OPTIONS = new Set(['--path', '--ref']);
@@ -138,11 +140,19 @@ function splitArgs(rest) {
 // takes the package name plus an optional explicit origin —a repo
 // spec positional or --path— and --ref overrides the github ref.
 // `help` is the query command —an optional topic from HELP— and
-// `--help` its global alias; like `guide` before it, the word is
-// reserved as first position.
+// `--help` its alias anywhere: as sole argument it asks for the
+// general help, and beside an invocation it asks for that command's
+// —the named subcommand, or `install` for the implicit form. Like
+// `guide` before it, the word is reserved as first position.
 function parseArgs(argv) {
   if (argv[0] === '--help') {
     return argv.length === 1 ? { command: 'help' } : null;
+  }
+  if (argv.includes('--help')) {
+    return {
+      command: 'help',
+      topic: Object.hasOwn(HELP, argv[0]) ? argv[0] : 'install',
+    };
   }
   if (argv[0] === 'help') {
     const rest = argv.slice(1);

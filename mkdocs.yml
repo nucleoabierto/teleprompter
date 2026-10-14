@@ -19,6 +19,7 @@ nav:
     - Referencia de list: referencia-list.md
     - Referencia de check: referencia-check.md
     - Referencia de update: referencia-update.md
+    - Referencia de help: referencia-help.md
   - Funcionalidad:
     - Instalar un paquete: 001-instalar-un-paquete.md
     - Listar los paquetes instalados: 002-listar-paquetes-instalados.md
