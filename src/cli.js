@@ -34,6 +34,7 @@ comandos:
   check                                   verifica los recursos instalados
   update <paquete> [<origen>]             actualiza un paquete instalado
   help [<comando>]                        muestra esta ayuda o la de un comando
+                                          —«--help» equivale a «help»—
 
 opciones:
   --path <paquete>     origen local: un directorio con su teleprompter.json (install, update)
@@ -55,8 +56,8 @@ ejemplos:
 // the manual's reference pages.
 const HELP = {
   install: `uso: teleprompter [install] <user/repo[@ref]> [destino] [--ref <ref>]
-     teleprompter [install] --path <paquete> [destino] [--package <nombre>]...
-     [--force|--skip] [--dry-run]
+     teleprompter [install] --path <paquete> [destino]
+     [--package <nombre>]... [--force|--skip] [--dry-run]
 
 instala un paquete en el repositorio cuya raíz es «destino»
 —por defecto, el directorio de trabajo—; «install» es un alias opcional
@@ -80,8 +81,9 @@ instante de instalación y una línea por recurso escrito`,
 
 verifica los recursos instalados contrastando el lock con el disco:
 intacto, modificado, ausente o no verificable`,
-  update: `uso: teleprompter update <paquete> [<user/repo[@ref]>|--path <paquete>]
-     [--ref <ref>] [--force|--skip] [--dry-run]
+  update: `uso: teleprompter update <paquete> [<user/repo[@ref]>] [--ref <ref>]
+     teleprompter update <paquete> --path <paquete>
+     [--force|--skip] [--dry-run]
 
 lleva un paquete instalado a la versión que publica su origen —el
 registrado en el lock o el origen explícito de la invocación—
