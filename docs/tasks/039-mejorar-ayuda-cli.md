@@ -110,4 +110,4 @@ Caso de uso: «el usuario consulta la ayuda» —derivado del objetivo; la tarea
 
 - Subagente: 2026-10-18 — Aprueba
 - Usuario (ejecución): 2026-10-18 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-10-18 — Aprueba
