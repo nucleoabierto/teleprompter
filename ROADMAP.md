@@ -14,9 +14,20 @@ reconstruir el destino.
 
 ## Now
 
-- 1. **Desinstalación de paquetes** — salida limpia del ciclo de
+- 1. **Gestión de conflictos** — respaldo de los archivos en
+  conflicto que se sobrescriben y diff destino-paquete en el
+  anuncio de cada conflicto (hito 1).
+  - Estado: pendiente de arrancar
+  - Justificación: conjunto pequeño y acotado de dos tareas ya
+    definitivas; su superficie —respaldo y diff de conflictos,
+    incluidos los `removal`— es la que la desinstalación
+    consumirá: el plan de retirada de la idea 007 generará
+    conflictos de ese tipo, así que ejecutarla antes evita que
+    la desinstalación nazca sobre la superficie vieja.
+- 2. **Desinstalación de paquetes** — salida limpia del ciclo de
   vida: retirar un paquete y sus recursos registrados con plan
   visible (idea 007).
+  - Estado: pendiente de arrancar
   - Justificación: cierra el ciclo con la infraestructura ya
     construida —plan y registro— y es la de menor riesgo del
     conjunto; su lectura del registro es la que la reproducción
@@ -105,4 +116,5 @@ en Now y el resto ordenado en Next.
   referencia al commit exacto, la descarga se ancla a él y el
   registro conserva la procedencia junto al origen, en install y en
   update—; Desinstalación de paquetes pasa a Now)
+- Usuario: 2026-10-18 — Aprueba (el hito 1 «Gestión de conflictos» entra en Now en primera posición —conjunto pequeño y definitivo cuya superficie de respaldo y diff consumirá la desinstalación, que queda segunda aún sin materializar)
 
