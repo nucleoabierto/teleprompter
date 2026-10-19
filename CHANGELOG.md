@@ -7,6 +7,10 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Added
+
+- El comando `help` y la opción `--help` consultan la ayuda del CLI —la general, con la sinopsis de cada comando, opciones y ejemplos, o la del comando indicado— y la invocación inválida emite ahora esa ayuda estructurada por stderr en lugar de una línea `uso:` monolítica (docs/tasks/039-mejorar-ayuda-cli.md).
+
 ### Changed
 
 - La obtención remota resuelve la referencia pedida al commit exacto, descarga el árbol de ese commit y lo registra en el origen del lock: la instalación queda anclada a un árbol concreto en lugar de a la rama móvil y su procedencia es consultable —pin de obtención remota (docs/epics/007-pin-de-obtencion-remota.md).
