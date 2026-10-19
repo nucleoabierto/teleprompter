@@ -52,7 +52,11 @@ bajo el directorio registrado. Lo que la versión
 cambió sobre una edición local, y los retirados modificados, se
 resuelven como las colisiones de `install`: pregunta interactiva,
 `--force`, `--skip` o aborto sin consola —para un retirado la
-pregunta es quitarlo, no sobrescribirlo—.
+pregunta es quitarlo, no sobrescribirlo—. Cuando una colisión se
+resuelve sobrescribiendo —incluido un retirado decidido a favor de
+la versión— el contenido previo se copia antes a
+`.teleprompter/backups/<operación>/`, espejo de su ruta relativa, y
+el resultado lo anuncia con `respaldo:` como en `install`.
 
 Si el paquete ya está en la versión que publica el origen, responde
 `ya está en esa versión` sin escribir nada. Terminada la ejecución,

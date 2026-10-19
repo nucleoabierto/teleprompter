@@ -5,7 +5,7 @@ import { readLock, writeLock, lockEntry, lockEntries } from './lock.js';
 import { buildPlan, buildUpdatePlan, resolveConflicts } from './plan.js';
 import { executePlan, installPersonalization, ExecutionError } from './execute.js';
 import {
-  resolvesUnder, personalizationTarget, resolveRecordedPath,
+  resolvesUnder, personalizationTarget, resolveRecordedPath, MANAGED_DIR,
 } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 import { classifyResource } from './drift.js';
@@ -458,16 +458,59 @@ function checkGuideDestination(destDir, manifest, err) {
   return null;
 }
 
+// A conflict resolved to overwrite gets its previous content mirrored
+// under `.teleprompter/backups/` — managed territory, like the guide,
+// so the same pre-flight applies: an escaping chain makes the plan
+// non-executable up front (D005) instead of a mid-run failure.
+function checkBackupDestination(destDir, plan, err) {
+  if (!plan.conflicts.some((r) => r.resolution === 'overwrite')) return null;
+  const backupBase = path.join(destDir, MANAGED_DIR, 'backups');
+  if (!resolvesUnder(destDir, backupBase)) {
+    err(`la ruta destino escapa de la raíz: ${backupBase}`);
+    err('plan no ejecutable');
+    return EXIT_PLAN;
+  }
+  return null;
+}
+
+// One directory per backup operation: the UTC stamp keeps successive
+// backups ordered and distinct, the package name attributes them and
+// the recorded version —the install being displaced— goes in when the
+// lock has one; a first install's conflicts were foreign content.
+// The lock is repository data: only a semver-shaped version can be
+// interpolated — anything else would let a hand-edited record write
+// the backup outside the managed root.
+function backupName(manifest, lock) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '');
+  const recorded = lockEntry(lock, manifest.name)?.version;
+  const version = /^\d+\.\d+\.\d+$/.test(recorded ?? '') ? recorded : undefined;
+  const tag = version === undefined ? manifest.name : `${manifest.name}@${version}`;
+  return path.join(MANAGED_DIR, 'backups', `${stamp}-${tag}`);
+}
+
+// Reports the backup an operation produced — in the result or in the
+// failure report when it already ran: where it lives and which
+// targets it preserved.
+function reportBackup(out, actions, backupRoot) {
+  const backedUp = actions.filter((a) => a.backup !== undefined);
+  if (backedUp.length === 0) return;
+  out(`respaldo (${backupRoot}/):`);
+  for (const a of backedUp) out(`  ${a.target}`);
+}
+
 // Runs the resolved plan, materializes the guide, records the install
 // and reports what happened — the same ending for install and update
 // apart from the final verb. On failure the report lists the actions
 // already applied so the partial state is visible.
 function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, origin, verb }) {
+  const backupRoot = plan.conflicts.some((r) => r.resolution === 'overwrite')
+    ? backupName(manifest, lock)
+    : null;
   let actions;
   let guide;
   let guideContent = null;
   try {
-    actions = executePlan(pkgDir, destDir, plan);
+    actions = executePlan(pkgDir, destDir, plan, backupRoot);
     guide = installPersonalization(pkgDir, destDir, manifest);
     writeLock(destDir, lock, manifest, actions, origin);
     // Deliver what was installed, not the package source — the
@@ -481,11 +524,13 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, ori
     for (const a of applied) {
       out(`  ${a.action.padEnd(15)}${a.target}`);
     }
+    reportBackup(out, applied, backupRoot);
     err(`error de ejecución: ${error.message}`);
     return EXIT_EXECUTION;
   }
   out('resultado:');
   for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
+  reportBackup(out, actions, backupRoot);
   if (guide !== null) {
     printGuide(out, guide.target, guideContent);
   }
@@ -584,6 +629,8 @@ async function runUpdate(io, out, err, parsed) {
     if (unresolved !== null) return unresolved;
     const escaping = checkGuideDestination(destDir, manifest, err);
     if (escaping !== null) return escaping;
+    const unsafeBackup = checkBackupDestination(destDir, plan, err);
+    if (unsafeBackup !== null) return unsafeBackup;
 
     if (parsed.flags.has('--dry-run')) {
       out('fin del plan (--dry-run): nada se escribió');
@@ -690,6 +737,8 @@ async function installUnit(io, out, err, { source, unit, destDir, flags, commit 
   if (unresolved !== null) return unresolved;
   const escaping = checkGuideDestination(destDir, manifest, err);
   if (escaping !== null) return escaping;
+  const unsafeBackup = checkBackupDestination(destDir, plan, err);
+  if (unsafeBackup !== null) return unsafeBackup;
 
   if (flags.has('--dry-run')) {
     out('fin del plan (--dry-run): nada se escribió');

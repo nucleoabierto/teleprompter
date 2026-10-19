@@ -1449,6 +1449,134 @@ test('update replaces the subtree wholesale when the map collapses children into
   assert.ok(!fs.existsSync(path.join(dest, 'skills/b.txt')));
 });
 
+test('update backs up an overwritten conflict under the recorded version', async () => {
+  const { dest, pkg } = await installed(validManifest('confb'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  writePkg(pkg, validManifest('confb', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stdout, stderr } = await run(['update', 'confb', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-confb@1\.0\.0$/);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'editado',
+  );
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo');
+  assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+});
+
+test('update backs up a removal conflict resolved to remove', async () => {
+  const { dest, pkg } = await installed(validManifest('retira', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), {
+    'a.txt': 'viejo', 'b.txt': 'b',
+  });
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado también');
+  writePkg(pkg, validManifest('retira', { version: '2.0.0' }), { 'a.txt': 'viejo' });
+  const { code, stderr } = await run(['update', 'retira', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.existsSync(path.join(dest, 'b.txt')), false);
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-retira@1\.0\.0$/);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'b.txt'), 'utf8'),
+    'editado también',
+  );
+});
+
+test('update --skip creates no backup', async () => {
+  const { dest, pkg } = await installed(validManifest('queda'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  writePkg(pkg, validManifest('queda', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'queda', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+});
+
+test('update aborts the plan when the backup root escapes the destination', async () => {
+  const { dest, pkg } = await installed(validManifest('fuera'), { 'a.txt': 'viejo' });
+  const outside = tmp();
+  fs.rmSync(path.join(dest, '.teleprompter'), { recursive: true, force: true });
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  writePkg(pkg, validManifest('fuera', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'fuera', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'backups')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+});
+
+test('a non-semver recorded version is not interpolated into the backup name', async () => {
+  const { dest, pkg } = await installed(validManifest('version-rara'), { 'a.txt': 'viejo' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages['version-rara'].version = 'x/../fuera';
+  fs.writeFileSync(lockPath, `${JSON.stringify(lock)}\n`);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  writePkg(pkg, validManifest('version-rara', { version: '2.0.0' }), { 'a.txt': 'nuevo' });
+  const { code, stderr } = await run(['update', 'version-rara', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-version-rara$/);
+  assert.equal(fs.existsSync(path.join(dest, 'fuera')), false);
+});
+
+test('a failed removal still reports the backup it already made', async () => {
+  const { dest, pkg } = await installed(validManifest('bloquea', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'sub/f.txt', target: 'sub/f.txt' },
+    ],
+  }), { 'a.txt': 'a', 'sub/f.txt': 'f' });
+  fs.writeFileSync(path.join(dest, 'sub', 'f.txt'), 'editado');
+  writePkg(pkg, validManifest('bloquea', { version: '2.0.0' }), { 'a.txt': 'a' });
+  fs.chmodSync(path.join(dest, 'sub'), 0o555);
+  try {
+    const { code, stdout, stderr } = await run(
+      ['update', 'bloquea', '--force'], { cwd: dest },
+    );
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+    const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+    assert.equal(dirs.length, 1);
+    assert.equal(
+      fs.readFileSync(
+        path.join(dest, '.teleprompter', 'backups', dirs[0], 'sub', 'f.txt'), 'utf8'),
+      'editado',
+    );
+  } finally {
+    fs.chmodSync(path.join(dest, 'sub'), 0o755);
+  }
+});
+
+test('a failed intact removal reports an execution error', async () => {
+  const { dest, pkg } = await installed(validManifest('retiro-falla', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'sub/f.txt', target: 'sub/f.txt' },
+    ],
+  }), { 'a.txt': 'a', 'sub/f.txt': 'f' });
+  writePkg(pkg, validManifest('retiro-falla', { version: '2.0.0' }), { 'a.txt': 'a' });
+  fs.chmodSync(path.join(dest, 'sub'), 0o555);
+  try {
+    const { code, stderr } = await run(
+      ['update', 'retiro-falla', '--force'], { cwd: dest },
+    );
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+  } finally {
+    fs.chmodSync(path.join(dest, 'sub'), 0o755);
+  }
+});
+
 test('update reports already at that version when nothing changed', async () => {
   const { dest } = await installed(validManifest('igual'), { 'a.txt': 'a' });
   const { code, stdout } = await run(['update', 'igual'], { cwd: dest });

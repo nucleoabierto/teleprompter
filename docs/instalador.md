@@ -136,6 +136,14 @@ error de invocación. `--force` es destructivo y nunca es el defecto;
 resolución decide por recurso completo (fuera de alcance, según la
 propuesta).
 
+Una colisión resuelta a sobrescribir no pierde el contenido previo:
+antes de la escritura —o del borrado, en un retirado decidido a
+favor de la versión— el destino se copia a
+`.teleprompter/backups/<operación>/`, espejo de su ruta relativa, y
+la ejecución lo anuncia con una sección `respaldo:`. Solo los
+conflictos sobrescritos se respaldan: nada que se omita, cree o
+actualice de forma gestionada produce copia.
+
 ## El registro
 
 Cada instalación ejecutada escribe `teleprompter-lock.json` en la

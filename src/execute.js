@@ -43,14 +43,30 @@ function copyResource(source, dest) {
   }
 }
 
+// The backup of a conflict about to be overwritten: the same verbatim
+// copy the plan writes, mirrored under the operation's backup root so
+// restoring is a plain copy back. The write gets the same
+// symlink-escape guard as any other.
+function backupConflict(destDir, backupRoot, target) {
+  const backupDest = path.join(destDir, backupRoot, target);
+  if (!resolvesUnder(destDir, path.dirname(backupDest))) {
+    throw new Error(`la ruta destino escapa de la raíz: ${backupDest}`);
+  }
+  copyResource(path.join(destDir, target), backupDest);
+  return path.join(backupRoot, target);
+}
+
 // Materializes a resolved plan: creates the precondition directories,
 // then applies exactly the action each resource was assigned. Every
 // write —including the rm that precedes an overwrite— first proves the
 // parent chain resolves under the destination root, so a symlinked
-// directory can never redirect a write outside it.
+// directory can never redirect a write outside it. A `conflict` that
+// reaches a destructive step —overwrite or remove— was resolved to
+// overwrite: with `backupRoot` set, its previous content is mirrored
+// under that root first, and the applied entry carries the location.
 // If anything throws midway, the ExecutionError carries `applied` —
 // the actions already performed — so the caller can report them.
-export function executePlan(pkgDir, destDir, plan) {
+export function executePlan(pkgDir, destDir, plan, backupRoot = null) {
   const applied = [];
   try {
     for (const dir of plan.mkdirs) {
@@ -73,18 +89,34 @@ export function executePlan(pkgDir, destDir, plan) {
         if (!resolvesUnder(destDir, path.dirname(dest))) {
           throw new Error(`la ruta destino escapa de la raíz: ${dest}`);
         }
-        fs.rmSync(dest, { recursive: true, force: true });
-        applied.push({ target: r.target, action });
+        const entry = { target: r.target, action };
+        if (backupRoot !== null && r.status === 'conflict') {
+          entry.backup = backupConflict(destDir, backupRoot, r.target);
+        }
+        try {
+          fs.rmSync(dest, { recursive: true, force: true });
+        } catch (error) {
+          // A backup that already ran still belongs in the report
+          // even when the removal that motivated it fails.
+          if (entry.backup !== undefined) {
+            applied.push({ target: r.target, action: 'backup', backup: entry.backup });
+          }
+          throw error;
+        }
+        applied.push(entry);
       } else if (action === 'create' || action === 'overwrite') {
         if (!resolvesUnder(destDir, path.dirname(dest))) {
           throw new Error(`la ruta destino escapa de la raíz: ${dest}`);
         }
-        if (action === 'overwrite') {
-          fs.rmSync(dest, { recursive: true, force: true });
-        }
         // Pushed before the copy so a failed write still reports the
         // destructive half it already ran.
         const entry = { target: r.target, action };
+        if (action === 'overwrite') {
+          if (backupRoot !== null && r.status === 'conflict') {
+            entry.backup = backupConflict(destDir, backupRoot, r.target);
+          }
+          fs.rmSync(dest, { recursive: true, force: true });
+        }
         applied.push(entry);
         copyResource(path.join(pkgDir, r.source), dest);
         entry.sha256 = hashPath(dest);
