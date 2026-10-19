@@ -23,6 +23,8 @@ colisiones con lo que ya existe y registra la instalación en
   de los recursos instalados.
 - [Referencia de `update`](referencia-update.md) — actualizar un
   paquete instalado a la versión que publica su origen.
+- [Referencia de `help`](referencia-help.md) — consultar la ayuda
+  del CLI, general o por comando.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
   y los escenarios que la suite de pruebas verifica.
 - [Listar los paquetes instalados](002-listar-paquetes-instalados.md)

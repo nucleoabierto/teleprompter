@@ -21,6 +21,7 @@ teleprompter guide [<paquete>]               # consulta la guía instalada
 teleprompter list                            # lista los paquetes instalados
 teleprompter check                           # verifica el estado de los recursos instalados
 teleprompter update <paquete> [<origen>]     # actualiza un paquete instalado
+teleprompter help [<comando>]                # muestra la ayuda (o --help)
 ```
 
 - `user/repo` descarga el tarball público del repositorio por HTTP
