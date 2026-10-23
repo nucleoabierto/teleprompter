@@ -7,6 +7,8 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-23
+
 ### Added
 
 - El comando `help` y la opción `--help` consultan la ayuda del CLI —la general, con la sinopsis de cada comando, opciones y ejemplos, o la del comando indicado— y la invocación inválida emite ahora esa ayuda estructurada por stderr en lugar de una línea `uso:` monolítica (docs/tasks/039-mejorar-ayuda-cli.md).
@@ -88,7 +90,8 @@ destino:
 - Especificación pública del formato de paquete y paquete de referencia
   `ciclo-tareas`.
 
-[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/nucleoabierto/teleprompter/compare/v0.2.0...v0.2.1
