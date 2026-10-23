@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { verifyPackage } from './verify.js';
-import { readLock, writeLock, lockEntry, lockEntries } from './lock.js';
-import { buildPlan, buildUpdatePlan, resolveConflicts } from './plan.js';
+import {
+  readLock, writeLock, lockEntry, lockEntries, removeLockEntry,
+} from './lock.js';
+import {
+  buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts,
+} from './plan.js';
 import { executePlan, installPersonalization, ExecutionError } from './execute.js';
 import { diffResource, show } from './diff.js';
 import {
@@ -34,6 +38,7 @@ comandos:
   list                                    lista los paquetes instalados
   check                                   verifica los recursos instalados
   update <paquete> [<origen>]             actualiza un paquete instalado
+  uninstall <paquete>                     retira un paquete instalado
   help [<comando>]                        muestra esta ayuda o la de un comando
                                           —«--help» pide la de cada comando—
 
@@ -43,7 +48,7 @@ opciones:
   --package <nombre>   selecciona miembros de una colección, repetible (install)
   --force              resuelve colisiones sobrescribiendo (install, update)
   --skip               resuelve colisiones omitiendo (install, update)
-  --dry-run            muestra el plan sin escribir (install, update)
+  --dry-run            muestra el plan sin escribir (install, update, uninstall)
 
 ejemplos:
   teleprompter nucleoabierto/mis-skills
@@ -94,6 +99,13 @@ registrado en el lock o el origen explícito de la invocación—
   --ref <ref>         sobrescribe el ref de un origen de repositorio
   --force, --skip     resuelven las colisiones sin preguntar
   --dry-run           muestra el plan completo sin escribir nada`,
+  uninstall: `uso: teleprompter uninstall <paquete> [--dry-run]
+
+retira del repositorio los recursos que el paquete registró en el
+lock —los intactos se eliminan, los modificados localmente se
+conservan— y deja el registro sin su entrada
+
+  --dry-run           muestra el plan de retirada sin escribir nada`,
   help: `uso: teleprompter help [<comando>]
      teleprompter [<comando>] --help
 
@@ -140,6 +152,9 @@ function splitArgs(rest) {
 // and `check` admit nothing — no options, no destination. `update`
 // takes the package name plus an optional explicit origin —a repo
 // spec positional or --path— and --ref overrides the github ref.
+// `uninstall` takes just the package name —it works on the working
+// directory's lock— and --dry-run; the resolution flags are not its
+// vocabulary until the drift policy lands in the next task.
 // `help` is the query command —an optional topic from HELP— and
 // `--help` its alias anywhere: as sole argument it asks for the
 // general help, and beside an invocation it asks for that command's
@@ -197,6 +212,15 @@ function parseArgs(argv) {
       ref: options['--ref'],
       flags,
     };
+  }
+  if (argv[0] === 'uninstall') {
+    const split = splitArgs(argv.slice(1));
+    if (split === null) return null;
+    const { args, flags, options } = split;
+    if (Object.keys(options).length > 0) return null;
+    if (args.length !== 1) return null;
+    if (flags.has('--force') || flags.has('--skip')) return null;
+    return { command: 'uninstall', pkg: args[0], flags };
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
   const split = splitArgs(rest);
@@ -661,6 +685,48 @@ async function runUpdate(io, out, err, parsed) {
   }
 }
 
+// `uninstall` is the way out of the lifecycle: it removes what the
+// lock recorded for the package —intact resources leave, drifted ones
+// are kept and announced— and rewrites the registry without the
+// package's entry. The drift policy lands in the next task: when a
+// `keep` degrades to a `conflict`/`removal` entry, the plan's
+// `conflicts` list stops being empty and the conflict machinery —
+// settle, backups — engages between the plan and the dry-run cut.
+async function runUninstall(io, out, err, parsed) {
+  const destDir = io.cwd;
+  const lock = readLock(destDir);
+  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  const record = lockEntry(lock, parsed.pkg);
+  if (record === undefined) {
+    err(`el paquete "${parsed.pkg}" no está instalado`);
+    return EXIT_USAGE;
+  }
+  const plan = buildUninstallPlan(destDir, record);
+  printPlan(plan, out, 'plan de retirada:');
+  if (parsed.flags.has('--dry-run')) {
+    out('fin del plan (--dry-run): nada se escribió');
+    return EXIT_OK;
+  }
+  let actions;
+  try {
+    // No package side: the removal plan never reads a `source`, so
+    // the destination stands in for the unused pkgDir argument.
+    actions = executePlan(destDir, destDir, plan);
+    removeLockEntry(destDir, lock, parsed.pkg);
+  } catch (error) {
+    const applied = error instanceof ExecutionError ? error.applied : actions;
+    for (const a of applied) {
+      out(`  ${a.action.padEnd(15)}${a.target}`);
+    }
+    err(`error de ejecución: ${error.message}`);
+    return EXIT_EXECUTION;
+  }
+  out('resultado:');
+  for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
+  out(`desinstalado: ${parsed.pkg}@${record.version}`);
+  return EXIT_OK;
+}
+
 const isDir = (p) => {
   try {
     return fs.statSync(p).isDirectory();
@@ -813,5 +879,6 @@ export async function main(argv, io = {}) {
   if (parsed.command === 'list') return showList(io, out);
   if (parsed.command === 'check') return showCheck(io, out);
   if (parsed.command === 'update') return runUpdate(io, out, err, parsed);
+  if (parsed.command === 'uninstall') return runUninstall(io, out, err, parsed);
   return runInstall(io, out, err, parsed);
 }

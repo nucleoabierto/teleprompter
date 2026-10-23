@@ -80,7 +80,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
     assert.equal(code, EXIT_OK, argv.join(' '));
     assert.deepEqual(stderr, []);
     const shown = stdout.join('\n');
-    for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'help']) {
+    for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'uninstall', 'help']) {
       assert.match(shown, new RegExp(`^  *${cmd} `, 'm'), cmd);
     }
     for (const opt of ['--path', '--package', '--force', '--skip', '--dry-run', '--ref']) {
@@ -91,7 +91,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
 });
 
 test('help <comando> prints the synopsis of that command', async () => {
-  for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'help']) {
+  for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'uninstall', 'help']) {
     const { code, stdout, stderr } = await run(['help', cmd]);
     assert.equal(code, EXIT_OK, cmd);
     assert.deepEqual(stderr, []);
@@ -106,6 +106,7 @@ test('--help beside an invocation prints that command\'s help', async () => {
     [['list', '--help'], 'list'],
     [['check', '--help'], 'check'],
     [['update', '--help'], 'update'],
+    [['uninstall', '--help'], 'uninstall'],
     [['help', '--help'], 'help'],
     [['o/pkg', '--help'], 'install'],
     [['--path', 'x', '--help'], 'install'],
@@ -2359,3 +2360,254 @@ test('update aborts when the collection manifest itself is invalid', async () =>
   assert.equal(code, EXIT_MANIFEST);
   assert.match(stderr.join('\n'), /manifiesto de colección inválido/);
 });
+
+test('uninstall removes an intact installed package and its lock entry', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'b.txt', target: 'b.txt' },
+    ],
+  }), { 'a.txt': 'a', 'b.txt': 'b' });
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /plan de retirada:/);
+  assert.match(out, /retire\s+a\.txt/);
+  assert.match(out, /retire\s+b\.txt/);
+  assert.match(out, /resultado:\n( {2}remove\s+\S+\n)+/);
+  assert.match(out, /desinstalado: p@1\.0\.0/);
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.ok(!fs.existsSync(path.join(dest, 'b.txt')));
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall removes a recorded directory whole', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'skills', target: 'skills/' }],
+  }), { 'skills/a.txt': 'a', 'skills/b.txt': 'b' });
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /retire\s+skills\//);
+  assert.ok(!fs.existsSync(path.join(dest, 'skills')));
+});
+
+test('uninstall keeps a recorded directory the user added content to', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'skills', target: 'skills/' }],
+  }), { 'skills/a.txt': 'a' });
+  fs.writeFileSync(path.join(dest, 'skills', 'mio.txt'), 'mío');
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /keep\s+skills\//);
+  assert.equal(fs.readFileSync(path.join(dest, 'skills/mio.txt'), 'utf8'), 'mío');
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall cleans the entry of a resource already gone', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'b.txt', target: 'b.txt' },
+    ],
+  }), { 'a.txt': 'a', 'b.txt': 'b' });
+  fs.rmSync(path.join(dest, 'a.txt'));
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.doesNotMatch(out, /a\.txt/);
+  assert.match(out, /retire\s+b\.txt/);
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall does not touch a resource recorded as skipped', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'instalado');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'ajeno');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        installedAt: '2026-09-28T10:00:00Z',
+        files: [
+          { target: 'a.txt', action: 'create', sha256: hashPath(path.join(dest, 'a.txt')) },
+          { target: 'b.txt', action: 'skip' },
+        ],
+      },
+    },
+  }));
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.doesNotMatch(out, /b\.txt/);
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'ajeno');
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall retires the managed guide with its package', async () => {
+  const { dest } = await installed(validManifest('p', {
+    personalization: 'GUIA.md',
+  }), { 'a.txt': 'a', 'GUIA.md': 'guía' });
+  assert.ok(fs.existsSync(path.join(dest, '.teleprompter/p/GUIA.md')));
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /retire\s+\.teleprompter\/p\/GUIA\.md/);
+  assert.ok(!fs.existsSync(path.join(dest, '.teleprompter/p/GUIA.md')));
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall removes only the named entry from the registry', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', writePkg2('q'), dest]);
+  const { code, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const lock = lockOf(dest);
+  assert.equal(lock.packages.p, undefined);
+  assert.equal(lock.packages.q.version, '1.0.0');
+  assert.equal(fs.readFileSync(path.join(dest, 'q.txt'), 'utf8'), 'q');
+});
+
+test('uninstall of the last package leaves the lock with empty packages', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  const { code } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(lockOf(dest).packages, {});
+  assert.ok(fs.existsSync(path.join(dest, 'teleprompter-lock.json')));
+});
+
+test('uninstall keeps a locally modified resource and says so', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /keep\s+a\.txt/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall never deletes a recorded path that is unsafe or unverifiable', async () => {
+  const dest = tmp();
+  const outside = path.join(path.dirname(dest), 'secreto.txt');
+  fs.writeFileSync(outside, 'secreto');
+  fs.writeFileSync(path.join(dest, 'sin-hash.txt'), 'dato');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [
+          { target: '../secreto.txt', action: 'create', sha256: '0'.repeat(64) },
+          { target: 'sin-hash.txt', action: 'create' },
+        ],
+      },
+    },
+  }));
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /keep\s+\.\.\/secreto\.txt/);
+  assert.match(out, /keep\s+sin-hash\.txt/);
+  assert.equal(fs.readFileSync(outside, 'utf8'), 'secreto');
+  assert.equal(fs.readFileSync(path.join(dest, 'sin-hash.txt'), 'utf8'), 'dato');
+  fs.rmSync(outside, { force: true });
+});
+
+test('uninstall rejects malformed invocations with code 4', async () => {
+  const dest = tmp();
+  for (const argv of [
+    ['uninstall'],
+    ['uninstall', 'p', 'extra'],
+    ['uninstall', 'p', '--path', 'x'],
+    ['uninstall', 'p', '--ref', 'v1'],
+    ['uninstall', 'p', '--package', 'x'],
+    ['uninstall', 'p', '--force'],
+    ['uninstall', 'p', '--skip'],
+    ['uninstall', 'p', '--wat'],
+  ]) {
+    const { code } = await run(argv, { cwd: dest });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+  }
+});
+
+test('uninstall exits 4 when the package is not installed or there is no lock', async () => {
+  const dest = tmp();
+  const { code, stderr } = await run(['uninstall', 'fantasma'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /no está instalado/);
+});
+
+test('uninstall exits 4 on a corrupt lock after the warning', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stdout.join('\n'), /aviso:.*corrupto/);
+  assert.match(stderr.join('\n'), /no está instalado/);
+});
+
+test('uninstall --dry-run shows the plan and writes nothing', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['uninstall', 'p', '--dry-run'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, /plan de retirada:/);
+  assert.match(out, /retire\s+a\.txt/);
+  assert.match(out, /fin del plan \(--dry-run\)/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+});
+
+test('uninstall reports the applied actions when a removal fails midway', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [
+      { source: 'sub/f.txt', target: 'sub/f.txt' },
+      { source: 'a.txt', target: 'a.txt' },
+    ],
+  }), { 'sub/f.txt': 'f', 'a.txt': 'a' });
+  fs.chmodSync(dest, 0o555);
+  try {
+    const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stdout.join('\n'), /remove\s+sub\/f\.txt/);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+    assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+  } finally {
+    fs.chmodSync(dest, 0o755);
+  }
+});
+
+test('uninstall reports the applied actions when the lock rewrite fails', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'sub/f.txt', target: 'sub/f.txt' }],
+  }), { 'sub/f.txt': 'f' });
+  fs.chmodSync(dest, 0o555);
+  try {
+    const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stdout.join('\n'), /remove\s+sub\/f\.txt/);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+  } finally {
+    fs.chmodSync(dest, 0o755);
+  }
+});
+
+test('after uninstall, list and check no longer report the package', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', writePkg2('q'), dest]);
+  await run(['uninstall', 'p'], { cwd: dest });
+  const listed = await run(['list'], { cwd: dest });
+  assert.equal(listed.code, EXIT_OK);
+  assert.match(listed.stdout.join('\n'), /q@1\.0\.0/);
+  assert.doesNotMatch(listed.stdout.join('\n'), /p@/);
+  const checked = await run(['check'], { cwd: dest });
+  assert.equal(checked.code, EXIT_OK);
+  assert.doesNotMatch(checked.stdout.join('\n'), /p@/);
+});
+
+function writePkg2(name) {
+  const pkg = path.join(tmp(), name);
+  writePkg(pkg, validManifest(name, {
+    install: [{ source: `${name}.txt`, target: `${name}.txt` }],
+  }), { [`${name}.txt`]: name });
+  return pkg;
+}

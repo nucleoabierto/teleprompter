@@ -125,12 +125,27 @@ export function writeLock(destDir, lock, manifest, actions, origin) {
       },
     },
   };
-  // Atomic write: the serialized lock goes to a temp file in the
-  // same directory — rename is only atomic within one filesystem —
-  // and is then renamed over the real name, so a crash mid-write
-  // leaves the old lock or the new one, never a truncated file. The
-  // pid suffix keeps the temp name unique across concurrent runs;
-  // the finally removes it whether the write or the rename failed.
+  persistLock(destDir, data);
+}
+
+// Rewrites the registry without one package's entry: the record
+// stops asserting what the uninstall retired — resources kept by
+// drift included, which no longer belong to the package — while
+// every other entry survives untouched. `packages` may come out
+// empty and the lock is still written: the file itself is the
+// history, so the write stays atomic like any other.
+export function removeLockEntry(destDir, lock, name) {
+  const { [name]: retired, ...rest } = lock.packages;
+  persistLock(destDir, { packages: rest });
+}
+
+// Atomic write: the serialized lock goes to a temp file in the
+// same directory — rename is only atomic within one filesystem —
+// and is then renamed over the real name, so a crash mid-write
+// leaves the old lock or the new one, never a truncated file. The
+// pid suffix keeps the temp name unique across concurrent runs;
+// the finally removes it whether the write or the rename failed.
+function persistLock(destDir, data) {
   const lockPath = path.join(destDir, 'teleprompter-lock.json');
   const tmpPath = `${lockPath}.${process.pid}.tmp`;
   try {

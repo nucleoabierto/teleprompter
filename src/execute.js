@@ -21,6 +21,7 @@ const ACTION = {
   'managed-update': 'overwrite',
   update: 'overwrite',
   retire: 'remove',
+  keep: 'keep',
   conflict: null, // taken from the resource's resolution
 };
 
