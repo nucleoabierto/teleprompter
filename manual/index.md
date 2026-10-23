@@ -23,6 +23,8 @@ colisiones con lo que ya existe y registra la instalación en
   de los recursos instalados.
 - [Referencia de `update`](referencia-update.md) — actualizar un
   paquete instalado a la versión que publica su origen.
+- [Referencia de `uninstall`](referencia-uninstall.md) — retirar un
+  paquete instalado y sus recursos registrados.
 - [Referencia de `help`](referencia-help.md) — consultar la ayuda
   del CLI, general o por comando.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
@@ -38,6 +40,8 @@ colisiones con lo que ya existe y registra la instalación en
 - [Instalar desde una colección](005-instalar-desde-una-coleccion.md)
   — repositorios multi-paquete: selección por nombre para el
   consumidor, declaración del índice para el mantenedor.
+- [Desinstalar un paquete](006-desinstalar-un-paquete.md) — la salida
+  del ciclo de vida y los escenarios que la suite verifica.
 
 ## En el repositorio
 
