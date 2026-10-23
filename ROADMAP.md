@@ -17,7 +17,7 @@ reconstruir el destino.
 - 1. **Gestión de conflictos** — respaldo de los archivos en
   conflicto que se sobrescriben y diff destino-paquete en el
   anuncio de cada conflicto (hito 1).
-  - Estado: pendiente de arrancar
+  - Estado: en curso
   - Justificación: conjunto pequeño y acotado de dos tareas ya
     definitivas; su superficie —respaldo y diff de conflictos,
     incluidos los `removal`— es la que la desinstalación

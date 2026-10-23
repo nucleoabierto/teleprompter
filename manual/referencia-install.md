@@ -117,6 +117,15 @@ Dos opciones excluyentes resuelven todas las colisiones por adelantado:
 Declarar ambas es un error de invocación (código `4`). La resolución
 decide por recurso completo: el contenido no se fusiona.
 
+Cuando una colisión se resuelve sobrescribiendo, el contenido previo
+del destino no se pierde: antes de la escritura se copia a
+`.teleprompter/backups/<operación>/`, espejo de su ruta relativa —un
+directorio por operación, nombrado con la marca temporal UTC y el
+paquete, más la versión registrada que se desplaza cuando el paquete
+ya estaba instalado—. El resultado lo anuncia con una sección
+`respaldo:` que lista lo preservado. Los `skip`, los `create`, los
+`identical` y los `managed-update` no generan respaldo.
+
 ## `--dry-run`
 
 Ejecuta las fases de verificación y plan —incluida, si procede, la

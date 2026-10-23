@@ -60,7 +60,10 @@ plan de instalación:
    interactiva el instalador pregunta por cada recurso en conflicto;
    en una ejecución no interactiva la operación aborta. `--force` y
    `--skip` resuelven todas las colisiones por adelantado (véase la
-   [referencia](referencia-install.md#colisiones)).
+   [referencia](referencia-install.md#colisiones)). Una colisión
+   resuelta a sobrescribir conserva el contenido previo en
+   `.teleprompter/backups/` y el resultado lo anuncia con
+   `respaldo:`.
 
 4. **Registro.** Terminada la ejecución se escribe
    `teleprompter-lock.json` en la raíz del destino y se informa del
@@ -140,8 +143,9 @@ El plan de actualización decide recurso a recurso: lo intacto que la
 versión cambió se sobrescribe (`update`), lo nuevo se crea, lo que la
 versión ya no trae se retira si sigue intacto (`retire`), y las
 ediciones locales se resuelven como las colisiones de `install` —
-interactiva, `--force`, `--skip` o aborto sin consola—. Si la versión
-ya es la registrada, responde que ya está en esa versión.
+interactiva, `--force`, `--skip` o aborto sin consola—, con el mismo
+respaldo del contenido sobrescrito en `.teleprompter/backups/`. Si la
+versión ya es la registrada, responde que ya está en esa versión.
 
 Véase la [referencia de `update`](referencia-update.md).
 

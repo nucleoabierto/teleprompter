@@ -25,6 +25,14 @@ repositorio destino.
 - Un recurso retirado por la versión pero modificado localmente se
   decide igual: quitar o conservar —conservarlo mantiene su registro
   previo—.
+- Una colisión decidida a favor de la versión —sobrescribir una
+  edición local o quitar un retirado modificado— respalda el
+  contenido previo en `.teleprompter/backups/<operación>/`, con la
+  versión registrada que se desplaza en el nombre del directorio, y
+  lo anuncia con `respaldo:`; conservar no genera copia. — módulo
+  `test/cli.test.js` («update backs up an overwritten conflict under
+  the recorded version», «update backs up a removal conflict
+  resolved to remove», «update --skip creates no backup»)
 - Si el mapa cambia de granularidad, el retirado baja a lo
   abandonado: un directorio instalado que la versión nueva declara
   por hijos conserva los hijos entrantes en disco y solo elimina el

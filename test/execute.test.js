@@ -351,3 +351,188 @@ test('a failed execution throws an ExecutionError carrying applied and cause', a
       && error.message === error.cause.message,
   );
 });
+
+// --- respaldo de los conflictos sobrescritos ---
+
+function backupDirs(dest) {
+  const base = path.join(dest, '.teleprompter', 'backups');
+  return fs.existsSync(base) ? fs.readdirSync(base) : [];
+}
+
+test('an overwritten conflict is backed up under .teleprompter/backups/', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const pkg = pkgWith('respalda', { 'a.txt': 'del paquete' });
+  const { code, stdout } = await run(['--path', pkg, dest, '--force']);
+  assert.equal(code, EXIT_OK);
+  const dirs = backupDirs(dest);
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-respalda$/);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'mío',
+  );
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'del paquete');
+  assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+  // The backup is tool territory, not a package resource.
+  const files = readLockFile(dest).packages.respalda.files;
+  assert.ok(files.every((f) => !f.target.startsWith('.teleprompter/backups/')));
+});
+
+test('a directory conflict backs up the whole previous tree', async () => {
+  const dest = tmp();
+  fs.mkdirSync(path.join(dest, 'd', 'sub'), { recursive: true });
+  fs.writeFileSync(path.join(dest, 'd', 'viejo.txt'), 'fuera');
+  fs.writeFileSync(path.join(dest, 'd', 'sub', 'otro.txt'), 'fuera también');
+  const pkg = pkgWith('respalda-dir', { 'd': { 'f.txt': 'dentro' } });
+  const { code } = await run(['--path', pkg, dest, '--force']);
+  assert.equal(code, EXIT_OK);
+  const dirs = backupDirs(dest);
+  assert.equal(dirs.length, 1);
+  const saved = path.join(dest, '.teleprompter', 'backups', dirs[0], 'd');
+  assert.equal(fs.readFileSync(path.join(saved, 'viejo.txt'), 'utf8'), 'fuera');
+  assert.equal(
+    fs.readFileSync(path.join(saved, 'sub', 'otro.txt'), 'utf8'),
+    'fuera también',
+  );
+});
+
+test('a symlink conflict is backed up as a symlink', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'real.txt'), 'apuntado');
+  fs.symlinkSync('real.txt', path.join(dest, 'l'));
+  const pkg = pkgWith('respalda-enlace', { 'l': 'contenido' });
+  const { code } = await run(['--path', pkg, dest, '--force']);
+  assert.equal(code, EXIT_OK);
+  const dirs = backupDirs(dest);
+  assert.equal(dirs.length, 1);
+  const saved = path.join(dest, '.teleprompter', 'backups', dirs[0], 'l');
+  assert.ok(fs.lstatSync(saved).isSymbolicLink());
+  assert.equal(fs.readlinkSync(saved), 'real.txt');
+});
+
+test('a skipped conflict leaves no backup', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const pkg = pkgWith('omite', { 'a.txt': 'del paquete' });
+  const { code } = await run(['--path', pkg, dest, '--skip']);
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(backupDirs(dest), []);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'mío');
+});
+
+test('a managed update overwrites without backing up', async () => {
+  const dest = tmp();
+  const pkg = pkgWith('gestionada', { 'a.txt': 'v1' });
+  assert.equal((await run(['--path', pkg, dest])).code, EXIT_OK);
+  const pkg2 = pkgWith('gestionada', { 'a.txt': 'v2' });
+  const { code } = await run(['--path', pkg2, dest, '--force']);
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(backupDirs(dest), []);
+});
+
+test('interactive resolution backs up only the accepted conflicts', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'mío también');
+  const pkg = pkgWith('mixta', { 'a.txt': 'p1', 'b.txt': 'p2' });
+  const answers = [true, false];
+  const { code } = await run(['--path', pkg, dest], {
+    cwd: dest,
+    interactive: true,
+    createAsker: () => ({
+      ask: async () => answers.shift(),
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK);
+  const dirs = backupDirs(dest);
+  assert.equal(dirs.length, 1);
+  const saved = path.join(dest, '.teleprompter', 'backups', dirs[0]);
+  assert.equal(fs.readFileSync(path.join(saved, 'a.txt'), 'utf8'), 'mío');
+  assert.equal(fs.existsSync(path.join(saved, 'b.txt')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'mío también');
+});
+
+test('two operations produce two distinct backup directories', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'uno');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'dos');
+  const p1 = pkgWith('primero', { 'a.txt': 'p1' });
+  const p2 = pkgWith('segundo', { 'b.txt': 'p2' });
+  assert.equal((await run(['--path', p1, dest, '--force'])).code, EXIT_OK);
+  assert.equal((await run(['--path', p2, dest, '--force'])).code, EXIT_OK);
+  const dirs = backupDirs(dest);
+  assert.equal(dirs.length, 2);
+  assert.ok(dirs.some((d) => d.endsWith('-primero')));
+  assert.ok(dirs.some((d) => d.endsWith('-segundo')));
+});
+
+test('--dry-run creates no backup', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const pkg = pkgWith('ensayo', { 'a.txt': 'del paquete' });
+  const { code } = await run(['--path', pkg, dest, '--force', '--dry-run']);
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(backupDirs(dest), []);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'mío');
+});
+
+test('an execution error still reports where the backup landed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const blocked = path.join(dest, 'sub');
+  fs.mkdirSync(blocked);
+  fs.chmodSync(blocked, 0o555);
+  try {
+    const pkg = pkgWith('falla-respaldo', {
+      'a.txt': 'del paquete', 'sub/f.txt': 'x',
+    });
+    const { code, stdout, stderr } = await run(['--path', pkg, dest, '--force']);
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+    const dirs = backupDirs(dest);
+    assert.equal(dirs.length, 1);
+    assert.equal(
+      fs.readFileSync(
+        path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+      'mío',
+    );
+  } finally {
+    fs.chmodSync(blocked, 0o755);
+  }
+});
+
+test('a backup root that escapes the destination aborts the plan', async () => {
+  const dest = tmp();
+  const outside = tmp();
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const pkg = pkgWith('respaldo-fuera', { 'a.txt': 'del paquete' });
+  const { code, stderr } = await run(['--path', pkg, dest, '--force']);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'backups')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'mío');
+});
+
+test('executePlan keeps its own backup escape guard as an API', async () => {
+  const { executePlan } = await import('../src/execute.js');
+  const dest = tmp();
+  const outside = tmp();
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'mío');
+  const pkg = pkgWith('guarda-respaldo', { 'a.txt': 'del paquete' });
+  const plan = {
+    mkdirs: [],
+    conflicts: [{ source: 'a.txt', target: 'a.txt', status: 'conflict', resolution: 'overwrite' }],
+    resources: [{ source: 'a.txt', target: 'a.txt', status: 'conflict', resolution: 'overwrite' }],
+  };
+  assert.throws(
+    () => executePlan(pkg, dest, plan, '.teleprompter/backups/op'),
+    /escapa de la raíz/,
+  );
+  assert.equal(fs.existsSync(path.join(outside, 'backups')), false);
+});

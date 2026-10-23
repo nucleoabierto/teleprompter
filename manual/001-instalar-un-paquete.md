@@ -75,6 +75,16 @@ mecánica detallada, en la [referencia](referencia-install.md).
   («--force resolves every conflict as overwrite», «--skip resolves
   every conflict as skip») y `test/cli.test.js` («main exits with usage
   error on unknown or mutually exclusive flags»)
+- **Una colisión resuelta a sobrescribir no pierde el contenido
+  previo:** antes de escribir se copia a
+  `.teleprompter/backups/<operación>/`, espejo de su ruta —un
+  directorio por operación con la marca UTC y el paquete—, y el
+  resultado lo anuncia con `respaldo:`. Ni `skip`, ni `create`, ni
+  `identical` ni `managed-update` generan respaldo. — módulo
+  `test/execute.test.js` («an overwritten conflict is backed up under
+  .teleprompter/backups/», «interactive resolution backs up only the
+  accepted conflicts», «a skipped conflict leaves no backup», «a
+  managed update overwrites without backing up»)
 - **`--dry-run` muestra el plan y termina sin escribir ni registrar.**
   — módulo `test/plan.test.js`, «--dry-run prints the plan and exits
   without writing»
