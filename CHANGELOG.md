@@ -10,7 +10,7 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 ### Added
 
 - El comando `help` y la opción `--help` consultan la ayuda del CLI —la general, con la sinopsis de cada comando, opciones y ejemplos, o la del comando indicado— y la invocación inválida emite ahora esa ayuda estructurada por stderr en lugar de una línea `uso:` monolítica (docs/tasks/039-mejorar-ayuda-cli.md).
-- Un conflicto resuelto a sobrescribir —en `install` o `update`, incluido un retirado decidido a favor de la versión— conserva el contenido previo del destino en `.teleprompter/backups/<operación>/`, espejo de su ruta, y el resultado lo anuncia con `respaldo:` —gestión de conflictos (docs/tasks/040-respaldar-conflictos-sobrescritos.md).
+- La gestión de conflictos anuncia cada colisión con el diff unificado entre el contenido del destino y el del paquete —antes de la pregunta interactiva y en el listado no interactivo, archivo a archivo cuando el recurso es una carpeta—, y un conflicto resuelto a sobrescribir —en `install` o `update`, incluido un retirado decidido a favor de la versión— conserva el contenido previo en `.teleprompter/backups/<operación>/`, espejo de su ruta, con anuncio `respaldo:` —gestión de conflictos (docs/tasks/040-respaldar-conflictos-sobrescritos.md, docs/tasks/041-mostrar-diff-archivos-conflicto.md).
 
 ### Changed
 

@@ -4,6 +4,7 @@ import { verifyPackage } from './verify.js';
 import { readLock, writeLock, lockEntry, lockEntries } from './lock.js';
 import { buildPlan, buildUpdatePlan, resolveConflicts } from './plan.js';
 import { executePlan, installPersonalization, ExecutionError } from './execute.js';
+import { diffResource, show } from './diff.js';
 import {
   resolvesUnder, personalizationTarget, resolveRecordedPath, MANAGED_DIR,
 } from './paths.js';
@@ -407,10 +408,13 @@ function checkVerified(result, out, err, expectedName) {
 
 // The D006 policy in one place: --force and --skip decide ahead, an
 // interactive console asks conflict by conflict, anything else lists
-// and aborts. A `removal` conflict asks about removing and reports
-// the decision as remove/keep — the plan's `overwrite`/`skip`
-// vocabulary stays internal.
-async function settleConflicts(io, out, err, flags, plan) {
+// and aborts. Both surfaces where a conflict is announced show its
+// diff — the abort listing prints each conflict's diff after its
+// line, the interactive prompt shows it before the question, so the
+// decision is made seeing what would change. A `removal` conflict
+// asks about removing and reports the decision as remove/keep —
+// the plan's `overwrite`/`skip` vocabulary stays internal.
+async function settleConflicts(io, out, err, flags, plan, destDir, pkgDir) {
   if (plan.conflicts.length === 0) return null;
   if (flags.has('--force')) {
     await resolveConflicts(plan, () => 'overwrite');
@@ -420,16 +424,23 @@ async function settleConflicts(io, out, err, flags, plan) {
     const asker = io.createAsker();
     try {
       await resolveConflicts(plan, async (r) => {
+        for (const line of diffResource(destDir, pkgDir, r)) out(line);
+        // The announced name is lock/manifest data: control
+        // characters in it would forge output, so it is escaped.
+        const shown = show(r.target);
         const question = r.removal === true
-          ? `el recurso ${r.target} se retira y tiene cambios locales: ¿quitar? [s/N] `
-          : `colisión en ${r.target}: ¿sobrescribir? [s/N] `;
+          ? `el recurso ${shown} se retira y tiene cambios locales: ¿quitar? [s/N] `
+          : `colisión en ${shown}: ¿sobrescribir? [s/N] `;
         return (await asker.ask(question)) ? 'overwrite' : 'skip';
       });
     } finally {
       asker.close();
     }
   } else {
-    for (const r of plan.conflicts) err(`conflicto sin resolver: ${r.target}`);
+    for (const r of plan.conflicts) {
+      err(`conflicto sin resolver: ${show(r.target)}`);
+      for (const line of diffResource(destDir, pkgDir, r)) err(line);
+    }
     err('plan no ejecutable: colisiones sin resolver');
     return EXIT_PLAN;
   }
@@ -625,7 +636,8 @@ async function runUpdate(io, out, err, parsed) {
     }
     printPlan(plan, out, 'plan de actualización:');
 
-    const unresolved = await settleConflicts(io, out, err, parsed.flags, plan);
+    const unresolved = await settleConflicts(
+      io, out, err, parsed.flags, plan, destDir, unitDir);
     if (unresolved !== null) return unresolved;
     const escaping = checkGuideDestination(destDir, manifest, err);
     if (escaping !== null) return escaping;
@@ -733,7 +745,8 @@ async function installUnit(io, out, err, { source, unit, destDir, flags, commit 
   const plan = buildPlan(unit.dir, manifest, destDir, result.creates, lock);
   printPlan(plan, out, 'plan de instalación:');
 
-  const unresolved = await settleConflicts(io, out, err, flags, plan);
+  const unresolved = await settleConflicts(
+    io, out, err, flags, plan, destDir, unit.dir);
   if (unresolved !== null) return unresolved;
   const escaping = checkGuideDestination(destDir, manifest, err);
   if (escaping !== null) return escaping;

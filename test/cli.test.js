@@ -9,6 +9,7 @@ import { create as tarCreate } from 'tar';
 import {
   main, EXIT_OK, EXIT_MANIFEST, EXIT_PLAN, EXIT_USAGE, EXIT_FETCH, EXIT_EXECUTION,
 } from '../src/cli.js';
+import { hashPath } from '../src/hash.js';
 
 const repoRoot = path.dirname(fileURLToPath(new URL('.', import.meta.url)));
 const referencePkg = path.join(repoRoot, 'packages', 'ciclo-tareas');
@@ -1732,6 +1733,151 @@ test('update --skip keeps local edits and drifted retirements', async () => {
   // The kept file preserves its previous record: it was not written.
   const kept = lockOf(dest).packages.omite.files.find((f) => f.target === 'b.txt');
   assert.notEqual(kept.action, 'keep');
+});
+
+test('a pending conflict lists the diff of what would change', async () => {
+  const { dest, pkg } = await installed(validManifest('dif'), { 'a.txt': 'viejo\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'viejo\neditado\n');
+  writePkg(pkg, validManifest('dif', { version: '2.0.0' }), { 'a.txt': 'viejo\nnuevo\n' });
+  const { code, stderr } = await run(['update', 'dif'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'),
+    /conflicto sin resolver: a\.txt\n--- a\.txt \(destino\)\n\+\+\+ a\.txt \(paquete\)\n@@ -1,2 \+1,2 @@\n viejo\n-editado\n\+nuevo/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo\neditado\n');
+});
+
+test('install shows the conflict diff in the non-interactive listing', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'local\n');
+  const pkg = path.join(tmp(), 'inst');
+  writePkg(pkg, validManifest('inst'), { 'a.txt': 'nuevo\n' });
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'),
+    /conflicto sin resolver: a\.txt\n--- a\.txt \(destino\)\n\+\+\+ a\.txt \(paquete\)\n@@ -1 \+1 @@\n-local\n\+nuevo/);
+});
+
+test('the interactive console shows each conflict diff before its question', async () => {
+  const { dest, pkg } = await installed(validManifest('inter2', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'viejo\n', 'b.txt': 'b\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado\n');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado también\n');
+  writePkg(pkg, validManifest('inter2', { version: '2.0.0' }), { 'a.txt': 'nuevo\n' });
+  const shown = [];
+  const asked = [];
+  const { code, stderr } = await run(['update', 'inter2'], {
+    cwd: dest,
+    interactive: true,
+    out: (m) => shown.push(m),
+    createAsker: () => ({
+      ask: async (q) => { asked.push({ q, seen: shown.join('\n') }); return true; },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // When the question was asked its diff was already out, and the
+  // next conflict's diff was not yet.
+  assert.match(asked[0].seen, /--- a\.txt \(destino\)[\s\S]*-editado\n\+nuevo/);
+  assert.doesNotMatch(asked[0].seen, /editado también/);
+  assert.match(asked[1].seen, /--- b\.txt \(destino\)\n\+\+\+ b\.txt \(ausente\)\n@@ -1 \+0,0 @@\n-editado también/);
+  assert.equal(asked.length, 2);
+  assert.match(asked[0].q, /sobrescribir/);
+  assert.match(asked[1].q, /¿quitar\?/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'nuevo\n');
+  assert.ok(!fs.existsSync(path.join(dest, 'b.txt')));
+});
+
+test('--force and --skip resolve conflicts without showing a diff', async () => {
+  for (const flag of ['--force', '--skip']) {
+    const { dest, pkg } = await installed(validManifest('nodiff'), { 'a.txt': 'viejo\n' });
+    fs.writeFileSync(path.join(dest, 'a.txt'), 'editado\n');
+    writePkg(pkg, validManifest('nodiff', { version: '2.0.0' }), { 'a.txt': 'nuevo\n' });
+    const { code, stdout, stderr } = await run(['update', 'nodiff', flag], { cwd: dest });
+    assert.equal(code, EXIT_OK, stderr.join('\n'));
+    assert.doesNotMatch([...stdout, ...stderr].join('\n'), /--- a\.txt/);
+  }
+});
+
+test('a directory conflict shows the diff of each diverging file only', async () => {
+  const dest = tmp();
+  fs.mkdirSync(path.join(dest, 'reglas'), { recursive: true });
+  fs.writeFileSync(path.join(dest, 'reglas', 'igual.txt'), 'igual\n');
+  fs.writeFileSync(path.join(dest, 'reglas', 'mod.txt'), 'viejo\n');
+  fs.writeFileSync(path.join(dest, 'reglas', 'solo.txt'), 'solo destino\n');
+  const pkg = path.join(tmp(), 'dirp');
+  writePkg(pkg, validManifest('dirp', {
+    install: [{ source: 'reglas', target: 'reglas' }],
+  }), {
+    'reglas/igual.txt': 'igual\n',
+    'reglas/mod.txt': 'nuevo\n',
+    'reglas/entrante.txt': 'solo paquete\n',
+  });
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  const shown = stderr.join('\n');
+  assert.match(shown, /conflicto sin resolver: reglas/);
+  assert.match(shown,
+    /--- reglas\/entrante\.txt \(ausente\)\n\+\+\+ reglas\/entrante\.txt \(paquete\)\n@@ -0,0 \+1 @@\n\+solo paquete/);
+  assert.match(shown,
+    /--- reglas\/mod\.txt \(destino\)\n\+\+\+ reglas\/mod\.txt \(paquete\)\n@@ -1 \+1 @@\n-viejo\n\+nuevo/);
+  assert.match(shown,
+    /--- reglas\/solo\.txt \(destino\)\n\+\+\+ reglas\/solo\.txt \(ausente\)\n@@ -1 \+0,0 @@\n-solo destino/);
+  // The identical file inside the conflicted tree produces no diff.
+  assert.doesNotMatch(shown, /igual\.txt \(/);
+});
+
+test('a removal conflict shows the local content it would retire', async () => {
+  const { dest, pkg } = await installed(validManifest('ret', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'a\n', 'b.txt': 'b1\n' });
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado\nlocal\n');
+  writePkg(pkg, validManifest('ret', { version: '2.0.0' }), { 'a.txt': 'a\n' });
+  const { code, stderr } = await run(['update', 'ret'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'),
+    /conflicto sin resolver: b\.txt\n--- b\.txt \(destino\)\n\+\+\+ b\.txt \(ausente\)\n@@ -1,2 \+0,0 @@\n-editado\n-local/);
+});
+
+test('a recorded target escaping the destination never dumps its content', async () => {
+  const dest = tmp();
+  const outside = tmp();
+  fs.writeFileSync(path.join(outside, 'secreto.txt'), 'SECRETO\n');
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a\n');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: { p: {
+      version: '1.0.0',
+      files: [
+        { target: 'a.txt', action: 'create', sha256: hashPath(path.join(dest, 'a.txt')) },
+        {
+          target: path.relative(dest, path.join(outside, 'secreto.txt')),
+          action: 'create', sha256: 'f'.repeat(64),
+        },
+      ],
+    } },
+  }));
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p', { version: '2.0.0' }), { 'a.txt': 'b\n' });
+  const { code, stderr } = await run(['update', 'p', '--path', pkg], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  const shown = stderr.join('\n');
+  assert.match(shown, /conflicto sin resolver:/);
+  assert.match(shown, /\(ruta insegura\)/);
+  assert.doesNotMatch(shown, /SECRETO/);
+});
+
+test('a symlink conflict diffs the link target', async () => {
+  const dest = tmp();
+  fs.symlinkSync('viejo', path.join(dest, 'enlace'));
+  const pkg = path.join(tmp(), 'links');
+  writePkg(pkg, validManifest('links', {
+    install: [{ source: 'enlace', target: 'enlace' }],
+  }));
+  fs.symlinkSync('nuevo', path.join(pkg, 'enlace'));
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'),
+    /--- enlace \(destino\)\n\+\+\+ enlace \(paquete\)\n@@ -1 \+1 @@\n--> viejo\n\+-> nuevo/);
 });
 
 test('update --dry-run prints the plan and writes nothing', async () => {

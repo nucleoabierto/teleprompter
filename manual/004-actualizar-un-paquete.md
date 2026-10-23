@@ -19,12 +19,15 @@ repositorio destino.
   registrado y quedan como el nuevo origen; `--ref` cambia solo el
   ref de un origen de repositorio —con `--path` es un error—.
 - Una edición local sobre un recurso que la versión también cambió
-  se decide caso a caso: la consola interactiva pregunta, `--force`
+  se decide caso a caso: la consola interactiva pregunta mostrando
+  antes el diff entre el destino y la versión entrante, `--force`
   sobrescribe, `--skip` conserva, y sin consola la operación aborta
-  sin escribir.
+  sin escribir tras listar cada conflicto con su diff.
 - Un recurso retirado por la versión pero modificado localmente se
   decide igual: quitar o conservar —conservarlo mantiene su registro
-  previo—.
+  previo—, con el diff mostrando el contenido local que se
+  retiraría. — módulo `test/cli.test.js`, «a removal conflict shows
+  the local content it would retire»
 - Una colisión decidida a favor de la versión —sobrescribir una
   edición local o quitar un retirado modificado— respalda el
   contenido previo en `.teleprompter/backups/<operación>/`, con la

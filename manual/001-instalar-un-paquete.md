@@ -63,13 +63,26 @@ mecánica detallada, en la [referencia](referencia-install.md).
 - **Lo modificado a mano es una colisión,** aunque el registro lo
   reconozca como instalado. — módulo `test/plan.test.js`, «plan marks
   conflict when a recorded resource was modified locally»
-- **Las colisiones se resuelven una a una en consola interactiva.** —
-  módulo `test/plan.test.js`, «an interactive console resolves each
-  conflict per answer»
+- **Las colisiones se resuelven una a una en consola interactiva,**
+  mostrando antes de cada pregunta el diff entre el contenido del
+  destino y el del paquete. — módulos `test/plan.test.js` («an
+  interactive console resolves each conflict per answer») y
+  `test/cli.test.js` («the interactive console shows each conflict
+  diff before its question»)
 - **Sin forma de preguntar ni opciones de resolución, las colisiones
-  abortan la operación sin escribir.** — módulo `test/plan.test.js`,
-  «an interactive console without an asker reports conflicts and
-  aborts»
+  abortan la operación sin escribir** — cada conflicto del listado se
+  anuncia con su diff. — módulos `test/plan.test.js` («an interactive
+  console without an asker reports conflicts and aborts») y
+  `test/cli.test.js` («install shows the conflict diff in the
+  non-interactive listing», «a pending conflict lists the diff of what
+  would change»)
+- **Una carpeta en colisión muestra el diff solo de sus archivos
+  divergentes** — los idénticos no producen salida —; un enlace lo
+  muestra como cambio de su destino, y `--force`/`--skip` no emiten
+  diff porque resuelven sin anunciar. — módulo `test/cli.test.js`
+  («a directory conflict shows the diff of each diverging file only»,
+  «a symlink conflict diffs the link target», «--force and --skip
+  resolve conflicts without showing a diff»)
 - **`--force` y `--skip` resuelven todas las colisiones por adelantado**
   y son mutuamente excluyentes. — módulos `test/plan.test.js`
   («--force resolves every conflict as overwrite», «--skip resolves

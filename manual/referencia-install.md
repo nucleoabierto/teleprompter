@@ -107,6 +107,13 @@ recurso si se sobrescribe o se omite. En una invocación no interactiva
 sin opciones, la operación lista los conflictos y aborta con código `2`
 sin escribir nada.
 
+Toda colisión anunciada lleva su diff: el unificado entre el contenido
+del destino y el del paquete, mostrado antes de la pregunta en la
+consola interactiva y tras `conflicto sin resolver:` en el listado. Si
+el recurso es una carpeta, el diff se resuelve archivo a archivo y solo
+muestra los divergentes; un enlace se muestra como cambio de su
+destino. `--force` y `--skip` no emiten diff: resuelven sin anunciar.
+
 Dos opciones excluyentes resuelven todas las colisiones por adelantado:
 
 - `--force` — el recurso del paquete sobrescribe el destino en cada
