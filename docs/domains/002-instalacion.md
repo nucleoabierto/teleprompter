@@ -26,6 +26,22 @@ instalado.
     - Ancla: `resolveConflicts` en `src/plan.js` (la asignación es
       operación del plan), `settleConflicts` en `src/cli.js` (la
       política) y `createAsker` en `src/prompt.js`
+  - **Diff de conflicto:** la comparación visible destino↔paquete que
+    acompaña el anuncio de cada `conflict` —tras `conflicto sin
+    resolver:` en el listado no interactivo y antes de la pregunta en
+    la interactiva—. Es un diff unificado línea a línea por archivo,
+    resuelto hoja a hoja cuando el recurso es una carpeta: solo las
+    hojas divergentes producen bloque, las unilaterales se muestran
+    como adición o retirada íntegras, los enlaces se comparan por su
+    destino y un `removal` —sin lado entrante— muestra el contenido
+    local que se retiraría. La comparación se hace en crudo y el
+    escape de caracteres de control es solo de presentación; las
+    hojas ilegibles o binarias degradan a un marcador. `--force` y
+    `--skip` no lo emiten: resuelven sin anuncio.
+    - Ancla: `diffResource`, `diffLines` y `show` en `src/diff.js`;
+      `settleConflicts` en `src/cli.js`
+    - Origen: tarea
+      `docs/tasks/041-mostrar-diff-archivos-conflicto.md`
   - **Respaldo:** la copia del contenido previo del destino que un
     conflicto resuelto `overwrite` —sobrescribir o, en un retirado,
     quitar— conserva antes del paso destructivo. Vive bajo
@@ -159,6 +175,12 @@ instalado.
     cadena de padres: el ancestro existente más profundo debe
     resolver a un directorio dentro del destino, en el plan y en la
     ejecución. Ancla: `resolvesUnder` en `src/paths.js`
+  - El anuncio de un conflicto tampoco lee fuera de la raíz —del
+    destino ni del paquete—: la ruta registrada y cada hoja pasan la
+    defensa de cadena antes de leerse, y la que no la supera degrada
+    a `(ruta insegura)` sin exponer contenido. Ancla:
+    `recordedChainSafe` en `src/paths.js` aplicado por `diffResource`
+    en `src/diff.js`
   - Dos entradas `install` no pueden compartir `target`: el plan sería
     ambiguo. Ancla: `checkInstall` en `src/manifest.js`
   - `.teleprompter/` es propiedad de la herramienta, igual que el lock:
@@ -307,8 +329,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-21 (tarea
-  `docs/tasks/040-respaldar-conflictos-sobrescritos.md`)
+- Última revisión: 2026-10-23 (tarea
+  `docs/tasks/041-mostrar-diff-archivos-conflicto.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

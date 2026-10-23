@@ -52,7 +52,8 @@ bajo el directorio registrado. Lo que la versión
 cambió sobre una edición local, y los retirados modificados, se
 resuelven como las colisiones de `install`: pregunta interactiva,
 `--force`, `--skip` o aborto sin consola —para un retirado la
-pregunta es quitarlo, no sobrescribirlo—. Cuando una colisión se
+pregunta es quitarlo, no sobrescribirlo, y su diff muestra el
+contenido local que se retiraría—. Cuando una colisión se
 resuelve sobrescribiendo —incluido un retirado decidido a favor de
 la versión— el contenido previo se copia antes a
 `.teleprompter/backups/<operación>/`, espejo de su ruta relativa, y

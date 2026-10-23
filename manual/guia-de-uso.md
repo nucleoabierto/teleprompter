@@ -57,8 +57,10 @@ plan de instalación:
 
 3. **Ejecución.** Si el plan no tiene colisiones, se ejecuta tal como se
    presentó. Si las hay, se resuelven antes de escribir: en una consola
-   interactiva el instalador pregunta por cada recurso en conflicto;
-   en una ejecución no interactiva la operación aborta. `--force` y
+   interactiva el instalador pregunta por cada recurso en conflicto
+   mostrando antes el diff de lo que cambiaría; en una ejecución no
+   interactiva la operación lista los conflictos con su diff y aborta.
+   `--force` y
    `--skip` resuelven todas las colisiones por adelantado (véase la
    [referencia](referencia-install.md#colisiones)). Una colisión
    resuelta a sobrescribir conserva el contenido previo en

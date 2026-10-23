@@ -14,17 +14,7 @@ reconstruir el destino.
 
 ## Now
 
-- 1. **Gestión de conflictos** — respaldo de los archivos en
-  conflicto que se sobrescriben y diff destino-paquete en el
-  anuncio de cada conflicto (hito 1).
-  - Estado: en curso
-  - Justificación: conjunto pequeño y acotado de dos tareas ya
-    definitivas; su superficie —respaldo y diff de conflictos,
-    incluidos los `removal`— es la que la desinstalación
-    consumirá: el plan de retirada de la idea 007 generará
-    conflictos de ese tipo, así que ejecutarla antes evita que
-    la desinstalación nazca sobre la superficie vieja.
-- 2. **Desinstalación de paquetes** — salida limpia del ciclo de
+- 1. **Desinstalación de paquetes** — salida limpia del ciclo de
   vida: retirar un paquete y sus recursos registrados con plan
   visible (idea 007).
   - Estado: pendiente de arrancar
