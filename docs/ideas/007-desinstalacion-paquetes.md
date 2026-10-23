@@ -5,6 +5,7 @@
 > **Orden sugerido:** 2 de 4 — primera de Next tras el pin (revisión
 > del roadmap 2026-10-04): cierra el ciclo de vida con lo ya
 > construido; el registro ya sabe qué retirar
+> **Procesada en:** docs/proposals/009-desinstalacion-paquetes/
 
 ## Problema
 
