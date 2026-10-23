@@ -26,6 +26,24 @@ instalado.
     - Ancla: `resolveConflicts` en `src/plan.js` (la asignación es
       operación del plan), `settleConflicts` en `src/cli.js` (la
       política) y `createAsker` en `src/prompt.js`
+  - **Respaldo:** la copia del contenido previo del destino que un
+    conflicto resuelto `overwrite` —sobrescribir o, en un retirado,
+    quitar— conserva antes del paso destructivo. Vive bajo
+    `.teleprompter/backups/<operación>/`, espejo de la ruta relativa
+    del recurso —un directorio por operación nombrado
+    `<marca-UTC>-<paquete>[@<versión-registrada>]`, donde la versión
+    es la que el respaldo desplaza y solo entra si el registro la
+    guarda con forma semver, pues el lock es dato que no se
+    interpola a ciegas—. Solo los conflictos sobrescritos lo
+    producen: `skip`, `create`, `identical` y `managed-update` no
+    generan copia, y la entrada aplicada declara su ubicación aunque
+    el paso destructivo falle después.
+    - Ancla: `backupConflict` en `src/execute.js` —la copia usa la
+      misma escritura y la misma guarda de escape del plan—;
+      `backupName`, `checkBackupDestination` y `reportBackup` en
+      `src/cli.js`
+    - Origen: tarea
+      `docs/tasks/040-respaldar-conflictos-sobrescritos.md`
   - **Registro (lock):** `teleprompter-lock.json` en la raíz del
     destino; por paquete guarda `version`, `installedAt` y `files`
     con `target`, acción y `sha256` —las entradas `skip` no llevan
@@ -145,9 +163,12 @@ instalado.
     ambiguo. Ancla: `checkInstall` en `src/manifest.js`
   - `.teleprompter/` es propiedad de la herramienta, igual que el lock:
     la guía declarada se copia ahí fuera del plan y sin detección de
-    colisiones, pero su destino se verifica escribible **antes** de
-    escribir nada —un escape hace el plan no ejecutable (D005)—.
-    Ancla: `installPersonalization` en `src/execute.js` y la
+    colisiones, y el respaldo de los conflictos sobrescritos vive en
+    `backups/` —en ambos casos su destino se verifica escribible
+    **antes** de escribir nada: un escape hace el plan no ejecutable
+    (D005)—.
+    Ancla: `installPersonalization` y `backupConflict` en
+    `src/execute.js`, `MANAGED_DIR` en `src/paths.js` y la
     pre-verificación en `src/cli.js`; D010
   - Un recurso `identical` conserva el registro previo que sigue
     siendo veraz —una omisión `skip`, un hash que coincide— y
@@ -181,10 +202,15 @@ instalado.
   - Ejecutar el plan resuelto: `mkdirs` primero, luego cada recurso
     según su acción; `overwrite` elimina el destino antes de escribir
     —nunca a través de un enlace— y los enlaces se copian como
-    enlaces. Un fallo a mitad lanza `ExecutionError`, que transporta
-    las acciones ya aplicadas y el error original como `cause`, para
-    que el informe muestre el estado parcial.
-    - Ancla: `executePlan` y `ExecutionError` en `src/execute.js`
+    enlaces. Un conflicto que llega a un paso destructivo copia antes
+    su contenido previo al respaldo de la operación, la entrada
+    aplicada declara su ubicación y el resultado lo anuncia con una
+    sección `respaldo:`. Un fallo a mitad lanza `ExecutionError`, que
+    transporta las acciones ya aplicadas y el error original como
+    `cause`, para que el informe muestre el estado parcial —respaldo
+    incluido—.
+    - Ancla: `executePlan`, `backupConflict` y `ExecutionError` en
+      `src/execute.js`; `reportBackup` en `src/cli.js`
   - Registrar la instalación: fusiona el lock preservando otros
     paquetes; `identical` conserva el registro previo veraz o se
     registra con su acción y su hash, y `skip` va sin hash; la
@@ -281,8 +307,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-12 (épica
-  `docs/epics/007-pin-de-obtencion-remota.md`)
+- Última revisión: 2026-10-21 (tarea
+  `docs/tasks/040-respaldar-conflictos-sobrescritos.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
