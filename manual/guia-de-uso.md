@@ -151,6 +151,23 @@ versión ya es la registrada, responde que ya está en esa versión.
 
 Véase la [referencia de `update`](referencia-update.md).
 
+## Desinstalar un paquete
+
+Desde la raíz del repositorio destino, `uninstall` retira los recursos
+que un paquete registró al instalarse:
+
+```sh
+npx @nucleoabierto/teleprompter uninstall ciclo-tareas
+```
+
+El plan de retirada se muestra antes de borrar: lo que sigue intacto
+se elimina (`retire`) y lo que fue modificado a mano se conserva
+anunciado como `keep`. Al terminar, el paquete deja de constar en el
+registro —`list` y `check` ya no lo reportan—.
+
+Véase la [referencia de `uninstall`](referencia-uninstall.md) y los
+escenarios de [desinstalar un paquete](006-desinstalar-un-paquete.md).
+
 ## Instalar desde una colección
 
 Un repositorio puede agrupar varios paquetes —una colección—. Sin

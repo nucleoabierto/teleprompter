@@ -135,6 +135,19 @@ instalado.
       `src/paths.js` y `recordedHash` en `src/plan.js`
     - Origen: tarea
       `docs/tasks/029-retiro-directorio-padre-destruye-targets-hijos.md`
+  - **Plan de retirada:** el plan de `uninstall`: recorre las
+    entradas `files` del paquete registrado y la deriva decide la
+    marca —`retire` para el recurso intacto (propio, la retirada es
+    segura), `keep` para el divergente (modificado o no verificable:
+    estado de plan que lo conserva y lo anuncia, no una resolución),
+    nada para el ya ausente, que sale del plan sin marca como en la
+    actualización—. Las entradas `skip` nunca producen entrada: la
+    instalación nunca las escribió y caen con la entrada del
+    paquete. La guía gestionada es un recurso más —sin la excepción
+    de la guía reemplazada, propia de `update`—.
+    - Ancla: `buildUninstallPlan` en `src/plan.js`
+    - Origen: tarea
+      `docs/tasks/042-uninstall-retira-paquete-intacto.md`
 - **Entidades / estado:**
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
@@ -147,6 +160,11 @@ instalado.
     los retirados con deriva marcados `removal`, `retired` solo las
     marcas `retire`.
     - Ancla: `buildUpdatePlan` en `src/plan.js`
+  - `UninstallPlan` — `{ mkdirs, resources, conflicts, retired }` con
+    la misma forma: `resources` lleva las marcas `retire`/`keep` en
+    el orden registrado y `conflicts` queda vacío hasta que la
+    política de divergencias degrade `keep` a `conflict`/`removal`.
+    - Ancla: `buildUninstallPlan` en `src/plan.js`
   - Hash de recurso — SHA-256 sobre dominios separados (`file\n`,
     `link\n`, `dir\n`) para que tipos distintos nunca colisionen;
     los árboles ordenan sus entradas para que el digest sea
@@ -279,6 +297,18 @@ instalado.
     `removal` preguntan por quitar y resuelven `remove`/`keep`; el
     registro queda a la versión nueva con el origen efectivo.
     - Ancla: `runUpdate` en `src/cli.js`; D016
+  - Retirar un paquete: `teleprompter uninstall <paquete>` opera
+    sobre el directorio de trabajo —sin destino—; nombra el paquete
+    por su entrada del registro, presenta el plan de retirada
+    completo antes de borrar, elimina los recursos `retire` con la
+    misma guarda de escritura que toda acción `remove` y anuncia los
+    `keep`; al terminar reescribe el registro sin la entrada del
+    paquete —atómicamente, con la escritura compartida de
+    `writeLock`— y el lock persiste aunque `packages` quede vacío.
+    Pedir un paquete no instalado es error de invocación (4) y
+    `--dry-run` muestra el plan sin escribir.
+    - Ancla: `runUninstall` en `src/cli.js`, `buildUninstallPlan` en
+      `src/plan.js` y `removeLockEntry` en `src/lock.js`
   - Verificar el estado de lo instalado: `teleprompter check`
     confronta el registro del directorio de trabajo con el disco
     —sin argumentos ni opciones— y muestra por paquete una marca de
@@ -330,7 +360,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-23 (tarea
-  `docs/tasks/041-mostrar-diff-archivos-conflicto.md`)
+  `docs/tasks/042-uninstall-retira-paquete-intacto.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

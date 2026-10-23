@@ -6,7 +6,7 @@ import path from 'node:path';
 import {
   main, EXIT_OK, EXIT_PLAN,
 } from '../src/cli.js';
-import { buildUpdatePlan, resolveConflicts } from '../src/plan.js';
+import { buildUpdatePlan, buildUninstallPlan, resolveConflicts } from '../src/plan.js';
 import { hashPath } from '../src/hash.js';
 
 function tmp() {
@@ -1012,4 +1012,11 @@ test('resolveConflicts awaits a promised decision', async () => {
   const plan = { conflicts: [{ target: 'a.txt' }] };
   await resolveConflicts(plan, async () => 'overwrite');
   assert.equal(plan.conflicts[0].resolution, 'overwrite');
+});
+
+test('buildUninstallPlan tolerates a record without files', () => {
+  const plan = buildUninstallPlan(tmp(), {});
+  assert.deepEqual(plan, {
+    mkdirs: [], resources: [], conflicts: [], retired: [],
+  });
 });

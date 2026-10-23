@@ -17,7 +17,7 @@ reconstruir el destino.
 - 1. **Desinstalación de paquetes** — salida limpia del ciclo de
   vida: retirar un paquete y sus recursos registrados con plan
   visible (idea 007).
-  - Estado: pendiente de arrancar
+  - Estado: en curso
   - Justificación: cierra el ciclo con la infraestructura ya
     construida —plan y registro— y es la de menor riesgo del
     conjunto; su lectura del registro es la que la reproducción
