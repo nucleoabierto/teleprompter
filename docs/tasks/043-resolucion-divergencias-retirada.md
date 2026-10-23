@@ -1,5 +1,9 @@
 # Resolución de divergencias en la retirada
 
+## Estado
+
+**[ ] Pendiente** | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+
 ## Tipo
 
 desarrollo
@@ -17,7 +21,7 @@ fuera del registro del paquete retirado.
 
 ## Dependencias
 
-- Borrador 01.
+- 042.
 
 ## Entrada
 
@@ -71,3 +75,9 @@ fuera del registro del paquete retirado.
    borrarlo, reutilizando la mecánica de respaldo.
 4. Cubrir la suite: cada superficie de decisión, respaldo de lo
    retirado, conservación y registro resultante.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

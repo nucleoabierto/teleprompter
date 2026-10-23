@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Borrador | **[p] Pendiente de revisión** | [a] Aprobada | [d] Descartada
+[ ] Borrador | [p] Pendiente de revisión | **[a] Aprobada** | [d] Descartada
 
 ## Problema
 
@@ -103,11 +103,11 @@ retirada sin escribir.
 
 ## Borradores
 
-- `01-uninstall-retira-paquete-intacto.md` — `uninstall` retira un
+- `docs/tasks/042-uninstall-retira-paquete-intacto.md` — `uninstall` retira un
   paquete instalado intacto
-- `02-resolucion-divergencias-retirada.md` — resolución de divergencias
+- `docs/tasks/043-resolucion-divergencias-retirada.md` — resolución de divergencias
   en la retirada (depende de 01)
 
 ## Revisión
 
-- Usuario: [fecha] — [Aprueba | Solicita cambios | Rechaza]
+- Usuario: 2026-10-23 — Aprueba

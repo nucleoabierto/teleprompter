@@ -3,7 +3,12 @@
 ## General
 
 
+## Hito 1: Desinstalación de paquetes
+<!-- épica: docs/epics/008-desinstalacion-paquetes.md -->
+
+- [ ] docs/tasks/042-uninstall-retira-paquete-intacto.md — `uninstall` retira un paquete instalado intacto
+- [ ] docs/tasks/043-resolucion-divergencias-retirada.md — Resolución de divergencias en la retirada
+
 ## Propuestas en revisión
 
-- [p] docs/proposals/009-desinstalacion-paquetes/ — Desinstalación de paquetes: salida limpia del ciclo de vida (2 borradores)
 

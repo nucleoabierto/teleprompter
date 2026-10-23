@@ -1,5 +1,9 @@
 # `uninstall` retira un paquete instalado intacto
 
+## Estado
+
+**[ ] Pendiente** | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+
 ## Tipo
 
 desarrollo
@@ -87,3 +91,9 @@ a la espera de la política de divergencias del borrador siguiente.
   no aquí.
 - Un directorio registrado intacto se retira entero; el que contiene
   contenido no registrado diverge y se conserva hasta el borrador 02.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
