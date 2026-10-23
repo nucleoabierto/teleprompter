@@ -114,4 +114,4 @@ Casos de uso derivados del objetivo —el hito 1 no tiene PRD—: CU-1 anuncio n
 
 - Subagente: 2026-10-23 — Aprueba
 - Usuario (ejecución): 2026-10-23 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-10-23 — Aprueba
