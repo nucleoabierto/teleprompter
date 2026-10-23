@@ -187,4 +187,4 @@ Todas las expectativas trazan a CU-1 del PRD del conjunto.
 
 - Subagente: 2026-10-23 — Aprueba
 - Usuario (ejecución): 2026-10-23 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-10-23 — Aprueba
