@@ -3,7 +3,7 @@ import path from 'node:path';
 import { isSafeRelative, hasEntry, MANAGED_DIR } from './paths.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
-const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 const TOP_LEVEL_FIELDS = new Set([

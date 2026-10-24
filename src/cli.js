@@ -14,7 +14,7 @@ import {
 } from './paths.js';
 import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
 import { classifyResource } from './drift.js';
-import { loadCollectionManifest } from './manifest.js';
+import { loadCollectionManifest, NAME_RE } from './manifest.js';
 import { isCollectionDir, resolveSelection, describeIndex } from './collection.js';
 
 export const EXIT_OK = 0;
@@ -46,8 +46,8 @@ opciones:
   --path <paquete>     origen local: un directorio con su teleprompter.json (install, update)
   --ref <ref>          referencia de GitHub —rama, tag o commit— (install, update)
   --package <nombre>   selecciona miembros de una colección, repetible (install)
-  --force              resuelve colisiones sobrescribiendo (install, update)
-  --skip               resuelve colisiones omitiendo (install, update)
+  --force              resuelve sin preguntar: sobrescribe o retira (install, update, uninstall)
+  --skip               resuelve sin preguntar: omite o conserva (install, update, uninstall)
   --dry-run            muestra el plan sin escribir (install, update, uninstall)
 
 ejemplos:
@@ -99,12 +99,15 @@ registrado en el lock o el origen explícito de la invocación—
   --ref <ref>         sobrescribe el ref de un origen de repositorio
   --force, --skip     resuelven las colisiones sin preguntar
   --dry-run           muestra el plan completo sin escribir nada`,
-  uninstall: `uso: teleprompter uninstall <paquete> [--dry-run]
+  uninstall: `uso: teleprompter uninstall <paquete> [--force|--skip] [--dry-run]
 
 retira del repositorio los recursos que el paquete registró en el
-lock —los intactos se eliminan, los modificados localmente se
-conservan— y deja el registro sin su entrada
+lock —los intactos se eliminan y los modificados localmente se
+deciden como divergencias: quitarlos, con respaldo previo, o
+conservarlos— y deja el registro sin su entrada
 
+  --force, --skip     resuelven las divergencias sin preguntar:
+                      las retiran todas o las conservan todas
   --dry-run           muestra el plan de retirada sin escribir nada`,
   help: `uso: teleprompter help [<comando>]
      teleprompter [<comando>] --help
@@ -153,8 +156,8 @@ function splitArgs(rest) {
 // takes the package name plus an optional explicit origin —a repo
 // spec positional or --path— and --ref overrides the github ref.
 // `uninstall` takes just the package name —it works on the working
-// directory's lock— and --dry-run; the resolution flags are not its
-// vocabulary until the drift policy lands in the next task.
+// directory's lock— plus the resolution flags, which decide the
+// removal conflicts of drifted resources, and --dry-run.
 // `help` is the query command —an optional topic from HELP— and
 // `--help` its alias anywhere: as sole argument it asks for the
 // general help, and beside an invocation it asks for that command's
@@ -219,7 +222,6 @@ function parseArgs(argv) {
     const { args, flags, options } = split;
     if (Object.keys(options).length > 0) return null;
     if (args.length !== 1) return null;
-    if (flags.has('--force') || flags.has('--skip')) return null;
     return { command: 'uninstall', pkg: args[0], flags };
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
@@ -512,15 +514,21 @@ function checkBackupDestination(destDir, plan, err) {
 // backups ordered and distinct, the package name attributes them and
 // the recorded version —the install being displaced— goes in when the
 // lock has one; a first install's conflicts were foreign content.
-// The lock is repository data: only a semver-shaped version can be
-// interpolated — anything else would let a hand-edited record write
-// the backup outside the managed root.
-function backupName(manifest, lock) {
+// The lock is repository data: only a semver-shaped version and a
+// manifest-shaped name can be interpolated — in install and update
+// the name comes from a verified manifest, but uninstall feeds it
+// from a lock key, and anything else would let a hand-edited record
+// write the backup outside the managed root. An unsafe name leaves
+// the bare stamp.
+function backupName(name, lock) {
   const stamp = new Date().toISOString().replace(/[-:]/g, '');
-  const recorded = lockEntry(lock, manifest.name)?.version;
+  const recorded = lockEntry(lock, name)?.version;
   const version = /^\d+\.\d+\.\d+$/.test(recorded ?? '') ? recorded : undefined;
-  const tag = version === undefined ? manifest.name : `${manifest.name}@${version}`;
-  return path.join(MANAGED_DIR, 'backups', `${stamp}-${tag}`);
+  const safeName = NAME_RE.test(name) ? name : undefined;
+  const tag = safeName === undefined ? undefined
+    : version === undefined ? safeName : `${safeName}@${version}`;
+  return path.join(MANAGED_DIR, 'backups',
+    tag === undefined ? stamp : `${stamp}-${tag}`);
 }
 
 // Reports the backup an operation produced — in the result or in the
@@ -539,7 +547,7 @@ function reportBackup(out, actions, backupRoot) {
 // already applied so the partial state is visible.
 function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, origin, verb }) {
   const backupRoot = plan.conflicts.some((r) => r.resolution === 'overwrite')
-    ? backupName(manifest, lock)
+    ? backupName(manifest.name, lock)
     : null;
   let actions;
   let guide;
@@ -687,11 +695,11 @@ async function runUpdate(io, out, err, parsed) {
 
 // `uninstall` is the way out of the lifecycle: it removes what the
 // lock recorded for the package —intact resources leave, drifted ones
-// are kept and announced— and rewrites the registry without the
-// package's entry. The drift policy lands in the next task: when a
-// `keep` degrades to a `conflict`/`removal` entry, the plan's
-// `conflicts` list stops being empty and the conflict machinery —
-// settle, backups — engages between the plan and the dry-run cut.
+// are removal conflicts the shared policy settles— and rewrites the
+// registry without the package's entry. The conflict machinery —
+// settle, backup preflight, the dry-run cut after both— runs in the
+// same order `update` runs it; what a kept divergence leaves on disk
+// simply stops being the package's, so the entry goes whole.
 async function runUninstall(io, out, err, parsed) {
   const destDir = io.cwd;
   const lock = readLock(destDir);
@@ -703,26 +711,38 @@ async function runUninstall(io, out, err, parsed) {
   }
   const plan = buildUninstallPlan(destDir, record);
   printPlan(plan, out, 'plan de retirada:');
+
+  const unresolved = await settleConflicts(
+    io, out, err, parsed.flags, plan, destDir, destDir);
+  if (unresolved !== null) return unresolved;
+  const unsafeBackup = checkBackupDestination(destDir, plan, err);
+  if (unsafeBackup !== null) return unsafeBackup;
+
   if (parsed.flags.has('--dry-run')) {
     out('fin del plan (--dry-run): nada se escribió');
     return EXIT_OK;
   }
+  const backupRoot = plan.conflicts.some((r) => r.resolution === 'overwrite')
+    ? backupName(parsed.pkg, lock)
+    : null;
   let actions;
   try {
     // No package side: the removal plan never reads a `source`, so
     // the destination stands in for the unused pkgDir argument.
-    actions = executePlan(destDir, destDir, plan);
+    actions = executePlan(destDir, destDir, plan, backupRoot);
     removeLockEntry(destDir, lock, parsed.pkg);
   } catch (error) {
     const applied = error instanceof ExecutionError ? error.applied : actions;
     for (const a of applied) {
       out(`  ${a.action.padEnd(15)}${a.target}`);
     }
+    reportBackup(out, applied, backupRoot);
     err(`error de ejecución: ${error.message}`);
     return EXIT_EXECUTION;
   }
   out('resultado:');
   for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
+  reportBackup(out, actions, backupRoot);
   out(`desinstalado: ${parsed.pkg}@${record.version}`);
   return EXIT_OK;
 }
