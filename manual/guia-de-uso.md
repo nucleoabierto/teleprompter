@@ -161,9 +161,13 @@ npx @nucleoabierto/teleprompter uninstall ciclo-tareas
 ```
 
 El plan de retirada se muestra antes de borrar: lo que sigue intacto
-se elimina (`retire`) y lo que fue modificado a mano se conserva
-anunciado como `keep`. Al terminar, el paquete deja de constar en el
-registro —`list` y `check` ya no lo reportan—.
+se elimina (`retire`) y lo que fue modificado a mano se decide como
+divergencia —con el diff del contenido que se retiraría—: quitarlo,
+con respaldo previo en `.teleprompter/backups/`, o conservarlo;
+`--force` las retira todas y `--skip` las conserva todas; sin
+consola, las divergencias se listan y la operación aborta. Al
+terminar, el paquete deja de constar en el registro —`list` y `check`
+ya no lo reportan—.
 
 Véase la [referencia de `uninstall`](referencia-uninstall.md) y los
 escenarios de [desinstalar un paquete](006-desinstalar-un-paquete.md).

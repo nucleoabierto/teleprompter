@@ -1020,3 +1020,22 @@ test('buildUninstallPlan tolerates a record without files', () => {
     mkdirs: [], resources: [], conflicts: [], retired: [],
   });
 });
+
+test('buildUninstallPlan classifies each recorded entry by drift', () => {
+  const dir = tmp();
+  fs.writeFileSync(path.join(dir, 'a.txt'), 'a');
+  fs.writeFileSync(path.join(dir, 'b.txt'), 'editado');
+  const plan = buildUninstallPlan(dir, {
+    files: [
+      { target: 'a.txt', action: 'create', sha256: hashPath(path.join(dir, 'a.txt')) },
+      { target: 'b.txt', action: 'create', sha256: '0'.repeat(64) },
+      { target: 'gone.txt', action: 'create', sha256: '0'.repeat(64) },
+      { target: 's.txt', action: 'skip' },
+    ],
+  });
+  assert.deepEqual(plan.resources, [
+    { target: 'a.txt', status: 'retire' },
+    { target: 'b.txt', status: 'conflict', removal: true },
+  ]);
+  assert.deepEqual(plan.conflicts, [plan.resources[1]]);
+});

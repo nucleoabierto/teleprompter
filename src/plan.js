@@ -217,13 +217,14 @@ function classifyRemoval(destDir, f, replacedGuide) {
 // The uninstall plan owns nothing on its own — the lock is the base
 // of ownership, so it walks the package's recorded `files` and the
 // drift classification decides the mark:
-//   retire - the resource is intact: it still holds what the
-//            install wrote, so it is managed content and removing
-//            it is safe
-//   keep   - the resource diverged (modified or unverifiable): it
-//            is not provably ours, so it is preserved — a plan
-//            state, not a resolution — until the divergence policy
-//            turns it into a removal conflict the user decides
+//   retire   - the resource is intact: it still holds what the
+//              install wrote, so it is managed content and removing
+//              it is safe
+//   conflict - the resource diverged (modified or unverifiable): it
+//              is not provably ours, so it degrades to a `removal`
+//              conflict the shared policy settles — overwrite means
+//              remove, skip means keep, and there is no incoming
+//              resource, so the entry carries no `source`
 // A recorded target already gone leaves the plan silently — like
 // the absent retired entries of the update plan — and a `skip`
 // entry never produces one at all: the install never wrote it, so
@@ -233,15 +234,14 @@ function classifyRemoval(destDir, f, replacedGuide) {
 // version rewrites the guide; nothing rewrites anything on the
 // way out. Entries keep the recorded order, and the plan keeps
 // the usual shape: nothing to create, the resources list carrying
-// the marks, `conflicts` by filter — empty today, filled when
-// `keep` degrades to `conflict`/`removal` — and `retired` empty.
+// the marks, `conflicts` by filter, `retired` empty.
 export function buildUninstallPlan(destDir, record) {
   const resources = (record.files ?? []).flatMap((f) => {
     if (f.action === 'skip') return [];
     const drift = classifyResource(destDir, f);
     if (drift === 'intact') return [{ target: f.target, status: 'retire' }];
     if (drift === 'missing') return [];
-    return [{ target: f.target, status: 'keep' }];
+    return [{ target: f.target, status: 'conflict', removal: true }];
   });
   return {
     mkdirs: [],

@@ -9,7 +9,7 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ### Added
 
-- `uninstall <paquete>` retira un paquete instalado: presenta el plan de retirada completo antes de borrar —una línea por recurso registrado—, elimina lo que la instalación escribió y sigue intacto —incluida la guía gestionada—, conserva con aviso `keep` lo modificado localmente y deja el registro sin la entrada del paquete —desinstalación de paquetes (docs/epics/008-desinstalacion-paquetes.md).
+- `uninstall <paquete>` retira un paquete instalado: presenta el plan de retirada completo antes de borrar —una línea por recurso registrado—, elimina lo que la instalación escribió y sigue intacto —incluida la guía gestionada—, decide lo que diverge del registro con la misma política de conflictos del resto del producto —diff del contenido local que se retiraría, decisión `remove`/`keep`, `--force`/`--skip` o listado y aborto sin consola—, respalda en `.teleprompter/backups/` lo decidido a retirar y deja el registro sin la entrada del paquete —desinstalación de paquetes (docs/epics/008-desinstalacion-paquetes.md).
 
 ## [0.5.0] - 2026-10-23
 
