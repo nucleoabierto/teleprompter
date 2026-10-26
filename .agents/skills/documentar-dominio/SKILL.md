@@ -16,7 +16,7 @@ description: >
 
 # Documentar dominio
 
-Instrucciones para que un agente mantenga la documentación viva de los dominios. Los dominios se documentan en el directorio de dominios del proyecto que contiene el código del dominio —su ubicación sale de la convención (`convencion dir_dominios` de `consultar-artefactos`) y la documentación vive junto al código que describe—: un documento por dominio y un índice obligatorio. La documentación separa la referencia del modelo (lenguaje ubicuo, entidades, invariantes, operaciones) de la explicación del dominio (propósito, fronteras, decisiones) y ancla sus afirmaciones a elementos de código para poder detectar deriva.
+Instrucciones para que un agente mantenga la documentación viva de los dominios. Los dominios se documentan en el directorio de dominios del proyecto que contiene el código del dominio —su ubicación es la convención `dir_dominios` (`docs/domains` por defecto) y la documentación vive junto al código que describe—: un documento por dominio y un índice obligatorio. La documentación separa la referencia del modelo (lenguaje ubicuo, entidades, invariantes, operaciones) de la explicación del dominio (propósito, fronteras, decisiones) y ancla sus afirmaciones a elementos de código para poder detectar deriva.
 
 ## Cuándo usar
 

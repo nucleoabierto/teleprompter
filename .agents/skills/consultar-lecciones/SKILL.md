@@ -29,7 +29,7 @@ Instrucciones para que un agente recupere las lecciones aprendidas que aplican a
 ## Entrada
 
 - Una descripción del trabajo a realizar: archivos o rutas que se tocarán, comandos que se ejecutarán, tipo de acción y palabras clave de la actividad.
-- El índice de lecciones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de lecciones que fija la convención (`convencion dir_lecciones` de `consultar-artefactos`).
+- El índice de lecciones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de lecciones que fija la convención `dir_lecciones` (`docs/lessons` por defecto).
 
 ## Salida
 
@@ -45,7 +45,7 @@ Instrucciones para que un agente recupere las lecciones aprendidas que aplican a
 
 ## Procedimiento
 
-1. **Leer el índice de lecciones** para obtener los temas con sus disparadores —el índice del directorio de lecciones que resuelve la convención (`convencion dir_lecciones` de `consultar-artefactos`)—.
+1. **Leer el índice de lecciones** para obtener los temas con sus disparadores —el índice del directorio de lecciones (`docs/lessons` por defecto)—.
 2. **Cotejar los disparadores con el trabajo** delegando en `consultar-artefactos`: la operación `coincidencias` del índice devuelve `archivo`, `estado` y `resumen` de cada entrada cuyos disparadores contienen alguno de los términos del trabajo —archivos, comandos o palabras clave—.
 3. **Leer las notas aplicables** —los archivos que devolvió el cotejo— y traerlas al contexto.
 4. **Informar brevemente** de qué lecciones aplican (o que ninguna aplica) y seguir con el trabajo.

@@ -41,7 +41,7 @@ Instrucciones para que un agente convierta la revisión recibida en un *pull req
 
 ## Salida
 
-- El documento de triage persistido en el directorio de la convención `dir_revisiones_pr`, con el nombre `pr-<n>-triage-<yyyymmdd>.md` —el sufijo ordinal `-2`, `-3`… solo aplica si por alguna razón debe crearse un documento nuevo en una fecha ya usada—. Es estado local efímero fuera del control de versiones: `gestionar-pr` lo elimina al cerrar el PR junto con el resto de `pr-<n>-*.md`.
+- El documento de triage persistido en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido—, con el nombre `pr-<n>-triage-<yyyymmdd>.md` —el sufijo ordinal `-2`, `-3`… solo aplica si por alguna razón debe crearse un documento nuevo en una fecha ya usada—. Es estado local efímero fuera del control de versiones: `gestionar-pr` lo elimina al cerrar el PR junto con el resto de `pr-<n>-*.md`.
 - Una entrada por hilo abierto o con actividad nueva: ubicación —ancla archivo:línea o superficie—, cita del comentario, veredicto, severidad, la propuesta que el veredicto exige y, en los aplazamientos, la razón.
 - El resumen en chat: cuántos hilos entraron a cada veredicto y cuántos quedaron como preguntas abiertas.
 - Un triage posterior sobre el mismo PR acumula: reutiliza el documento existente añadiendo las entradas nuevas con su ronda, nunca reclasifica.
@@ -67,7 +67,7 @@ Instrucciones para que un agente convierta la revisión recibida en un *pull req
 
 ### 2. Acumular sobre triages anteriores
 
-5. **Localizar el documento previo del PR** en el directorio que resuelve la convención `dir_revisiones_pr` de `consultar-artefactos` —patrón `pr-<n>-triage-*.md`, el de mayor fecha y sufijo—. Cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`.
+5. **Localizar el documento previo del PR** en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido— —patrón `pr-<n>-triage-*.md`, el de mayor fecha y sufijo—. Cuando el valor empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`.
 6. **Omitir lo ya triagiado, salvo actividad nueva:** un hilo que ya tiene entrada en el documento —clasificado o en preguntas abiertas— no se reclasifica; solo entran los hilos abiertos sin registro. La comparación se hace por el `hilo:` registrado y, como *fallback*, por ancla, cita y autor —el ancla sola no basta: tras empujar correcciones las líneas derivan y `isOutdated` recoloca hilos—.
    - La excepción es la actividad posterior: un hilo registrado vuelve a entrar cuando su par (`visto:`, `estado:`) ya no describe la plataforma —comentarios ajenos más recientes que el `visto:` más reciente registrado, incluidos los de hilos ya resueltos donde aterriza la réplica del revisor, o un `estado: resuelto` registrado que reaparece abierto —la reapertura no genera comentario; la detecta el cambio de estado—; la pata de estado solo dispara en esta dirección —`resuelto`→`abierto`—: un `abierto` registrado que aparece resuelto no genera entrada —la absorbe la omisión de la ejecución—. Genera una entrada nueva en la ronda citando el mismo `hilo:` —las entradas previas no se tocan—. Lo que el propio flujo publicó no computa como actividad —los ítems que terminan con `<!-- factory:revision -->` sí computan: son revisión del revisor aunque los firme la cuenta autenticada—.
    - Si todos los abiertos ya están triagiados sin actividad nueva, informar de que la ronda no trae hilos nuevos y terminar.
@@ -92,12 +92,12 @@ Instrucciones para que un agente convierta la revisión recibida en un *pull req
 El skill ha terminado cuando:
 
 - Cada hilo abierto o con actividad posterior sin triagiar tiene su entrada en el documento —veredicto, severidad, propuesta— o su lugar en preguntas abiertas.
-- El documento está persistido en `dir_revisiones_pr` como `pr-<n>-triage-<yyyymmdd>.md` y el usuario recibió el resumen.
+- El documento está persistido en el directorio de informes de revisión de PR como `pr-<n>-triage-<yyyymmdd>.md` y el usuario recibió el resumen.
 - Ningún hilo fue respondido, resuelto ni corregido —solo clasificado—.
 
 ## Referencias
 
 - `assets/triage.md` — La plantilla del documento de triage que este skill produce.
 - `.agents/skills/revisar-pr/SKILL.md` — El bloque revisor: su plantilla `assets/informe.md` fija la escala de severidades que este documento reutiliza.
-- `.agents/skills/comentar-pr/SKILL.md` — Hermano que ya resuelve `dir_revisiones_pr` con la sustitución de `.git/` y confronta el head del PR.
+- `.agents/skills/comentar-pr/SKILL.md` — Hermano que resuelve el directorio de informes con la sustitución de `.git/` y confronta el head del PR.
 - `.agents/skills/gestionar-pr/SKILL.md` — Patrón «la respuesta es mejorar el código» y la limpieza de `pr-<n>-*.md` al cerrar.

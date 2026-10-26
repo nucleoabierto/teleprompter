@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente | [~] En progreso | [r] En revisión | [x] Completada | [!] Bloqueada
+[ ] Pendiente
 
 [La línea de opciones se mantiene completa y la opción vigente se marca en negrita, marcador y etiqueta incluidos: `**[x] Completada**`.]
 

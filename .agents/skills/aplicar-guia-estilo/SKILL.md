@@ -32,7 +32,7 @@ Instrucciones para que un agente escriba frontend conforme a la guía de estilo 
 
 ## Entrada
 
-- La guía de estilo del proyecto evaluado —su ubicación es la convención `archivo_design`, resoluble con la operación `convencion` de `consultar-artefactos`—, como contrato vigente.
+- La guía de estilo del proyecto evaluado —su ubicación es la convención `archivo_design` (`DESIGN.md` por defecto)—, como contrato vigente.
 - El trabajo de frontend a realizar o el diff ya producido a validar.
 - `references/rubrica-y-validacion.md` — la rúbrica de revisión y las estrategias de validación por niveles.
 

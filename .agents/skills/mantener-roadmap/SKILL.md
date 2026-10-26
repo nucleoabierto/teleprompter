@@ -32,9 +32,9 @@ Instrucciones para que un agente mantenga el roadmap del proyecto evaluado fiel 
 ## Entrada
 
 - La tarea recién completada, comunicada por el ciclo de tareas en su punto de cierre, o la solicitud de sincronización del usuario.
-- El índice de tareas del proyecto evaluado como fuente de verdad del estado de ejecución: qué trabajo está comprometido y en qué estado está cada tarea. Sus consultas se delegan en `consultar-artefactos`, que resuelve su ubicación desde la configuración.
+- El índice de tareas del proyecto evaluado como fuente de verdad del estado de ejecución: qué trabajo está comprometido y en qué estado está cada tarea. Sus consultas se delegan en `consultar-artefactos`, que resuelve su ubicación desde el documento de reglas del índice.
 - Las épicas del proyecto evaluado como fuente del estado de las líneas-épica; su inventario y su estado también se consultan delegando en `consultar-artefactos`.
-- El roadmap del proyecto evaluado —su ubicación es la convención `archivo_roadmap`, resoluble con la operación `convencion` de `consultar-artefactos`—; este skill lo lee y lo escribe directamente. El formato esperado es el que produce `planificar-roadmap`: horizontes Now, Next, Later y No ahora, con campo «Estado» por línea en Now.
+- El roadmap del proyecto evaluado —su ubicación es la convención `archivo_roadmap` (`ROADMAP.md` por defecto)—; este skill lo lee y lo escribe directamente. El formato esperado es el que produce `planificar-roadmap`: horizontes Now, Next, Later y No ahora, con campo «Estado» por línea en Now.
 
 ## Salida
 
@@ -51,7 +51,7 @@ Instrucciones para que un agente mantenga el roadmap del proyecto evaluado fiel 
 
 ## Procedimiento
 
-1. **Localizar el roadmap.** Resolver su ubicación con la operación `convencion archivo_roadmap` de `consultar-artefactos` y buscar el archivo. Si no existe, emitir «roadmap ausente» y terminar sin crear ni invocar nada.
+1. **Localizar el roadmap.** Buscar el archivo en su ubicación de la convención `archivo_roadmap` (`ROADMAP.md` en la raíz por defecto). Si no existe, emitir «roadmap ausente» y terminar sin crear ni invocar nada.
 2. **Reconstruir el estado real de cada línea de Now.** Resolver cada línea del horizonte Now al trabajo que referencia y leer su estado real —las consultas mecánicas se delegan en `consultar-artefactos`: «las agrupaciones del índice con su épica» resuelve los encabezados y sus épicas enlazadas, «el estado de la agrupación» los estados presentes bajo un encabezado y «el estado de la tarea» el estado que su archivo declara—. Una línea que referencia un documento de épica o un encabezado del índice resuelve a la agrupación entera —la agrupación enlazada a la épica en el índice o las tareas bajo el encabezado ligero—; una línea que referencia un archivo de tarea resuelve a esa tarea concreta, esté suelta en el índice o dentro de una agrupación. El estado se evalúa en el orden de la lista:
    - **Completada:** la épica referenciada está completada, o el trabajo de la línea ya no figura en el índice por haberse cerrado —para una tarea, su archivo declara completada—, o todas las líneas de tarea del trabajo están completadas.
    - **Bloqueada:** alguna de sus tareas está bloqueada; las bloqueantes se leen de la declaración de bloqueo que la acompaña en el índice.

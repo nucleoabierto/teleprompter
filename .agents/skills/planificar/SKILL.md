@@ -40,7 +40,7 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 
 ## Salida
 
-- Un documento de épica nuevo en el directorio de épicas de la convención (`convencion dir_epicas` de `consultar-artefactos`) con estado `planificada`, o una épica existente actualizada con las piezas nuevas.
+- Un documento de épica nuevo en el directorio de épicas de la convención `dir_epicas` (`docs/epics` por defecto) con estado `planificada`, o una épica existente actualizada con las piezas nuevas.
 - La agrupación correspondiente en el índice: un encabezado con el título de la épica, las líneas de las tareas bajo él y el comentario de enlace a la épica que la vincula con el documento.
 - Las líneas de las tareas agrupadas se mueven bajo el encabezado de la épica desde su ubicación anterior (en modo promoción, las tareas sueltas; en modo bajo demanda, su agrupación previa).
 
@@ -92,7 +92,7 @@ Instrucciones para que un agente produzca la épica de un conjunto de trabajo: e
 El skill ha terminado cuando:
 
 - El usuario aprobó el borrador de la épica y el PRD.
-- El documento existe en el directorio de épicas (o la épica existente quedó actualizada) con estado `planificada`, y el PRD del conjunto existe en el directorio de PRD de la convención (`convencion dir_prd`) con los casos de uso identificados —o se declaró que el conjunto no lo amerita—.
+- El documento existe en el directorio de épicas (o la épica existente quedó actualizada) con estado `planificada`, y el PRD del conjunto existe en el directorio de PRD de la convención `dir_prd` (`docs/prd` por defecto) con los casos de uso identificados —o se declaró que el conjunto no lo amerita—.
 - El índice refleja la agrupación con su encabezado, el comentario de enlace a la épica y las tareas bajo él.
 
 ## Referencias

@@ -29,7 +29,7 @@ Instrucciones para que un agente libere una versión del proyecto evaluado. La l
 
 ## Entrada
 
-- El changelog del proyecto evaluado; su ubicación la resuelve `operar-changelog` desde la configuración de la instalación.
+- El changelog del proyecto evaluado; su ubicación la resuelve `operar-changelog` desde el documento de reglas del artefacto.
 - La fuente de verdad de la versión actual —la última versión del changelog, el manifiesto del proyecto u otra que el proyecto use—: se detecta o se pregunta al usuario, nunca se asume ni se fija a un gestor concreto.
 - `references/promocion-y-semver.md`: la lista de curación previa a la promoción y la correspondencia entre categorías y bump. Cargarlo al proponer el bump.
 

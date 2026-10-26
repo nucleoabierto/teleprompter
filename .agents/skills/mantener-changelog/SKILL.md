@@ -30,7 +30,7 @@ Instrucciones para que un agente mantenga el changelog del proyecto evaluado. El
 ## Entrada
 
 - La ubicación de los cambios a registrar —árbol de trabajo sin commitear o rango de commits de la tarea—: el skill reconstruye el diff con git a partir de ella, no lo recibe ya materializado.
-- El changelog del proyecto evaluado, si ya existe; su ubicación la resuelve `operar-changelog` desde la configuración de la instalación.
+- El changelog del proyecto evaluado, si ya existe; su ubicación la resuelve `operar-changelog` desde su documento de reglas.
 - Los artefactos de agrupación del sistema de tareas del proyecto evaluado, cuando existen —épicas, propuestas, encabezados del índice de tareas—, para resolver la agregación.
 - `references/formato-y-agregacion.md`: la estructura del formato, los criterios de notabilidad y la política de agregación. Cargarlo al redactar y fusionar entradas.
 

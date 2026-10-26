@@ -30,7 +30,7 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 ## Entrada
 
 - Una descripción del trabajo a realizar: archivos o rutas que se tocarán, comandos que se ejecutarán, tipo de acción y palabras clave de la actividad.
-- El índice de decisiones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de decisiones que fija la convención (`convencion dir_decisiones` de `consultar-artefactos`).
+- El índice de decisiones, cuyos disparadores son el contrato de descubrimiento; vive en el directorio de decisiones que fija la convención `dir_decisiones` (`docs/decisions` por defecto).
 
 ## Salida
 
@@ -47,7 +47,7 @@ Instrucciones para que un agente recupere las decisiones de diseño que aplican 
 
 ## Procedimiento
 
-1. **Leer el índice de decisiones** para obtener las entradas con sus disparadores —el índice del directorio de decisiones que resuelve la convención (`convencion dir_decisiones` de `consultar-artefactos`)—.
+1. **Leer el índice de decisiones** para obtener las entradas con sus disparadores —el índice del directorio de decisiones (`docs/decisions` por defecto)—.
 2. **Cotejar los disparadores con el trabajo** delegando en `consultar-artefactos`: la operación `coincidencias` del índice devuelve `archivo`, `estado` y `resumen` de cada entrada cuyos disparadores contienen alguno de los términos del trabajo —archivos, comandos o palabras clave—.
 3. **Descartar las no vigentes:** las entradas cuyo estado sea `Sustituida` u `Obsoleta` no aplican; si la sustituta existe y aplica, es la que se trae.
 4. **Leer las decisiones aplicables** —los archivos que devolvió el cotejo— y traerlas al contexto.

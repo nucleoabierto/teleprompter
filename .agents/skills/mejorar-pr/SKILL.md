@@ -34,7 +34,7 @@ Instrucciones para que un agente ejecute el documento de triage sobre un *pull r
 ## Entrada
 
 - La referencia del PR: su número, o la rama actual cuando el usuario no da número.
-- El documento de triage de `clasificar-comentarios` para ese PR, en el directorio de la convención `dir_revisiones_pr`.
+- El documento de triage de `clasificar-comentarios` para ese PR, en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido—.
 - `gh` autenticado contra el remoto del repositorio evaluado.
 
 ## Salida
@@ -58,7 +58,7 @@ Instrucciones para que un agente ejecute el documento de triage sobre un *pull r
 
 1. **Resolver el PR:** con número dado, `gh pr view <n>`; sin número, el PR de la rama actual con `gh pr view`. Si no resuelve a un PR abierto, informar y terminar.
 2. **Situar el árbol en la rama del PR:** las correcciones se aplican sobre el cambio —si la rama actual no es la head del PR, `gh pr checkout <n>`— y se deja al día con el head remoto —`git pull` si la rama local va atrás—.
-3. **Localizar el triage más reciente del PR** en el directorio que resuelve la convención `dir_revisiones_pr` de `consultar-artefactos` —patrón `pr-<n>-triage-*.md`, el de mayor fecha y sufijo—. Cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`. Si no hay triage para el PR, informar de que no hay nada que mejorar —sugerir `clasificar-comentarios`— y terminar.
+3. **Localizar el triage más reciente del PR** en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido— —patrón `pr-<n>-triage-*.md`, el de mayor fecha y sufijo—. Cuando el valor empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`. Si no hay triage para el PR, informar de que no hay nada que mejorar —sugerir `clasificar-comentarios`— y terminar.
 4. **Verificar la frescura del triage en ambos sentidos:** cargar los hilos de la plataforma **con su estado** en las tres superficies con `--paginate` —hilos de línea GraphQL con `isResolved` e `isOutdated`, cuerpos de reviews, conversación—:
    - Un hilo abierto sin entrada **ni pregunta abierta** registrada en el triage —la comparación se hace por el `hilo:`— significa revisión nueva no clasificada: informar al usuario. Por defecto se propone `clasificar-comentarios` antes de actuar, porque un triage incompleto ejecuta a ciegas; si el usuario decide ejecutar lo ya triagiado, las entradas sin ejecutar proceden igual.
    - La misma alarma cubre la actividad posterior: un hilo registrado cuyo par (`visto:`, `estado:`) ya no describe la plataforma —comentarios más recientes que el `visto:` más reciente registrado, o `estado: resuelto` que reaparece abierto—. La transición inversa, `abierto` que aparece resuelto, la gestiona la regla de omisión de la entrada sin ejecutar —dos viñetas más abajo—, no la alarma.
@@ -101,5 +101,5 @@ El skill ha terminado cuando:
 ## Referencias
 
 - `.agents/skills/clasificar-comentarios/SKILL.md` — El productor del documento de triage que este skill consume; la plantilla vive en su `assets/triage.md`.
-- `.agents/skills/comentar-pr/SKILL.md` — Hermano que resuelve `dir_revisiones_pr` con la sustitución de `.git/` y publica tras confirmación.
+- `.agents/skills/comentar-pr/SKILL.md` — Hermano que resuelve el directorio de informes con la sustitución de `.git/` y publica tras confirmación.
 - `.agents/skills/gestionar-pr/SKILL.md` — Convención «fuera de alcance → `crear-tareas` + responder con la referencia» y la limpieza de `pr-<n>-*.md` al cerrar.

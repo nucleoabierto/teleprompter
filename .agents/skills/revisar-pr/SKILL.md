@@ -37,7 +37,7 @@ Instrucciones para que un agente someta un *pull request* del proyecto evaluado 
 
 ## Salida
 
-- Un informe de revisión persistido en el directorio de informes de revisión de PR del proyecto evaluado —resuelto con `convencion dir_revisiones_pr` de `consultar-artefactos`—, nombrado `pr-<numero>-<fecha>.md` con la fecha en `yyyymmdd`; el nombre admite re-revisiones del mismo PR y, si el archivo ya existe, lleva un sufijo ordinal al final (`pr-<numero>-<fecha>-2.md`, `-3`…) para no sobrescribirlo. El informe sigue la plantilla `assets/informe.md` —cabecera, resumen del cambio, intención reconstruida con sus fuentes, hallazgos por severidad, preguntas abiertas y veredicto único (`merge`/`improve`/`blocked`)— y es estado local efímero: con el valor por defecto de la convención queda bajo el directorio git del repositorio, fuera del control de versiones, y `gestionar-pr` lo elimina al cerrar el PR —un cierre por otra vía puede dejarlo huérfano; borrarlo a mano no tiene efecto—.
+- Un informe de revisión persistido en el directorio de informes de revisión de PR del proyecto evaluado —`.git/factory/pr-reviews` por defecto, literal embebido—, nombrado `pr-<numero>-<fecha>.md` con la fecha en `yyyymmdd`; el nombre admite re-revisiones del mismo PR y, si el archivo ya existe, lleva un sufijo ordinal al final (`pr-<numero>-<fecha>-2.md`, `-3`…) para no sobrescribirlo. El informe sigue la plantilla `assets/informe.md` —cabecera, resumen del cambio, intención reconstruida con sus fuentes, hallazgos por severidad, preguntas abiertas y veredicto único (`merge`/`improve`/`blocked`)— y es estado local efímero: con el valor por defecto de la convención queda bajo el directorio git del repositorio, fuera del control de versiones, y `gestionar-pr` lo elimina al cerrar el PR —un cierre por otra vía puede dejarlo huérfano; borrarlo a mano no tiene efecto—.
 - El resumen del veredicto en chat, con la ruta del informe.
 
 ## Principios rectores
@@ -54,7 +54,7 @@ Instrucciones para que un agente someta un *pull request* del proyecto evaluado 
 ### 1. Resolver el PR y la ubicación del informe
 
 1. **Resolver el PR:** con número dado, `gh pr view <n>`; sin número, el PR de la rama actual con `gh pr view`. Si el número no resuelve a un PR —inexistente o inaccesible— o la rama no tiene PR, informar de que no hay nada que revisar y terminar. El invocador solo necesita el número —para el nombre del informe—; todo lo demás lo reconstruye el revisor.
-2. **Resolver la ubicación del informe** con la consulta «el valor de la convención `dir_revisiones_pr`» de `consultar-artefactos`, crear el directorio si no existe y fijar el nombre `pr-<numero>-<fecha>.md` con la fecha del día en `yyyymmdd` —con el sufijo ordinal si el archivo ya existe—. Cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por el directorio git real del repositorio —`git rev-parse --git-common-dir`—: en *worktrees* y submódulos `.git` es un archivo, no un directorio.
+2. **Resolver la ubicación del informe:** el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido—, crearlo si no existe y fijar el nombre `pr-<numero>-<fecha>.md` con la fecha del día en `yyyymmdd` —con el sufijo ordinal si el archivo ya existe—. Cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por el directorio git real del repositorio —`git rev-parse --git-common-dir`—: en *worktrees* y submódulos `.git` es un archivo, no un directorio.
 
 ### 2. Lanzar el revisor independiente
 

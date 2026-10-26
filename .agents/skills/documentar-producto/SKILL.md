@@ -35,7 +35,7 @@ Instrucciones para que un agente mantenga viva la documentación de producto del
 ## Entrada
 
 - La ubicación de los cambios de la tarea —árbol de trabajo sin commitear o rango de commits—: el skill reconstruye el diff con git a partir de ella, no lo recibe ya materializado (o el comportamiento del producto, si se documenta por primera vez).
-- El directorio de documentación de producto del proyecto evaluado —resuelto con `convencion dir_docs_producto` de `consultar-artefactos`—: su índice y los documentos existentes (guías, referencia, funcionalidades).
+- El directorio de documentación de producto del proyecto evaluado —la convención `dir_docs_producto` (`manual` en este proyecto)—: su índice y los documentos existentes (guías, referencia, funcionalidades).
 - La suite de pruebas del proyecto, como ancla de los escenarios.
 - `assets/feature.md` como plantilla del documento de funcionalidad.
 

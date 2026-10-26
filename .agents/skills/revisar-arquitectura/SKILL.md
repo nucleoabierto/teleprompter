@@ -37,7 +37,7 @@ Instrucciones para que un agente evalúe la arquitectura de un dominio con crite
 
 ## Salida
 
-- Un informe de revisión de arquitectura persistido en el directorio de revisiones de arquitectura del proyecto que contiene el dominio evaluado —resuelto con `convencion dir_revisiones_arquitectura` de `consultar-artefactos`; la misma regla que los documentos de dominio: junto al código del dominio—. Serie numerada propia de la convención, consistente con las demás series del sistema; sin índice propio: la serie basta.
+- Un informe de revisión de arquitectura persistido en el directorio de revisiones de arquitectura del proyecto que contiene el dominio evaluado —la convención `dir_revisiones_arquitectura` (`docs/architecture-reviews` por defecto); la misma regla que los documentos de dominio: junto al código del dominio—. Serie numerada propia de la convención, consistente con las demás series del sistema; sin índice propio: la serie basta.
 - Contenido del informe:
   - Cabecera con bullets etiquetados: fecha, dominio evaluado y su alcance, intención declarada (documento de dominio, si existe) y decisiones respetadas.
   - Veredicto por criterio de la rúbrica (correcto, mejorable, deficiente, no evaluable) con su evidencia y nivel de confianza.

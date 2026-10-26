@@ -55,10 +55,10 @@ Instrucciones para que un agente cree y mantenga el PRD de un conjunto de trabaj
 ### Creación (invocado por `planificar` al crear la épica)
 
 1. **Reunir el enmarcado:** de la propuesta aprobada, el problema, la oportunidad y el fuera de alcance; de las piezas, los objetivos y resultados esperados. Sin propuesta, partir de la intención del conjunto y las piezas.
-2. **Redactar el PRD** siguiendo `assets/prd.md`: problema y objetivo de producto; usuarios; casos de uso identificados con el prefijo de la convención —`convencion prefijo_caso_uso` de `consultar-artefactos`; `CU-N` bajo la convención por defecto— en lenguaje de negocio —quién busca qué y qué ocurre—, con sus variantes y bordes; comportamiento esperado por área de funcionalidad, observable y sin nombrar funciones ni archivos; criterios de éxito a nivel producto; fuera de alcance de producto.
+2. **Redactar el PRD** siguiendo `assets/prd.md`: problema y objetivo de producto; usuarios; casos de uso identificados con el prefijo de la convención `prefijo_caso_uso` —`CU-N` bajo la convención por defecto— en lenguaje de negocio —quién busca qué y qué ocurre—, con sus variantes y bordes; comportamiento esperado por área de funcionalidad, observable y sin nombrar funciones ni archivos; criterios de éxito a nivel producto; fuera de alcance de producto.
 3. **Aplicar revisión de redacción y pulido mecánico en modo preventivo** —`revisar-redaccion` y `pulir-escritura` si el arnés lo permite—.
 4. **Presentar el PRD junto con el borrador de épica** en la misma puerta humana: el usuario aprueba o pide cambios de ambos a la vez. Si lo rechaza, no crear el archivo.
-5. **Materializar** el PRD en el directorio de PRDs que resuelve la convención (`convencion dir_prd` de `consultar-artefactos`), con el número de la épica que lo porta en la serie, e informar de su ruta para que las piezas lo referencien.
+5. **Materializar** el PRD en el directorio de PRDs de la convención `dir_prd` (`docs/prd` por defecto), con el número de la épica que lo porta en la serie, e informar de su ruta para que las piezas lo referencien.
 
 ### Sensor de cierre (invocado por el ciclo al cerrar una tarea del conjunto)
 

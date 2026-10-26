@@ -34,7 +34,7 @@ Instrucciones para que un agente convierta los hallazgos de un informe de `revis
 ## Entrada
 
 - La referencia del PR: su número, o la rama actual cuando el usuario no da número.
-- El informe de `revisar-pr` para ese PR, en el directorio de la convención `dir_revisiones_pr`.
+- El informe de `revisar-pr` para ese PR, en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido—.
 - `gh` autenticado contra el remoto del repositorio evaluado.
 
 ## Salida
@@ -55,7 +55,7 @@ Instrucciones para que un agente convierta los hallazgos de un informe de `revis
 ### 1. Resolver el PR y el informe
 
 1. **Resolver el PR:** con número dado, `gh pr view <n>`; sin número, el PR de la rama actual con `gh pr view`. Si no resuelve a un PR abierto, informar y terminar.
-2. **Localizar el informe más reciente del PR** en el directorio que resuelve la convención `dir_revisiones_pr` de `consultar-artefactos` —patrón `pr-<n>-<yyyymmdd>*.md`: la fecha sigue inmediata al número, así los documentos de triage `pr-<n>-triage-*.md` de `clasificar-comentarios` no casan; el de mayor fecha y sufijo ordinal—. Cuando el valor resuelto empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`. Si no hay informe para el PR, informar de que no hay nada que comentar —sugerir `revisar-pr`— y terminar.
+2. **Localizar el informe más reciente del PR** en el directorio de informes de revisión de PR —`.git/factory/pr-reviews` por defecto, literal embebido— —patrón `pr-<n>-<yyyymmdd>*.md`: la fecha sigue inmediata al número, así los documentos de triage `pr-<n>-triage-*.md` de `clasificar-comentarios` no casan; el de mayor fecha y sufijo ordinal—. Cuando el valor empieza por `.git/`, sustituir ese prefijo por `git rev-parse --git-common-dir`. Si no hay informe para el PR, informar de que no hay nada que comentar —sugerir `revisar-pr`— y terminar.
 3. **Verificar la frescura del informe:** el SHA head actual —`gh pr view <n> --json headRefOid`— debe coincidir con el que el informe registra como revisado en su cabecera; si difiere o el informe no lo registra, el informe está obsoleto —informar al usuario y proponer `revisar-pr` de nuevo antes de publicar, porque los hallazgos podrían ya no aplicar—.
 4. **Obtener el diff** —`gh pr diff <n>`— para el anclaje, y **cargar lo ya publicado** en el PR —`gh api --paginate repos/:owner/:repo/pulls/<n>/comments` para los comentarios de línea, `gh api --paginate repos/:owner/:repo/pulls/<n>/reviews` para los generales, que viajan en el `body` de las reviews, y `gh api --paginate repos/:owner/:repo/issues/<n>/comments` para los sueltos en la conversación— para no republicar un hallazgo que ya está en la plataforma.
 

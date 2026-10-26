@@ -32,7 +32,7 @@ Instrucciones para que un agente registre una decisión de diseño siguiendo el 
 
 - La decisión a registrar, descrita por el usuario o inferida del cambio que la motiva.
 - El contexto en que se tomó: qué problema o fuerzas la motivaron.
-- Las decisiones existentes, en el directorio de decisiones de la convención (`convencion dir_decisiones` de `consultar-artefactos`), para determinar el siguiente número disponible.
+- Las decisiones existentes, en el directorio de decisiones de la convención `dir_decisiones` (`docs/decisions` por defecto), para determinar el siguiente número disponible.
 
 ## Salida
 
@@ -51,7 +51,7 @@ Instrucciones para que un agente registre una decisión de diseño siguiendo el 
 
 ## Procedimiento
 
-1. **Determinar el siguiente número disponible** delegando «el siguiente número de la serie de decisiones» en `consultar-artefactos` —el directorio lo resuelve la convención (`convencion dir_decisiones`); el prefijo y el ancho salen de la configuración—. Si el directorio no existe, crearlo y empezar en el primer número de la serie.
+1. **Determinar el siguiente número disponible** delegando «el siguiente número de la serie de decisiones» en `consultar-artefactos` —el directorio es el de la convención (`docs/decisions` por defecto); el prefijo `D` y el ancho `3` son los de la convención por defecto—. Si el directorio no existe, crearlo y empezar en el primer número de la serie.
 2. **Redactar el título.** Frase nominal breve que describe la decisión, no el problema. Por ejemplo: «`TODO.txt` como índice único de tareas», no «Cómo organizar las tareas».
 3. **Redactar el contexto.** Dos a cuatro frases que describan las fuerzas en juego: qué problema motivó la decisión, qué opciones estaban sobre la mesa, qué restricciones aplican. Sin justificar la decisión todavía.
 4. **Redactar la decisión.** Una a tres frases, en presente y en primera persona del plural, que digan qué se decidió de forma clara y concreta.

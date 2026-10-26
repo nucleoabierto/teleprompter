@@ -1,18 +1,18 @@
 {
   "packages": {
     "factory": {
-      "version": "0.5.0",
-      "installedAt": "2026-10-14T00:57:04.713Z",
+      "version": "0.6.0",
+      "installedAt": "2026-10-26T22:01:48.134Z",
       "files": [
         {
           "target": ".agents/skills/actualizar-artefactos",
           "action": "overwrite",
-          "sha256": "591b9f973aca16d51781c58c896a30d0b61f5db59891f4b6712404d09332231d"
+          "sha256": "3c1eeec950383492eb31628150bdbe7c899b26e0ab1abf2157bea3ea72c78cfd"
         },
         {
           "target": ".agents/skills/aplicar-guia-estilo",
           "action": "overwrite",
-          "sha256": "1bdec6677609aafee5f8bd2aa52acaf15eafd79435dd317eb5a3594fdd784714"
+          "sha256": "9fdc24c2a254b84c793a756bb0c75a1b32d28e66b4d79eebb33f0adfa6702827"
         },
         {
           "target": ".agents/skills/cerrar-conjunto",
@@ -21,13 +21,13 @@
         },
         {
           "target": ".agents/skills/clasificar-comentarios",
-          "action": "create",
-          "sha256": "40b2811ae929ca0af176c4626e027eca8d653870545c578dcc96d4a2e61dadf6"
+          "action": "overwrite",
+          "sha256": "26f8016ffe2bc4154692b617f264045a33d8c7e2226869c26f07e3393365f6ed"
         },
         {
           "target": ".agents/skills/comentar-pr",
-          "action": "create",
-          "sha256": "f206076c9f1af650e9e73d3650e3af15ce19003e9bb0af2d07a67c8d6a217ffe"
+          "action": "overwrite",
+          "sha256": "08fca76d31e47460cd6f22031ed962266a1f7e474d970bf1f99f782c3ecc762d"
         },
         {
           "target": ".agents/skills/commit",
@@ -37,27 +37,27 @@
         {
           "target": ".agents/skills/consultar-artefactos",
           "action": "overwrite",
-          "sha256": "f764502579a4c81c2752e1034fc6a4bb959f88b12fca991cad3a43ea52d832b8"
+          "sha256": "9133bb5dc1d0324e5bd2fc7782c850f76e444399cf4032e4933897ab4fdb0e93"
         },
         {
           "target": ".agents/skills/consultar-decisiones",
           "action": "overwrite",
-          "sha256": "70ca1a4d2ba963ca511abaa3b852b1b0e019a64e2de9aca6d25e485193b75755"
+          "sha256": "39bec785e366fb0e587d28554864b0dea50aefbc515071c56c2118bd170e5be2"
         },
         {
           "target": ".agents/skills/consultar-lecciones",
           "action": "overwrite",
-          "sha256": "95c3899c34e57ba570bbdb2a3349a9b78b712f6f224923e04e7ad89af343a279"
+          "sha256": "26c634b1389f152dd738837791f1db1dc24c37982c84fd809a8b0e16d1921a59"
         },
         {
           "target": ".agents/skills/crear-tareas",
           "action": "overwrite",
-          "sha256": "a5a2fa8a486ff631e027ef5e318382b20216a31c1e9ddadb45fda5d825a5e53c"
+          "sha256": "5a60611ba2ff7f7b00580836daa3024dc40bb4c4180286edd93b77e7a9bb10d8"
         },
         {
           "target": ".agents/skills/decisiones-diseno",
           "action": "overwrite",
-          "sha256": "29f327d705a767be8cfa0c769c8393381664da7e6ef7ee4b3ff789f522f3aebd"
+          "sha256": "7f335db20ea7878ecdcf74a92149a3bdaed74e5e0d486e0a552d63b77c8da85d"
         },
         {
           "target": ".agents/skills/desarrollar-tarea",
@@ -71,23 +71,23 @@
         },
         {
           "target": ".agents/skills/destilar-lecciones",
-          "action": "create",
-          "sha256": "147297db7966209d7481bd9f0df86b9cf05fec46057fa3ed5f56d4df5cf9aac6"
+          "action": "overwrite",
+          "sha256": "5da2ced1cc0e4f6e2cad240a3517054754a8c7b8dc017ecea6529f7a39d5e1d0"
         },
         {
           "target": ".agents/skills/documentar-dominio",
           "action": "overwrite",
-          "sha256": "dc579bf15d5c2dbb819bbfb38bdbe9554b4d8108a7e2edf650850ac3878bae91"
+          "sha256": "cab4fe424bade3823b71f79dac35d53a19f5cf548bc89d4dcf4ce91fb5c8ac23"
         },
         {
           "target": ".agents/skills/documentar-guia-estilo",
           "action": "overwrite",
-          "sha256": "794dadc9f457059d856bbc7a25a26ba75e2dd483c83a4b462b03b8fd7f3405d6"
+          "sha256": "6fb123e1a1ccad69de2ed7bd90a2552fa3d4d5e6e4246043d9e54ebb48a8bee1"
         },
         {
           "target": ".agents/skills/documentar-producto",
           "action": "overwrite",
-          "sha256": "78a3f209ee22961ef44d7ac3c9d9c7cde3625e9129173c1a2ca865263f68ca51"
+          "sha256": "0a861c5e255c2e2aeebe58ae40ef007d53ff333e265b0622531b0add7efd3b2b"
         },
         {
           "target": ".agents/skills/ejecutar-implementacion",
@@ -97,7 +97,7 @@
         {
           "target": ".agents/skills/ejecutar-tareas",
           "action": "overwrite",
-          "sha256": "e527c5d2e82262e2fc54029402f4cbc41354b44ef3b62ebc1e365acd5e1e80a9"
+          "sha256": "e9db6eea72fea3d3d2c3a22a6de88f88932377c63213f0da4a028e58750c130d"
         },
         {
           "target": ".agents/skills/evaluar-conectividad",
@@ -107,57 +107,57 @@
         {
           "target": ".agents/skills/gestionar-pr",
           "action": "overwrite",
-          "sha256": "5d3031c0258c9719e86b0f1cc80cf30fe5bccb84afa9ac986f33b40b010cf141"
+          "sha256": "c52e2e7b3365771443c1a99f7297d6691797625f4abb116c4776ef0d9d4d3bb3"
         },
         {
           "target": ".agents/skills/idea-a-tarea",
           "action": "overwrite",
-          "sha256": "fba20cd940a424efe1af17143f1ca400405cf1162949f167dd47174aefc01a8b"
+          "sha256": "b9e8d6d08092dac00c36904a0233e3ac83cc42ebe30d8f1181eb4c23f9567eb6"
         },
         {
           "target": ".agents/skills/investigar",
           "action": "overwrite",
-          "sha256": "27d226f19551ae8d00cbb52cf76a51e8cc1facd4e44f48b135555381adac4d54"
+          "sha256": "77941dfd867f31b5e231157dc86390b171c3e8697cfb4ee1150506533089cc10"
         },
         {
           "target": ".agents/skills/liberar-version",
           "action": "overwrite",
-          "sha256": "7686a43eaf175c459df527b06670d8c0662f2f503d0dee7dfd86ffc35876a914"
+          "sha256": "b6184a259e6aa3bb1857a31de6c0fc97e16e512f040744ba8da9496bbcc94c73"
         },
         {
           "target": ".agents/skills/lluvia-de-ideas",
           "action": "overwrite",
-          "sha256": "e9d113c2a02a963ca71dac104e72c5e8c9411ea2c3cd9016895481f73fc5b7a3"
+          "sha256": "58ef2e55ab73d5a58e10946b37e80c62ffb2581ee2ab2319934758854df3bfe6"
         },
         {
           "target": ".agents/skills/mantener-changelog",
           "action": "overwrite",
-          "sha256": "364aa3ad5b2b19ca6501da7a70e674d3e6e3cff54d4e668f720381ac2b8c27f9"
+          "sha256": "c962ddf5096d5565f43bb4d8f6b50b71c7903b170ef91173b14e4d445346c374"
         },
         {
           "target": ".agents/skills/mantener-prd",
           "action": "overwrite",
-          "sha256": "fb70e4e1dcb9c220931046ad06890a244ed137a051d0107a90241f3573b9c33a"
+          "sha256": "c2b0a98b35a775181f48f765e27da30330902aa127d630b8fe4040d06d12aeaa"
         },
         {
           "target": ".agents/skills/mantener-roadmap",
           "action": "overwrite",
-          "sha256": "35be19cc687b0694289c78316c242b98786b7410001e933973c97d18ba2280cb"
+          "sha256": "e48507d0ca532c3c22d8c6d80eca76b25d0a822427afe6c77352169a014ef5fe"
         },
         {
           "target": ".agents/skills/mejorar-pr",
-          "action": "create",
-          "sha256": "bccc9e562b7f7b287b43cb7c0ae26596e672d2e272194943541d3c63c7069529"
+          "action": "overwrite",
+          "sha256": "5de0be5327fce5ff14e1ec81c99959a8043956ed3a733e422d8f6a95996da91a"
         },
         {
           "target": ".agents/skills/operar-changelog",
           "action": "overwrite",
-          "sha256": "539092fb8d60d731e268aeaae60562cdae0b29d6b8c4a790ee69285029afd286"
+          "sha256": "ebb1fd41b2704e0ec2a694751e679c30883611256464c339c81ac64b58fbd25f"
         },
         {
           "target": ".agents/skills/operar-experiencias",
           "action": "overwrite",
-          "sha256": "99f7d5fee16f7bc70a92db251fb4255c3e3042ff8e0b6afe3f14853f8e4a9174"
+          "sha256": "3e8921ce3c28a0a1854f5b5134ff1144920689be6ab968c21973e71910326253"
         },
         {
           "target": ".agents/skills/planear-implementacion",
@@ -172,12 +172,12 @@
         {
           "target": ".agents/skills/planificar",
           "action": "overwrite",
-          "sha256": "bcb91777676c6cab4300d78ea3c6e91a648b0e484e24fec3c7841a9ca77fe59e"
+          "sha256": "6870497f712f7070b055ee9de9dc9bcb00145f8de07fafd58b3e24d99fd2e77e"
         },
         {
           "target": ".agents/skills/planificar-roadmap",
           "action": "overwrite",
-          "sha256": "8d544ecfede7200e0335e1b99d076c8d021984ba457811cbd6d1acc205c06b2d"
+          "sha256": "cd3009a73089cb5303816f89677851921125352137efae89604b622b6c2b4177"
         },
         {
           "target": ".agents/skills/proponer-forma-solucion",
@@ -202,12 +202,12 @@
         {
           "target": ".agents/skills/refinar-propuesta",
           "action": "overwrite",
-          "sha256": "426671cc25a40e248b35a7c8c681547f4587a1d65f50c41a078cf902eccac709"
+          "sha256": "16f137785d5840c6a99fb2932d9eeebb4a481cf2449f1d818dea386bbab1ffa4"
         },
         {
           "target": ".agents/skills/revisar-arquitectura",
           "action": "overwrite",
-          "sha256": "f965ac840216fba28521d500d80cc482540db4f149b1303d9c256fedf55ea8cc"
+          "sha256": "b2843b021f5605b1a974925814aa4b19f419fd13ecf59316d76ca0f6cee3212b"
         },
         {
           "target": ".agents/skills/revisar-implementacion",
@@ -216,8 +216,8 @@
         },
         {
           "target": ".agents/skills/revisar-pr",
-          "action": "create",
-          "sha256": "cb2ab5384216093e8eb3f8746427637c304f2da3905ee0d4283735aa4dfeb9ae"
+          "action": "overwrite",
+          "sha256": "c74c6530c7da8042ea0f83385fbd69c2021f70239ad69108475041baf1fe996c"
         },
         {
           "target": ".agents/skills/revisar-redaccion",
@@ -227,14 +227,14 @@
         {
           "target": ".teleprompter/factory/PERSONALIZE.md",
           "action": "overwrite",
-          "sha256": "26190a5642228ab1c974e3853f7d55f29540ec47944522447e4a35864eafaee3"
+          "sha256": "f370ef14096e6822251f85eaed4bdeec10d56cf68f797cc920113e5b818f82cd"
         }
       ],
       "personalization": ".teleprompter/factory/PERSONALIZE.md",
       "origin": {
         "type": "github",
         "repo": "nucleoabierto/factory",
-        "commit": "8acbba7d1cc3205cda4ab124c01607751564a931"
+        "commit": "9e2c8e0c4dc98ea4fb13a639593e612ace873afc"
       }
     }
   }

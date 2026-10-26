@@ -75,7 +75,7 @@ Instrucciones para que un agente produzca el roadmap de un producto: el document
 
 ### 4. Materializar el roadmap
 
-9. **Crear o actualizar el documento de roadmap** en la ubicación de la convención `archivo_roadmap` —resoluble con la operación `convencion` de `consultar-artefactos`— siguiendo `assets/roadmap.md`, registrando la aprobación en su sección de revisión con la acción «registrar el veredicto» de `actualizar-artefactos`. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
+9. **Crear o actualizar el documento de roadmap** en la ubicación de la convención `archivo_roadmap` (`ROADMAP.md` por defecto) siguiendo `assets/roadmap.md`, registrando la aprobación en su sección de revisión con la acción «registrar el veredicto» de `actualizar-artefactos`. El documento es vivo: una dirección nueva se escribe sobre la anterior, cuya historia queda en git.
 10. **Reflejar los horizontes comprometidos en el índice:** recolocar las agrupaciones y las tareas sueltas para que el orden del índice coincida con el declarado en Now y Next, componiendo la reordenación con la acción «recolocar» de `actualizar-artefactos`, que mueve bloques sin tocar el estado de ninguna tarea. Later y No ahora no aparecen en el índice. Si el índice ya coincide, no tocarlo.
 11. **Informar al usuario** del roadmap producido y del orden reflejado en el índice.
 

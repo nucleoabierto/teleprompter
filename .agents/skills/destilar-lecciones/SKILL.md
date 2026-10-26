@@ -32,7 +32,7 @@ Instrucciones para que un agente convierta las correcciones del usuario en lecci
 
 - La conversación de la sesión actual, donde el usuario corrigió al agente; o, en modo pendientes, las entradas `pendiente` del registro.
 - La tarea en curso o recién terminada, referenciada por la ruta de su archivo, cuando el lote viene de correcciones frescas.
-- El registro de experiencias del proyecto —su ubicación la resuelve `operar-experiencias`— y el directorio de lecciones de la convención (`convencion dir_lecciones` de `consultar-artefactos`) con su índice, si existen.
+- El registro de experiencias del proyecto —su ubicación la resuelve `operar-experiencias`— y el directorio de lecciones de la convención `dir_lecciones` (`docs/lessons` por defecto) con su índice, si existen.
 
 ## Salida
 

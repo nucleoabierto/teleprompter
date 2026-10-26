@@ -29,7 +29,7 @@ Instrucciones para que un agente cree la propuesta en su directorio de la serie 
 ## Entrada
 
 - Problema + oportunidad (salida de `descubrir-problema`) y forma de solución + alternativas + fuera de alcance (salida de `proponer-forma-solucion`), validados por el usuario.
-- El directorio de propuestas de la convención (`convencion dir_propuestas` de `consultar-artefactos`), para determinar el siguiente número de la serie.
+- El directorio de propuestas de la convención `dir_propuestas` (`docs/proposals` por defecto), para determinar el siguiente número de la serie.
 - El índice de tareas, para dar de alta la propuesta en revisión al terminar.
 
 ## Salida

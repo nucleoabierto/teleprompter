@@ -33,7 +33,7 @@ aporta valor listarlas. Qué consecuencias tiene.]
 
 ## Reglas del formato
 
-1. Una decisión por archivo, numerada secuencialmente con el prefijo y el ancho de la convención (`convencion prefijo_decision` y `ancho_numeracion` en `consultar-artefactos`; `D001`, `D002`, … bajo la convención por defecto).
+1. Una decisión por archivo, numerada secuencialmente con el prefijo `D` y el ancho `3` de la convención por defecto (`D001`, `D002`, …).
 2. El título es una frase nominal breve que describe la decisión, no el problema.
 3. El estado se actualiza cuando una decisión posterior la sustituye o la deja obsoleta. La decisión original no se reescribe: se marca y se enlaza a la sustituta.
 4. El contexto describe las fuerzas, no la justificación. La justificación va en su propia sección.

@@ -38,7 +38,7 @@ Instrucciones para que un agente cree tareas definitivas en el directorio de tar
 
 ## Salida
 
-- Uno o varios archivos de tarea en el directorio de tareas de la convención (`convencion dir_tareas` de `consultar-artefactos`) siguiendo la plantilla, con estado inicial `pendiente` y la sección de revisión con los marcadores sin rellenar.
+- Uno o varios archivos de tarea en el directorio de tareas de la convención `dir_tareas` (`docs/tasks` por defecto) siguiendo la plantilla, con estado inicial `pendiente` y la sección de revisión con los marcadores sin rellenar.
 - Entradas correspondientes añadidas al índice, bajo la agrupación correspondiente cuando la tienen y como tareas sueltas en caso contrario.
 - En modo flujo de idea a tarea, además: la propuesta en estado `aprobada` con su índice de borradores actualizado a las tareas definitivas y su línea retirada del índice. Las entradas de las tareas quedan sueltas; la agrupación del conjunto la produce el orquestador del flujo invocando `planificar`.
 
