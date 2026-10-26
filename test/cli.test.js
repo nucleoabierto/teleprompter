@@ -2563,6 +2563,29 @@ test('uninstall exits 4 when the package is not installed or there is no lock', 
   assert.match(stderr.join('\n'), /no está instalado/);
 });
 
+test('uninstall, update and guide treat names inherited from Object.prototype as not installed', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'a' });
+  for (const cmd of ['uninstall', 'update', 'guide']) {
+    for (const name of ['__proto__', 'constructor', 'hasOwnProperty', 'toString']) {
+      const { code, stderr } = await run([cmd, name], { cwd: dest });
+      assert.equal(code, EXIT_USAGE, `${cmd} ${name}`);
+      assert.match(stderr.join('\n'), /no está instalado/, `${cmd} ${name}`);
+    }
+  }
+});
+
+test('uninstall reads a lock entry recorded as own __proto__', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'a');
+  const sha = hashPath(path.join(dest, 'a.txt'));
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'),
+    `{"packages":{"__proto__":{"version":"1.0.0","files":[{"target":"a.txt","action":"create","sha256":"${sha}"}]}}}`);
+  const { code, stderr } = await run(['uninstall', '__proto__'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.deepEqual(lockOf(dest).packages, {});
+});
+
 test('uninstall exits 4 on a corrupt lock after the warning', async () => {
   const dest = tmp();
   fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
