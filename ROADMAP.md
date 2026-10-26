@@ -14,14 +14,9 @@ reconstruir el destino.
 
 ## Now
 
-- 1. **Desinstalación de paquetes** — salida limpia del ciclo de
-  vida: retirar un paquete y sus recursos registrados con plan
-  visible (idea 007).
-  - Estado: en curso
-  - Justificación: cierra el ciclo con la infraestructura ya
-    construida —plan y registro— y es la de menor riesgo del
-    conjunto; su lectura del registro es la que la reproducción
-    compartirá después.
+- Vacío: la épica `docs/epics/008-desinstalacion-paquetes.md` cerró
+  con la resolución de divergencias en la retirada (043). No hay
+  trabajo en vuelo; la siguiente línea arranca desde Next.
 
 ## Next
 
