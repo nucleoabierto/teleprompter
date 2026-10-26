@@ -5,43 +5,48 @@
 Que el paquete sea un canal completo del mantenedor al repositorio
 destino. El canal ya está abierto y el formato ya cubre colecciones:
 el producto distribuye, instala, entrega el criterio para adaptar,
-mantiene un ciclo de vida —visible, contrastable, actualizable— y se
-publica en npm con cadena de release repetible, ejecutable con `npx`.
-La dirección pasa ahora a cerrar el ciclo y hacerlo fiable: que la
-obtención remota sea robusta y determinista, que el ciclo tenga
-salida —revisar, actualizar y retirar— y que el registro permita
-reconstruir el destino.
+mantiene un ciclo de vida completo —instalar, revisar, actualizar y
+retirar, siempre con plan visible— y se publica en npm con cadena de
+release repetible, ejecutable con `npx`. Lo que falta para cerrar el
+círculo es hacer el ciclo informado —revisar qué ofrece versión
+nueva antes de actualizar— y convertir el registro en fuente de
+reconstrucción del destino.
 
 ## Now
 
-- Vacío: la épica `docs/epics/008-desinstalacion-paquetes.md` cerró
-  con la resolución de divergencias en la retirada (043). No hay
-  trabajo en vuelo; la siguiente línea arranca desde Next.
+- 1. `docs/tasks/044-guarda-propiedad-propia-lecturas-lock.md` —
+  Guarda de propiedad propia en las lecturas del lock.
+  - Estado: pendiente de arrancar.
+  - Justificación: defecto del lector compartido del registro —una
+    clave heredada se resuelve como instalada—; pequeña y acotada, y
+    conviene cerrarla antes de que la línea siguiente amplíe la
+    superficie que consulta el registro por nombre.
+- 2. Revisión de desactualizados — consultar qué paquetes ofrecen
+  versión nueva y actualizar lo revisado en una invocación (idea
+  008; conjunto por planificar).
+  - Estado: pendiente de arrancar.
+  - Justificación: sus prerrequisitos ya están materializados —la
+    obtención remota endurecida y pinneada le permite señalar el
+    commit que avanzó sin bump, y la desinstalación dejó la lectura
+    del registro por unidad—; va tras la 044 para no heredar el
+    defecto de lectura en la superficie nueva que abre.
 
 ## Next
 
-Ideas de la lluvia de 2026-10-04 comprometidas (`docs/ideas/007–009`),
-en el orden decidido en la revisión del 2026-10-04:
-
-- 1. **Revisión de desactualizados** — consultar qué paquetes
-  ofrecen versión nueva sin actualizar, y actualizar lo revisado
-  en una invocación (idea 008).
-  - Justificación: `update` hoy decide a ciegas; sondea orígenes
-    remotos, así que rinde mejor con el fetch endurecido y pinneado
-    —puede señalar el commit que avanzó sin bump, hoy invisible—.
-- 2. **Reproducción del destino desde el registro** — reinstalar de
-  una vez lo que el lock de un repo declara, desde sus orígenes
-  (idea 009).
+- 1. Reproducción del destino desde el registro — reinstalar de una
+  vez lo que el lock de un repo declara, desde sus orígenes (idea
+  009).
   - Justificación: la más dependiente del conjunto —consume los
     orígenes pinneados, la lectura del registro que comparte con la
-    desinstalación y la mecánica multi-unidad que la revisión
-    establece—; ejecutarla última la hace exacta en lugar de
-    aproximada.
+    desinstalación y la mecánica multi-unidad que la revisión de
+    desactualizados establece—; ejecutarla última la hace exacta en
+    lugar de aproximada.
 
 ## Later
 
-Vacío: las cuatro ideas de la lluvia quedaron comprometidas —el pin
-en Now y el resto ordenado en Next.
+Vacío: las cuatro ideas de la lluvia de 2026-10-04 quedaron
+comprometidas o materializadas —pin y desinstalación ya ejecutadas,
+revisión y reproducción ordenadas entre Now y Next—.
 
 ## No ahora
 
@@ -102,4 +107,10 @@ en Now y el resto ordenado en Next.
   registro conserva la procedencia junto al origen, en install y en
   update—; Desinstalación de paquetes pasa a Now)
 - Usuario: 2026-10-18 — Aprueba (el hito 1 «Gestión de conflictos» entra en Now en primera posición —conjunto pequeño y definitivo cuya superficie de respaldo y diff consumirá la desinstalación, que queda segunda aún sin materializar)
-
+- Usuario: 2026-10-26 — Aprueba (la épica 008 «Desinstalación de
+  paquetes» cerró con la retirada end-to-end, las divergencias
+  decididas con la política de conflictos y el respaldo previo; Now
+  se repuebla con la 044 —defecto del lector del registro— primera
+  por proteger la superficie que sigue, y la revisión de
+  desactualizados segunda; la reproducción del destino queda sola en
+  Next y la Dirección se actualiza a ciclo completo informado)
