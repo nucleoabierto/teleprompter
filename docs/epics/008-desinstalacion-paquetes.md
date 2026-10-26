@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada | [ ] Completada
+[x] Planificada | [x] Completada
 
 ## Objetivo
 
@@ -24,9 +24,9 @@ y `check`.
 
 ## Piezas
 
-- [ ] docs/tasks/042-uninstall-retira-paquete-intacto.md — `uninstall`
+- [x] docs/tasks/042-uninstall-retira-paquete-intacto.md — `uninstall`
   retira un paquete instalado intacto
-- [ ] docs/tasks/043-resolucion-divergencias-retirada.md — resolución
+- [x] docs/tasks/043-resolucion-divergencias-retirada.md — resolución
   de divergencias en la retirada
 
 ## Plan técnico

@@ -2391,14 +2391,16 @@ test('uninstall removes a recorded directory whole', async () => {
   assert.ok(!fs.existsSync(path.join(dest, 'skills')));
 });
 
-test('uninstall keeps a recorded directory the user added content to', async () => {
+test('uninstall decides a recorded directory the user added content to', async () => {
   const { dest } = await installed(validManifest('p', {
     install: [{ source: 'skills', target: 'skills/' }],
   }), { 'skills/a.txt': 'a' });
   fs.writeFileSync(path.join(dest, 'skills', 'mio.txt'), 'mío');
-  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  const { code, stdout, stderr } = await run(['uninstall', 'p', '--skip'], { cwd: dest });
   assert.equal(code, EXIT_OK, stderr.join('\n'));
-  assert.match(stdout.join('\n'), /keep\s+skills\//);
+  const out = stdout.join('\n');
+  assert.match(out, /conflict\s+skills\//);
+  assert.match(out, /skills\/ → keep/);
   assert.equal(fs.readFileSync(path.join(dest, 'skills/mio.txt'), 'utf8'), 'mío');
   assert.equal(lockOf(dest).packages.p, undefined);
 });
@@ -2475,12 +2477,13 @@ test('uninstall of the last package leaves the lock with empty packages', async 
   assert.ok(fs.existsSync(path.join(dest, 'teleprompter-lock.json')));
 });
 
-test('uninstall keeps a locally modified resource and says so', async () => {
+test('uninstall --skip keeps a locally modified resource and says so', async () => {
   const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo' });
   fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
-  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  const { code, stdout, stderr } = await run(['uninstall', 'p', '--skip'], { cwd: dest });
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   const out = stdout.join('\n');
+  assert.match(out, /a\.txt → keep/);
   assert.match(out, /keep\s+a\.txt/);
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
   assert.equal(lockOf(dest).packages.p, undefined);
@@ -2502,13 +2505,38 @@ test('uninstall never deletes a recorded path that is unsafe or unverifiable', a
       },
     },
   }));
-  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  const { code, stdout, stderr } = await run(['uninstall', 'p', '--skip'], { cwd: dest });
   assert.equal(code, EXIT_OK, stderr.join('\n'));
   const out = stdout.join('\n');
-  assert.match(out, /keep\s+\.\.\/secreto\.txt/);
-  assert.match(out, /keep\s+sin-hash\.txt/);
+  assert.match(out, /\.\.\/secreto\.txt → keep/);
+  assert.match(out, /sin-hash\.txt → keep/);
   assert.equal(fs.readFileSync(outside, 'utf8'), 'secreto');
   assert.equal(fs.readFileSync(path.join(dest, 'sin-hash.txt'), 'utf8'), 'dato');
+  fs.rmSync(outside, { force: true });
+});
+
+test('uninstall --force on an unsafe recorded path fails as an execution error', async () => {
+  const dest = tmp();
+  const outside = path.join(path.dirname(dest), 'secreto.txt');
+  fs.writeFileSync(outside, 'secreto');
+  fs.writeFileSync(path.join(dest, 'sin-hash.txt'), 'dato');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [
+          { target: '../secreto.txt', action: 'create', sha256: '0'.repeat(64) },
+          { target: 'sin-hash.txt', action: 'create' },
+        ],
+      },
+    },
+  }));
+  const { code, stderr } = await run(['uninstall', 'p', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_EXECUTION);
+  assert.match(stderr.join('\n'), /error de ejecución.*escapa de la raíz/);
+  assert.equal(fs.readFileSync(outside, 'utf8'), 'secreto');
+  assert.equal(fs.readFileSync(path.join(dest, 'sin-hash.txt'), 'utf8'), 'dato');
+  assert.equal(lockOf(dest).packages.p.version, '1.0.0');
   fs.rmSync(outside, { force: true });
 });
 
@@ -2520,8 +2548,7 @@ test('uninstall rejects malformed invocations with code 4', async () => {
     ['uninstall', 'p', '--path', 'x'],
     ['uninstall', 'p', '--ref', 'v1'],
     ['uninstall', 'p', '--package', 'x'],
-    ['uninstall', 'p', '--force'],
-    ['uninstall', 'p', '--skip'],
+    ['uninstall', 'p', '--force', '--skip'],
     ['uninstall', 'p', '--wat'],
   ]) {
     const { code } = await run(argv, { cwd: dest });
@@ -2602,6 +2629,222 @@ test('after uninstall, list and check no longer report the package', async () =>
   const checked = await run(['check'], { cwd: dest });
   assert.equal(checked.code, EXIT_OK);
   assert.doesNotMatch(checked.stdout.join('\n'), /p@/);
+});
+
+test('uninstall lists a divergent resource with its diff and aborts without a console', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado\n');
+  const { code, stdout, stderr } = await run(['uninstall', 'p'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stdout.join('\n'), /conflict\s+a\.txt/);
+  assert.match(stderr.join('\n'),
+    /conflicto sin resolver: a\.txt\n--- a\.txt \(destino\)\n\+\+\+ a\.txt \(ausente\)\n@@ -1 \+0,0 @@\n-editado/);
+  assert.match(stderr.join('\n'), /plan no ejecutable/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado\n');
+  assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+});
+
+test('uninstall asks about removing each divergence with its diff shown first', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'viejo\n', 'b.txt': 'b\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado\n');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado también\n');
+  const shown = [];
+  const asked = [];
+  const answers = [true, false];
+  const { code, stderr } = await run(['uninstall', 'p'], {
+    cwd: dest,
+    interactive: true,
+    out: (m) => shown.push(m),
+    createAsker: () => ({
+      ask: async (q) => { asked.push({ q, seen: shown.join('\n') }); return answers.shift(); },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(asked.length, 2);
+  assert.match(asked[0].q, /¿quitar\?/);
+  // When the question was asked its diff was already out, and the
+  // next divergence's diff was not yet.
+  assert.match(asked[0].seen, /--- a\.txt \(destino\)[\s\S]*-editado/);
+  assert.doesNotMatch(asked[0].seen, /editado también/);
+  assert.match(asked[1].seen, /--- b\.txt \(destino\)\n\+\+\+ b\.txt \(ausente\)/);
+  const out = shown.join('\n');
+  assert.match(out, /a\.txt → remove/);
+  assert.match(out, /b\.txt → keep/);
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'editado también\n');
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.equal(
+    fs.readFileSync(path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'editado\n',
+  );
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall --force removes every divergence with a backup', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'viejo', 'b.txt': 'b' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado también');
+  const { code, stdout, stderr } = await run(['uninstall', 'p', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.ok(!fs.existsSync(path.join(dest, 'b.txt')));
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-p@1\.0\.0$/);
+  assert.equal(
+    fs.readFileSync(path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'editado',
+  );
+  assert.equal(
+    fs.readFileSync(path.join(dest, '.teleprompter', 'backups', dirs[0], 'b.txt'), 'utf8'),
+    'editado también',
+  );
+  assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+  assert.match(stdout.join('\n'), /desinstalado: p@1\.0\.0/);
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall --force backs up a divergent directory subtree, local files included', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'skills', target: 'skills/' }],
+  }), { 'skills/a.txt': 'a' });
+  fs.writeFileSync(path.join(dest, 'skills', 'mio.txt'), 'mío');
+  const { code, stderr } = await run(['uninstall', 'p', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.ok(!fs.existsSync(path.join(dest, 'skills')));
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'skills', 'mio.txt'), 'utf8'),
+    'mío',
+  );
+});
+
+test('uninstall --skip leaves the kept resource on disk and out of the registry', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stderr } = await run(['uninstall', 'p', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+  const checked = await run(['check'], { cwd: dest });
+  assert.match(checked.stdout.join('\n'), /no hay paquetes instalados/);
+});
+
+test('uninstall --dry-run lists divergences and aborts, and resolves ahead with --force', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado\n');
+  const aborted = await run(['uninstall', 'p', '--dry-run'], { cwd: dest });
+  assert.equal(aborted.code, EXIT_PLAN);
+  assert.match(aborted.stderr.join('\n'), /conflicto sin resolver: a\.txt/);
+  const resolved = await run(['uninstall', 'p', '--dry-run', '--force'], { cwd: dest });
+  assert.equal(resolved.code, EXIT_OK);
+  const out = resolved.stdout.join('\n');
+  assert.match(out, /a\.txt → remove/);
+  assert.match(out, /fin del plan \(--dry-run\)/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado\n');
+  assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+});
+
+test('uninstall retires the intact resources and decides the divergent ones', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [{ source: 'a.txt', target: 'a.txt' }, { source: 'b.txt', target: 'b.txt' }],
+  }), { 'a.txt': 'a', 'b.txt': 'b' });
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['uninstall', 'p', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const out = stdout.join('\n');
+  assert.match(out, /retire\s+a\.txt/);
+  assert.match(out, /conflict\s+b\.txt/);
+  assert.ok(!fs.existsSync(path.join(dest, 'a.txt')));
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'editado');
+  assert.equal(lockOf(dest).packages.p, undefined);
+});
+
+test('uninstall aborts the plan when the backup root escapes the destination', async () => {
+  const { dest } = await installed(validManifest('p'), { 'a.txt': 'viejo' });
+  const outside = tmp();
+  fs.rmSync(path.join(dest, '.teleprompter'), { recursive: true, force: true });
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stderr } = await run(['uninstall', 'p', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'backups')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+});
+
+test('uninstall does not interpolate a hostile package name into the backup path', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      'x/../../../fuera': {
+        version: '1.0.0',
+        files: [{ target: 'a.txt', action: 'create', sha256: '0'.repeat(64) }],
+      },
+    },
+  }));
+  const { code, stderr } = await run(
+    ['uninstall', 'x/../../../fuera', '--force'], { cwd: dest },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.doesNotMatch(dirs[0], /fuera/);
+  assert.equal(fs.existsSync(path.join(dest, 'fuera@1.0.0')), false);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'editado',
+  );
+});
+
+test('uninstall reports the backup already made when a decided removal fails', async () => {
+  const { dest } = await installed(validManifest('p', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'sub/f.txt', target: 'sub/f.txt' },
+    ],
+  }), { 'a.txt': 'a', 'sub/f.txt': 'f' });
+  fs.writeFileSync(path.join(dest, 'sub', 'f.txt'), 'editado');
+  fs.chmodSync(path.join(dest, 'sub'), 0o555);
+  try {
+    const { code, stdout, stderr } = await run(
+      ['uninstall', 'p', '--force'], { cwd: dest },
+    );
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stdout.join('\n'), /remove\s+a\.txt/);
+    assert.match(stdout.join('\n'), /respaldo \(\.teleprompter\/backups\//);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+    const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+    assert.equal(dirs.length, 1);
+    assert.equal(
+      fs.readFileSync(
+        path.join(dest, '.teleprompter', 'backups', dirs[0], 'sub', 'f.txt'), 'utf8'),
+      'editado',
+    );
+    assert.equal(lockOf(dest).packages.p.version, '1.0.0');
+  } finally {
+    fs.chmodSync(path.join(dest, 'sub'), 0o755);
+  }
+});
+
+test('uninstall help documents the divergence flags', async () => {
+  const { code, stdout } = await run(['help', 'uninstall']);
+  assert.equal(code, EXIT_OK);
+  const out = stdout.join('\n');
+  assert.match(out, /--force\|--skip/);
+  assert.match(out, /divergencias/);
 });
 
 function writePkg2(name) {
