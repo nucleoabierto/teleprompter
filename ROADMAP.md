@@ -14,7 +14,19 @@ reconstrucción del destino.
 
 ## Now
 
-- 1. Revisión de desactualizados — consultar qué paquetes ofrecen
+- 1. Hito 1: Saneamiento idiomático y estructural — seis tareas
+  derivadas de las revisiones de arquitectura 003 (idiomática) y
+  004 (general): primitivas compartidas, informes y predicados,
+  separación de la capa de invocación, forma del plan, resolución
+  de colección y ejecución sin paquete.
+  - Estado: pendiente de arrancar.
+  - Justificación: las revisiones detectaron duplicaciones y
+    concentración que encarecen cualquier línea futura —
+    `cli.js` concentra cinco preocupaciones justo donde la
+    revisión de desactualizados añadiría un comando nuevo—;
+    sanear primero abarata todo lo que sigue y es trabajo
+    acotado y de comportamiento invariante.
+- 2. Revisión de desactualizados — consultar qué paquetes ofrecen
   versión nueva y actualizar lo revisado en una invocación (idea
   008; conjunto por planificar).
   - Estado: pendiente de arrancar.
@@ -107,3 +119,8 @@ revisión y reproducción ordenadas entre Now y Next—.
   por proteger la superficie que sigue, y la revisión de
   desactualizados segunda; la reproducción del destino queda sola en
   Next y la Dirección se actualiza a ciclo completo informado)
+- Usuario: 2026-10-26 — Aprueba (la 044 cerrada y retirada de Now;
+  las revisiones de arquitectura 003 y 004 derivan el hito
+  «Saneamiento idiomático y estructural», que entra a Now en
+  primera posición por abaratar las líneas siguientes, y la
+  revisión de desactualizados queda segunda)

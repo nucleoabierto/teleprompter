@@ -140,3 +140,21 @@ decisión antes de actuar.
     `indice_tareas`, convenciones, personalización, factory,
     `consultar-artefactos`, `actualizar-artefactos`
   - Estado: Aceptada
+- [D021-idiomas-de-resultado-por-capa.md](D021-idiomas-de-resultado-por-capa.md)
+  — cada capa declara su idioma de resultado: objetos
+  discriminados en el dominio, códigos de salida en la
+  invocación, `ExecutionError` tipado en la ejecución; no se
+  unifica.
+  - Disparadores: resultado, `{ok}`, `{code}`, códigos de salida,
+    `ExecutionError`, capas, `src/cli.js`, `src/fetch.js`,
+    `src/verify.js`, `src/execute.js`, revisión de arquitectura
+  - Estado: Aceptada
+- [D021-idiomas-de-resultado-por-capa.md](D021-idiomas-de-resultado-por-capa.md)
+  — cada capa declara su idioma de resultado: objetos
+  discriminados en el dominio, códigos de salida en la
+  invocación, `ExecutionError` tipado en la ejecución; no se
+  unifica.
+  - Disparadores: resultado, `{ok}`, `{code}`, códigos de salida,
+    `ExecutionError`, capas, `src/cli.js`, `src/fetch.js`,
+    `src/verify.js`, `src/execute.js`, revisión de arquitectura
+  - Estado: Aceptada
