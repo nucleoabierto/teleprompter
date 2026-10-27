@@ -14,14 +14,7 @@ reconstrucción del destino.
 
 ## Now
 
-- 1. `docs/tasks/044-guarda-propiedad-propia-lecturas-lock.md` —
-  Guarda de propiedad propia en las lecturas del lock.
-  - Estado: pendiente de arrancar.
-  - Justificación: defecto del lector compartido del registro —una
-    clave heredada se resuelve como instalada—; pequeña y acotada, y
-    conviene cerrarla antes de que la línea siguiente amplíe la
-    superficie que consulta el registro por nombre.
-- 2. Revisión de desactualizados — consultar qué paquetes ofrecen
+- 1. Revisión de desactualizados — consultar qué paquetes ofrecen
   versión nueva y actualizar lo revisado en una invocación (idea
   008; conjunto por planificar).
   - Estado: pendiente de arrancar.

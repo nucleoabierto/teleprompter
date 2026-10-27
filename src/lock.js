@@ -25,9 +25,12 @@ export function readLock(destDir) {
 
 // The lock is the module that owns the registry's shape: readers ask
 // for an entry by name or walk the entries, never `lock.packages`
-// directly, so the internal structure can change in one place.
+// directly, so the internal structure can change in one place. The
+// own-property check treats the lock as untrusted data — an inherited
+// key like `__proto__` or `constructor` resolves a member of
+// `Object.prototype`, which must read as "not installed".
 export function lockEntry(lock, name) {
-  return lock.packages[name];
+  return Object.hasOwn(lock.packages, name) ? lock.packages[name] : undefined;
 }
 
 export function lockEntries(lock) {

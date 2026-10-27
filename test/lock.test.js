@@ -25,6 +25,18 @@ test('lockEntry answers undefined for a name that is not installed', () => {
   assert.equal(lockEntry(populatedLock(), 'nada'), undefined);
 });
 
+test('lockEntry answers undefined for names only inherited from Object.prototype', () => {
+  const lock = populatedLock();
+  for (const name of ['__proto__', 'constructor', 'hasOwnProperty', 'toString']) {
+    assert.equal(lockEntry(lock, name), undefined, name);
+  }
+});
+
+test('lockEntry resolves an own __proto__ entry materialized by JSON.parse', () => {
+  const lock = JSON.parse('{"packages":{"__proto__":{"version":"9.9.9","files":[]}},"warnings":[]}');
+  assert.equal(lockEntry(lock, '__proto__').version, '9.9.9');
+});
+
 test('lockEntries walks every recorded package entry', () => {
   assert.deepEqual(
     lockEntries(populatedLock()).map(([name]) => name),
