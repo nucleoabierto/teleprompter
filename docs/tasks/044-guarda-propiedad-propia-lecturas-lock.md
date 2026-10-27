@@ -167,4 +167,4 @@ lector, no a los comandos.
 
 - Subagente: 2026-10-26 — Aprueba
 - Usuario (ejecución): 2026-10-26 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-10-26 — Aprueba
