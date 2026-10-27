@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente | [~] En progreso | **[r] En revisión** | [x] Completada | [!] Bloqueada
+[x] Completada
 
 ## Tipo
 
@@ -165,6 +165,6 @@ lector, no a los comandos.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-26 — Aprueba
+- Usuario (ejecución): 2026-10-26 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

@@ -11,6 +11,10 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 - `uninstall <paquete>` retira un paquete instalado: presenta el plan de retirada completo antes de borrar —una línea por recurso registrado—, elimina lo que la instalación escribió y sigue intacto —incluida la guía gestionada—, decide lo que diverge del registro con la misma política de conflictos del resto del producto —diff del contenido local que se retiraría, decisión `remove`/`keep`, `--force`/`--skip` o listado y aborto sin consola—, respalda en `.teleprompter/backups/` lo decidido a retirar y deja el registro sin la entrada del paquete —desinstalación de paquetes (docs/epics/008-desinstalacion-paquetes.md).
 
+### Fixed
+
+- `uninstall`, `update` y `guide` ya no resuelven nombres heredados de `Object.prototype` —`__proto__`, `constructor` y afines— como paquetes instalados: responden «no está instalado», mientras una entrada propia con ese nombre sigue siendo legible (docs/tasks/044-guarda-propiedad-propia-lecturas-lock.md).
+
 ## [0.5.0] - 2026-10-23
 
 ### Added
