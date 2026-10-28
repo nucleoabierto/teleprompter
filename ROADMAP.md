@@ -19,7 +19,7 @@ reconstrucción del destino.
   004 (general): primitivas compartidas, informes y predicados,
   separación de la capa de invocación, forma del plan, resolución
   de colección y ejecución sin paquete.
-  - Estado: pendiente de arrancar.
+  - Estado: en curso — una de seis tareas completada.
   - Justificación: las revisiones detectaron duplicaciones y
     concentración que encarecen cualquier línea futura —
     `cli.js` concentra cinco preocupaciones justo donde la
