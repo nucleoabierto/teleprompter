@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { hashPath } from './hash.js';
 import { classifyResource, uncoveredUnits } from './drift.js';
-import { lockEntry } from './lock.js';
+import { isWritten, lockEntry } from './lock.js';
 import { SEMVER_SHAPE } from './manifest.js';
 import {
   canonTarget, hasEntry, isWithin, personalizationTarget, resolvesUnder,
@@ -152,7 +152,7 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const recordedTargets = new Set(recordedByTarget.keys());
   const retired = [];
   const removals = recordedFiles
-    .filter((f) => f.action !== 'skip' && canonTarget(f.target) !== guideTarget
+    .filter((f) => isWritten(f) && canonTarget(f.target) !== guideTarget
       && !shipped.has(canonTarget(f.target)))
     .flatMap((f) => {
       const t = canonTarget(f.target);
@@ -232,7 +232,7 @@ function classifyRemoval(destDir, f, replacedGuide) {
 // the marks, `conflicts` by filter, `retired` empty.
 export function buildUninstallPlan(destDir, record) {
   const resources = (record.files ?? []).flatMap((f) => {
-    if (f.action === 'skip') return [];
+    if (!isWritten(f)) return [];
     const drift = classifyResource(destDir, f);
     if (drift === 'intact') return [{ target: f.target, status: 'retire' }];
     if (drift === 'missing') return [];
@@ -253,6 +253,14 @@ export function buildUninstallPlan(destDir, record) {
 // plan order, and may return a promise.
 export async function resolveConflicts(plan, decide) {
   for (const r of plan.conflicts) r.resolution = await decide(r);
+}
+
+// Whether the resolved plan displaces content a backup must
+// preserve: the presence of an `overwrite` resolution is what
+// makes the plan produce backups — `skip` and `create` write
+// nothing worth mirroring.
+export function needsBackup(plan) {
+  return plan.conflicts.some((r) => r.resolution === 'overwrite');
 }
 
 // Downgrades are not managed updates: writing older content over a

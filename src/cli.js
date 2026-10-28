@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { verifyPackage } from './verify.js';
 import {
-  readLock, writeLock, lockEntry, lockEntries, removeLockEntry,
+  readLock, writeLock, lockEntry, lockEntries, removeLockEntry, isWritten,
 } from './lock.js';
 import {
-  buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts,
+  buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts, needsBackup,
 } from './plan.js';
 import { executePlan, installPersonalization, ExecutionError } from './execute.js';
 import { diffResource, show } from './diff.js';
@@ -288,7 +288,7 @@ function printGuide(out, target, content) {
 function showGuide(io, out, err, pkgName) {
   const destDir = io.cwd;
   const lock = readLock(destDir);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   if (pkgName !== undefined && lockEntry(lock, pkgName) === undefined) {
     err(`el paquete "${pkgName}" no está instalado`);
     return EXIT_USAGE;
@@ -340,7 +340,7 @@ function showGuide(io, out, err, pkgName) {
 // failure.
 function showList(io, out) {
   const lock = readLock(io.cwd);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   const entries = lockEntries(lock);
   if (entries.length === 0) {
     out('no hay paquetes instalados');
@@ -355,7 +355,7 @@ function showList(io, out) {
       out(`    guía: teleprompter guide ${name}`);
     }
     for (const f of entry.files) {
-      if (f.action !== 'skip') out(`    ${f.target}`);
+      if (isWritten(f)) out(`    ${f.target}`);
     }
   }
   return EXIT_OK;
@@ -378,7 +378,7 @@ const DRIFT_MARKS = {
 // always exits 0.
 function showCheck(io, out) {
   const lock = readLock(io.cwd);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   const entries = lockEntries(lock);
   if (entries.length === 0) {
     out('no hay paquetes instalados');
@@ -388,7 +388,7 @@ function showCheck(io, out) {
   for (const [name, entry] of entries) {
     out(`  ${name}@${entry.version}`);
     for (const f of entry.files) {
-      if (f.action === 'skip') continue;
+      if (!isWritten(f)) continue;
       const mark = DRIFT_MARKS[classifyResource(io.cwd, f)];
       out(`    ${mark.padEnd(15)}${f.target}`);
     }
@@ -414,7 +414,7 @@ async function obtainPackage(io, out, err, source) {
 // `update` passes it — fails an origin that publishes a different
 // package before its preconditions are even looked at.
 function checkVerified(result, out, err, expectedName) {
-  for (const warning of result.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, result.warnings);
   if (result.kind === 'manifest') {
     for (const error of result.errors) err(`manifiesto inválido: ${error}`);
     return EXIT_MANIFEST;
@@ -501,7 +501,7 @@ function checkGuideDestination(destDir, manifest, err) {
 // so the same pre-flight applies: an escaping chain makes the plan
 // non-executable up front (D005) instead of a mid-run failure.
 function checkBackupDestination(destDir, plan, err) {
-  if (!plan.conflicts.some((r) => r.resolution === 'overwrite')) return null;
+  if (!needsBackup(plan)) return null;
   const backupBase = path.join(destDir, MANAGED_DIR, 'backups');
   if (!resolvesUnder(destDir, backupBase)) {
     err(`la ruta destino escapa de la raíz: ${backupBase}`);
@@ -542,12 +542,34 @@ function reportBackup(out, actions, backupRoot) {
   for (const a of backedUp) out(`  ${a.target}`);
 }
 
+// Warnings travel with the data that produced them — the lock, a
+// manifest, a collection — but the `aviso:` idiom is the CLI's: one
+// emitter keeps the prefix and the emission order in a single place.
+function reportWarnings(out, warnings) {
+  for (const warning of warnings) out(`aviso: ${warning}`);
+}
+
+// A mid-plan failure reports the same three things wherever it
+// surfaces: the actions already applied — the ExecutionError carries
+// them; a failure outside the plan falls back to the full list —,
+// the backup already made, and the error itself under the execution
+// exit code.
+function reportExecutionFailure(out, err, error, actions, backupRoot) {
+  const applied = error instanceof ExecutionError ? error.applied : actions;
+  for (const a of applied) {
+    out(`  ${a.action.padEnd(15)}${a.target}`);
+  }
+  reportBackup(out, applied, backupRoot);
+  err(`error de ejecución: ${error.message}`);
+  return EXIT_EXECUTION;
+}
+
 // Runs the resolved plan, materializes the guide, records the install
 // and reports what happened — the same ending for install and update
 // apart from the final verb. On failure the report lists the actions
 // already applied so the partial state is visible.
 function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, origin, verb }) {
-  const backupRoot = plan.conflicts.some((r) => r.resolution === 'overwrite')
+  const backupRoot = needsBackup(plan)
     ? backupName(manifest.name, lock)
     : null;
   let actions;
@@ -564,13 +586,7 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, ori
       guideContent = fs.readFileSync(path.join(destDir, guide.target), 'utf8');
     }
   } catch (error) {
-    const applied = error instanceof ExecutionError ? error.applied : actions;
-    for (const a of applied) {
-      out(`  ${a.action.padEnd(15)}${a.target}`);
-    }
-    reportBackup(out, applied, backupRoot);
-    err(`error de ejecución: ${error.message}`);
-    return EXIT_EXECUTION;
+    return reportExecutionFailure(out, err, error, actions, backupRoot);
   }
   out('resultado:');
   for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
@@ -590,7 +606,7 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, ori
 async function runUpdate(io, out, err, parsed) {
   const destDir = io.cwd;
   const lock = readLock(destDir);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   const record = lockEntry(lock, parsed.pkg);
   if (record === undefined) {
     err(`el paquete "${parsed.pkg}" no está instalado`);
@@ -638,7 +654,7 @@ async function runUpdate(io, out, err, parsed) {
     let fromCollection = false;
     if (isCollectionDir(pkgDir)) {
       const collection = loadCollectionManifest(pkgDir);
-      for (const warning of collection.warnings) out(`aviso: ${warning}`);
+      reportWarnings(out, collection.warnings);
       if (collection.errors.length > 0) {
         for (const error of collection.errors) {
           err(`manifiesto de colección inválido: ${error}`);
@@ -704,7 +720,7 @@ async function runUpdate(io, out, err, parsed) {
 async function runUninstall(io, out, err, parsed) {
   const destDir = io.cwd;
   const lock = readLock(destDir);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   const record = lockEntry(lock, parsed.pkg);
   if (record === undefined) {
     err(`el paquete "${parsed.pkg}" no está instalado`);
@@ -723,7 +739,7 @@ async function runUninstall(io, out, err, parsed) {
     out('fin del plan (--dry-run): nada se escribió');
     return EXIT_OK;
   }
-  const backupRoot = plan.conflicts.some((r) => r.resolution === 'overwrite')
+  const backupRoot = needsBackup(plan)
     ? backupName(parsed.pkg, lock)
     : null;
   let actions;
@@ -733,13 +749,7 @@ async function runUninstall(io, out, err, parsed) {
     actions = executePlan(destDir, destDir, plan, backupRoot);
     removeLockEntry(destDir, lock, parsed.pkg);
   } catch (error) {
-    const applied = error instanceof ExecutionError ? error.applied : actions;
-    for (const a of applied) {
-      out(`  ${a.action.padEnd(15)}${a.target}`);
-    }
-    reportBackup(out, applied, backupRoot);
-    err(`error de ejecución: ${error.message}`);
-    return EXIT_EXECUTION;
+    return reportExecutionFailure(out, err, error, actions, backupRoot);
   }
   out('resultado:');
   for (const a of actions) out(`  ${a.action.padEnd(15)}${a.target}`);
@@ -789,7 +799,7 @@ function selectUnits(out, err, rootDir, names) {
     return { units: [{ dir: rootDir }] };
   }
   const collection = loadCollectionManifest(rootDir);
-  for (const warning of collection.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, collection.warnings);
   if (collection.errors.length > 0) {
     for (const error of collection.errors) {
       err(`manifiesto de colección inválido: ${error}`);
@@ -828,7 +838,7 @@ async function installUnit(io, out, err, { source, unit, destDir, flags, commit 
   const { manifest } = result;
 
   const lock = readLock(destDir);
-  for (const warning of lock.warnings) out(`aviso: ${warning}`);
+  reportWarnings(out, lock.warnings);
   const plan = buildPlan(unit.dir, manifest, destDir, result.creates, lock);
   printPlan(plan, out, 'plan de instalación:');
 
