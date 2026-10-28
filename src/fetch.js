@@ -48,7 +48,7 @@ const DEFAULT_MAX_BYTES = 50 * 1024 * 1024;
 
 const isAbort = (error) => error?.name === 'TimeoutError' || error?.name === 'AbortError';
 
-const specLabel = ({ owner, name, ref }) => `${owner}/${name}${ref ? `@${ref}` : ''}`;
+export const specLabel = ({ owner, name, ref }) => `${owner}/${name}${ref ? `@${ref}` : ''}`;
 
 // Resolving the requested ref to the commit it points at is what
 // anchors provenance: a branch or tag moves, a SHA does not. A

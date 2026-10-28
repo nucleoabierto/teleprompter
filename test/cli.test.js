@@ -486,6 +486,7 @@ test('main exits 1 when two install entries share a target', async () => {
 test('main exits 1 on normalized duplicate, nested, or reserved targets', async () => {
   const cases = [
     { targets: ['a.txt', 'a.txt/'], match: /target duplicado/ },
+    { targets: ['a/', 'a\\'], match: /target duplicado/ },
     { targets: ['a', 'a/b.txt'], match: /dentro de otro target/ },
     { targets: ['teleprompter-lock.json'], match: /target reservado/ },
   ];
