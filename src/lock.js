@@ -37,6 +37,13 @@ export function lockEntries(lock) {
   return Object.entries(lock.packages);
 }
 
+// A recorded file entry asserts the tool wrote the resource —
+// `skip` records a decision that wrote nothing: a conflict kept
+// foreign content. Every other action counts as written.
+export function isWritten(f) {
+  return f.action !== 'skip';
+}
+
 // A lock is only trustworthy if every package entry holds a files
 // array of {target, sha256?} records — anything else is corrupt even
 // when it parses as JSON.
