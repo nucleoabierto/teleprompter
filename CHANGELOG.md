@@ -14,6 +14,7 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 ### Fixed
 
 - `uninstall`, `update` y `guide` ya no resuelven nombres heredados de `Object.prototype` —`__proto__`, `constructor` y afines— como paquetes instalados: responden «no está instalado», mientras una entrada propia con ese nombre sigue siendo legible (docs/tasks/044-guarda-propiedad-propia-lecturas-lock.md).
+- La validación del manifiesto detecta como target duplicado dos entradas que solo difieren en el separador final —`a/` y `a\` canona igual—: la comparación de targets usa ya la misma forma canónica en todo el producto (docs/tasks/045-centralizar-primitivas-compartidas.md).
 
 ## [0.5.0] - 2026-10-23
 

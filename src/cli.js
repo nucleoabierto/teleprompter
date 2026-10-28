@@ -12,9 +12,11 @@ import { diffResource, show } from './diff.js';
 import {
   resolvesUnder, personalizationTarget, resolveRecordedPath, MANAGED_DIR,
 } from './paths.js';
-import { parseRepoSpec, fetchRepoTree, isValidRef } from './fetch.js';
+import {
+  parseRepoSpec, fetchRepoTree, isValidRef, specLabel,
+} from './fetch.js';
 import { classifyResource } from './drift.js';
-import { loadCollectionManifest, NAME_RE } from './manifest.js';
+import { loadCollectionManifest, NAME_RE, SEMVER_SHAPE } from './manifest.js';
 import { isCollectionDir, resolveSelection, describeIndex } from './collection.js';
 
 export const EXIT_OK = 0;
@@ -399,8 +401,7 @@ function showCheck(io, out) {
 // happens next, so the result carries `cleanup` beside `pkgDir`.
 async function obtainPackage(io, out, err, source) {
   if (source.kind !== 'repo') return { ok: true, pkgDir: source.dir, cleanup: null };
-  const { owner, name, ref } = source.spec;
-  out(`obteniendo: ${owner}/${name}${ref ? `@${ref}` : ''}`);
+  out(`obteniendo: ${specLabel(source.spec)}`);
   const fetched = await fetchRepoTree(source.spec, { fetch: io.fetch, tmpBase: io.tmpBase });
   if (!fetched.ok) {
     err(`error de obtención: ${fetched.error}`);
@@ -523,7 +524,7 @@ function checkBackupDestination(destDir, plan, err) {
 function backupName(name, lock) {
   const stamp = new Date().toISOString().replace(/[-:]/g, '');
   const recorded = lockEntry(lock, name)?.version;
-  const version = /^\d+\.\d+\.\d+$/.test(recorded ?? '') ? recorded : undefined;
+  const version = SEMVER_SHAPE.test(recorded ?? '') ? recorded : undefined;
   const safeName = NAME_RE.test(name) ? name : undefined;
   const tag = safeName === undefined ? undefined
     : version === undefined ? safeName : `${safeName}@${version}`;

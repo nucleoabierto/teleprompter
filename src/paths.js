@@ -66,16 +66,26 @@ export function recordedChainSafe(root, rel) {
     && resolvesUnder(root, path.dirname(path.join(root, rel)));
 }
 
+// The trailing-separator strip applied to a path as recorded:
+// deliberately no normalization — isSafeRelative and the
+// leaf-is-atomic rule must see the lock's data, not a rewritten
+// version where "a/../b" collapsed to "b".
+export const stripTargetSeps = (t) => t.replace(/[/\\]+$/, '');
+
+// The comparison shape for targets: normalize, then strip the
+// trailing separator — `./a`, `a/` and `a\` name the same
+// resource, so a directory recorded as `d/` never compares as
+// a different path.
+export const canonTarget = (t) => stripTargetSeps(path.normalize(t));
+
 // Whether `descendant` sits strictly inside `ancestor`, both
-// targets under the same root. The comparison works on normalized
-// paths stripped of their trailing separator —directory targets
-// are recorded as `d/`— because a bare string prefix would
-// conflate `d` with `dir`: `d/x` is inside `d`, `dir/x` is not.
-// An equal pair is never "within": `d` does not start with `d/`.
+// targets under the same root. The comparison works on canonical
+// targets —directory targets are recorded as `d/`— because a
+// bare string prefix would conflate `d` with `dir`: `d/x` is
+// inside `d`, `dir/x` is not. An equal pair is never "within":
+// `d` does not start with `d/`.
 export function isWithin(ancestor, descendant) {
-  const a = path.normalize(ancestor).replace(/[/\\]+$/, '');
-  const d = path.normalize(descendant).replace(/[/\\]+$/, '');
-  return d.startsWith(`${a}${path.sep}`);
+  return canonTarget(descendant).startsWith(`${canonTarget(ancestor)}${path.sep}`);
 }
 
 // The leaf level of the recorded-path defense: for reads that follow

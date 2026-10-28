@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { recordedChainSafe } from './paths.js';
+import { recordedChainSafe, stripTargetSeps } from './paths.js';
 
 // Unified-diff context: how many unchanged lines frame each change
 // run. Two runs merge when the gap between them fits inside both
@@ -231,7 +231,7 @@ function safeCollect(root, rel) {
   // `lstat` on `d/` follows a leaf link, which would defeat the
   // leaf-is-atomic rule the chain level relies on — and makes a
   // file target read as ENOTDIR instead of showing its content.
-  const clean = rel.replace(/[/\\]+$/, '');
+  const clean = stripTargetSeps(rel);
   if (!recordedChainSafe(root, clean)) {
     return new Map([['', { kind: 'other', lines: ['(ruta insegura)'], eol: null }]]);
   }
@@ -267,7 +267,7 @@ export function diffResource(destDir, pkgDir, resource) {
   const keys = [...new Set([...destLeaves.keys(), ...pkgLeaves.keys()])].sort();
   // Displayed paths normalize the target: a directory recorded as
   // `d/` joins its leaves as `d/x`, not `d//x`.
-  const base = resource.target.replace(/[/\\]+$/, '');
+  const base = stripTargetSeps(resource.target);
   const out = [];
   for (const key of keys) {
     const a = destLeaves.get(key);

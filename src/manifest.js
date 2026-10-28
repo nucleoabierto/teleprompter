@@ -1,9 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { isSafeRelative, hasEntry, MANAGED_DIR } from './paths.js';
+import {
+  canonTarget, isSafeRelative, hasEntry, MANAGED_DIR,
+} from './paths.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
 export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// The shape every reader of untrusted data recognizes — three
+// numeric components, capture-grouped for callers that parse them;
+// the manifest contract below is stricter and rejects leading zeros.
+export const SEMVER_SHAPE = /^(\d+)\.(\d+)\.(\d+)$/;
 const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 const TOP_LEVEL_FIELDS = new Set([
@@ -17,6 +23,7 @@ const OBJECT_KEYS = {
   requires: new Set(['paths']),
   requiresPath: new Set(['path', 'create']),
   installEntry: new Set(['source', 'target']),
+  packagesEntry: new Set(['path']),
 };
 
 const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -118,7 +125,7 @@ const VALIDATORS = [
     // itself would let the second silently overwrite the first.
     const targets = manifest.install
       .map((e) => (typeof e?.target === 'string'
-        ? path.normalize(e.target).replace(/\/+$/, '')
+        ? canonTarget(e.target)
         : null))
       .filter((t) => t !== null);
     const seen = new Set();
@@ -279,7 +286,7 @@ export function loadCollectionManifest(colDir) {
         errors.push(`${where}: debe ser un objeto { "path" }`);
         return;
       }
-      checkKeys(entry, new Set(['path']), where, errors);
+      checkKeys(entry, OBJECT_KEYS.packagesEntry, where, errors);
       checkRelativePath(entry.path, `${where}.path`, errors);
     });
   }

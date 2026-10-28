@@ -2,8 +2,9 @@ import path from 'node:path';
 import { hashPath } from './hash.js';
 import { classifyResource, uncoveredUnits } from './drift.js';
 import { lockEntry } from './lock.js';
+import { SEMVER_SHAPE } from './manifest.js';
 import {
-  hasEntry, isWithin, personalizationTarget, resolvesUnder,
+  canonTarget, hasEntry, isWithin, personalizationTarget, resolvesUnder,
 } from './paths.js';
 
 // Classifies each install entry by comparing the destination with the
@@ -84,12 +85,6 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
 // hash for the directory, but a tree that still hashes as recorded
 // proves every child holds what the tool wrote, so an incoming
 // child can classify `update` instead of degrading to `conflict`.
-// Targets compare normalized and without a trailing separator:
-// `./a.txt`, `a.txt` and a directory recorded as `d/` all resolve
-// to the same resource, so a shipped target can never masquerade
-// as retired — nor a recorded directory as a different path.
-const canon = (t) => path.normalize(t).replace(/[/\\]+$/, '');
-
 export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const record = lockEntry(lock, manifest.name);
   if (record !== undefined && record.version === manifest.version) {
@@ -98,9 +93,9 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
     };
   }
   const recordedFiles = record?.files ?? [];
-  const recorded = new Map(recordedFiles.map((f) => [canon(f.target), f.sha256]));
-  const recordedByTarget = new Map(recordedFiles.map((f) => [canon(f.target), f]));
-  const shipped = new Set(manifest.install.map(({ target }) => canon(target)));
+  const recorded = new Map(recordedFiles.map((f) => [canonTarget(f.target), f.sha256]));
+  const recordedByTarget = new Map(recordedFiles.map((f) => [canonTarget(f.target), f]));
+  const shipped = new Set(manifest.install.map(({ target }) => canonTarget(target)));
   const updatesAllowed = semverAtLeast(manifest.version, record?.version);
   // The recorded hash of an incoming target is its own entry's when
   // it has one; inside an intact recorded tree the current hash
@@ -129,7 +124,7 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
     }
     const destHash = hashPath(dest);
     const pkgHash = hashPath(path.join(pkgDir, source));
-    const recHash = recordedHash(canon(target), destHash);
+    const recHash = recordedHash(canonTarget(target), destHash);
     let status;
     if (destHash === pkgHash) status = 'identical';
     else if (updatesAllowed && destHash === recHash && pkgHash !== recHash) {
@@ -147,20 +142,20 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   // renames the file— the old guide retires like any other file.
   const guideTarget = manifest.personalization === undefined
     ? undefined
-    : canon(personalizationTarget(manifest.name, manifest.personalization));
+    : canonTarget(personalizationTarget(manifest.name, manifest.personalization));
   // The lock is untrusted data: a hand-edited `personalization` that
   // is not a string must not crash the plan.
   const replacedGuide = guideTarget === undefined || typeof record?.personalization !== 'string'
     ? undefined
-    : canon(record.personalization);
+    : canonTarget(record.personalization);
   const shippedArr = [...shipped];
   const recordedTargets = new Set(recordedByTarget.keys());
   const retired = [];
   const removals = recordedFiles
-    .filter((f) => f.action !== 'skip' && canon(f.target) !== guideTarget
-      && !shipped.has(canon(f.target)))
+    .filter((f) => f.action !== 'skip' && canonTarget(f.target) !== guideTarget
+      && !shipped.has(canonTarget(f.target)))
     .flatMap((f) => {
-      const t = canon(f.target);
+      const t = canonTarget(f.target);
       // Governed by the incoming resource that covers it: identical
       // keeps it, update or overwrite replaces the whole subtree.
       if (shippedArr.some((s) => isWithin(s, t))) return [];
@@ -208,7 +203,7 @@ function classifyRemoval(destDir, f, replacedGuide) {
   const drift = classifyResource(destDir, f);
   if (drift === 'intact') return [{ target: f.target, status: 'retire' }];
   if (drift === 'missing') return [];
-  if (drift === 'modified' && canon(f.target) === replacedGuide) {
+  if (drift === 'modified' && canonTarget(f.target) === replacedGuide) {
     return [{ target: f.target, status: 'retire' }];
   }
   return [{ target: f.target, status: 'conflict', removal: true }];
@@ -264,7 +259,7 @@ export async function resolveConflicts(plan, decide) {
 // newer recorded install must surface as a conflict, not silently
 // pass as safe.
 function semverAtLeast(version, recordedVersion) {
-  const parse = (v) => /^(\d+)\.(\d+)\.(\d+)$/.exec(v ?? '')?.slice(1).map(Number);
+  const parse = (v) => SEMVER_SHAPE.exec(v ?? '')?.slice(1).map(Number);
   const a = parse(version);
   const b = parse(recordedVersion);
   if (!a || !b) return false;
