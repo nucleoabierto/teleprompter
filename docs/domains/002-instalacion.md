@@ -77,11 +77,12 @@ instalado.
     clave heredada como `__proto__` o `constructor` se lee como
     ausente—; la guarda es de pertenencia, así que una entrada
     `__proto__` propia sigue resolviéndose.
-    - Ancla: `readLock`, `isValidLock`, `writeLock`, `lockEntry` y
-      `lockEntries` en `src/lock.js` —la forma del registro solo se
-      navega desde ese módulo y `lockEntry` lleva la guarda de
-      propiedad propia— y `originOf` en `src/cli.js`;
-      D007, D014, D019
+    - Ancla: `readLock`, `isValidLock`, `writeLock`, `lockEntry`,
+      `lockEntries` e `isWritten` en `src/lock.js` —la forma del
+      registro solo se navega desde ese módulo, `lockEntry` lleva
+      la guarda de propiedad propia e `isWritten` nombra la entrada
+      registrada como escrita (toda `action` salvo `skip`)— y
+      `originOf` en `src/cli.js`; D007, D014, D019
   - **Unidad de colección:** cada paquete que una selección nombra
     dentro de una colección; se instala como instalación plena e
     independiente —plan, colisiones, guía y registro propios—, en
@@ -370,7 +371,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-26 (tarea
-  `docs/tasks/044-guarda-propiedad-propia-lecturas-lock.md`)
+  `docs/tasks/046-extraer-informes-y-predicados-cli.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
