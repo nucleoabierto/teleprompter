@@ -89,8 +89,9 @@ instalado.
     ejecución secuencial y atómica por unidad. La actualización
     re-resuelve el miembro por su nombre en el índice del árbol
     recién obtenido.
-    - Ancla: `selectUnits` e `installUnit` en `src/commands.js`,
-      `resolveSelection` en `src/collection.js`; D019
+    - Ancla: `selectUnits`, `resolveMembers` e `installUnit` en
+      `src/commands.js`, `resolveSelection` en `src/collection.js`;
+      D019
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
@@ -377,7 +378,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-26 (tarea
-  `docs/tasks/048-uniformar-forma-plan.md`)
+  `docs/tasks/049-extraer-resolucion-miembro-coleccion.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
