@@ -4,7 +4,7 @@ import { EXIT_EXECUTION } from './exits.js';
 export function printPlan(plan, out, title) {
   out(title);
   for (const dir of plan.mkdirs) out(`  ${'mkdir'.padEnd(15)}${dir}`);
-  for (const r of [...plan.resources, ...(plan.retired ?? [])]) {
+  for (const r of [...plan.resources, ...plan.retired]) {
     out(`  ${r.status.padEnd(15)}${r.target}`);
   }
 }
