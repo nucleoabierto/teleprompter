@@ -1,7 +1,6 @@
 import { parseArgs, showHelp, USAGE } from './usage.js';
-import {
-  showGuide, showList, showCheck, runInstall, runUpdate, runUninstall,
-} from './commands.js';
+import { showGuide, showList, showCheck } from './queries.js';
+import { runInstall, runUpdate, runUninstall } from './commands.js';
 import { EXIT_USAGE } from './exits.js';
 
 export {
