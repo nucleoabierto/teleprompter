@@ -355,23 +355,10 @@ export async function runUpdate(io, out, err, parsed) {
     let unitDir = pkgDir;
     let fromCollection = false;
     if (isCollectionDir(pkgDir)) {
-      const collection = loadCollectionManifest(pkgDir);
-      reportWarnings(out, collection.warnings);
-      if (collection.errors.length > 0) {
-        for (const error of collection.errors) {
-          err(`manifiesto de colección inválido: ${error}`);
-        }
-        return EXIT_MANIFEST;
-      }
-      const resolved = resolveSelection(pkgDir, collection.manifest, [parsed.pkg]);
-      if (!resolved.ok) {
-        err(`el paquete "${parsed.pkg}" ya no está en la colección`);
-        if (resolved.available.length > 0) {
-          err(`disponibles: ${resolved.available.join(', ')}`);
-        }
-        return EXIT_USAGE;
-      }
-      unitDir = resolved.units[0].dir;
+      const selected = resolveMembers(out, err, pkgDir, [parsed.pkg],
+        () => err(`el paquete "${parsed.pkg}" ya no está en la colección`));
+      if (selected.units === undefined) return selected.code;
+      unitDir = selected.units[0].dir;
       fromCollection = true;
     }
 
@@ -489,17 +476,13 @@ function originOf(source, commit) {
   return origin;
 }
 
-// A collection origin resolves to member units selected by name; a
-// package origin resolves to itself. Everything here is read-only:
-// no selection prints the index and aborts before any write.
-function selectUnits(out, err, rootDir, names) {
-  if (!isCollectionDir(rootDir)) {
-    if (names.length > 0) {
-      err('el origen no es una colección: --package no aplica');
-      return { code: EXIT_USAGE };
-    }
-    return { units: [{ dir: rootDir }] };
-  }
+// The shared member-resolution sequence inside a collection
+// directory: load the index manifest, surface its warnings and
+// errors, print the index when nothing was selected, resolve the
+// names and — when resolution fails — let the caller phrase the
+// miss before listing what is available. Everything here is
+// read-only: it aborts before any write.
+function resolveMembers(out, err, rootDir, names, onUnresolved) {
   const collection = loadCollectionManifest(rootDir);
   reportWarnings(out, collection.warnings);
   if (collection.errors.length > 0) {
@@ -520,13 +503,27 @@ function selectUnits(out, err, rootDir, names) {
   }
   const resolved = resolveSelection(rootDir, collection.manifest, names);
   if (!resolved.ok) {
-    for (const error of resolved.errors) err(error);
+    onUnresolved(resolved);
     if (resolved.available.length > 0) {
       err(`disponibles: ${resolved.available.join(', ')}`);
     }
     return { code: EXIT_USAGE };
   }
   return { units: resolved.units };
+}
+
+// A collection origin resolves to member units selected by name; a
+// package origin resolves to itself.
+function selectUnits(out, err, rootDir, names) {
+  if (!isCollectionDir(rootDir)) {
+    if (names.length > 0) {
+      err('el origen no es una colección: --package no aplica');
+      return { code: EXIT_USAGE };
+    }
+    return { units: [{ dir: rootDir }] };
+  }
+  return resolveMembers(out, err, rootDir, names,
+    (resolved) => { for (const error of resolved.errors) err(error); });
 }
 
 // One installable unit through the shared pipeline: verify, plan,
