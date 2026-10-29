@@ -50,6 +50,44 @@ const isAbort = (error) => error?.name === 'TimeoutError' || error?.name === 'Ab
 
 export const specLabel = ({ owner, name, ref }) => `${owner}/${name}${ref ? `@${ref}` : ''}`;
 
+// The GitHub failure vocabulary lives in one place: resolution
+// produces it from a single status, the download aggregated
+// across endpoints — the strings never differ between them.
+const WHY = {
+  unreachable: 'no se pudo contactar con GitHub',
+  notFound: 'repositorio o referencia no encontrados',
+  denied: 'acceso denegado o límite de peticiones',
+  server: 'GitHub responde con error de servidor',
+  unexpected: 'respuesta inesperada de GitHub',
+};
+
+const timeoutWhy = (timeoutMs) =>
+  `${WHY.unreachable}: tiempo máximo excedido (${timeoutMs} ms)`;
+
+// One HTTP status to its diagnosis. A nonexistent ref answers
+// 422 «No commit found», not 404 — both mean the requested tree
+// is not there.
+const statusWhy = (s) => {
+  if (s === 404 || s === 422) return WHY.notFound;
+  if (s === 401 || s === 403) return WHY.denied;
+  if (typeof s === 'number' && s >= 500) return WHY.server;
+  if (typeof s === 'number') return `GitHub responde con HTTP ${s}`;
+  return WHY.unexpected;
+};
+
+// The aggregate over the endpoints actually tried: a server
+// error dominates — one endpoint down says nothing about the
+// other —, «not found» only holds when every answer was 404,
+// and denied when any said so. Otherwise the last status
+// speaks; no status at all is unexpected.
+const statusesWhy = (statuses) => {
+  if (statuses.some((s) => s >= 500)) return WHY.server;
+  if (statuses.length > 0 && statuses.every((s) => s === 404)) return WHY.notFound;
+  if (statuses.some((s) => s === 401 || s === 403)) return WHY.denied;
+  if (statuses.length > 0) return `GitHub responde con HTTP ${statuses.at(-1)}`;
+  return WHY.unexpected;
+};
+
 // Resolving the requested ref to the commit it points at is what
 // anchors provenance: a branch or tag moves, a SHA does not. A
 // full 40-hex ref is already resolved — no API call —; otherwise
@@ -66,20 +104,11 @@ async function resolveCommit(spec, { fetchImpl, timeoutMs }) {
   try {
     res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
   } catch (error) {
-    const why = isAbort(error)
-      ? `no se pudo contactar con GitHub: tiempo máximo excedido (${timeoutMs} ms)`
-      : 'no se pudo contactar con GitHub';
+    const why = isAbort(error) ? timeoutWhy(timeoutMs) : WHY.unreachable;
     return { ok: false, error: `${why}: ${specLabel(spec)}` };
   }
   if (!res.ok) {
-    const s = res.status;
-    // A nonexistent ref answers 422 «No commit found», not 404 —
-    // both mean the requested tree is not there.
-    const why = s === 404 || s === 422 ? 'repositorio o referencia no encontrados'
-      : s === 401 || s === 403 ? 'acceso denegado o límite de peticiones'
-        : typeof s === 'number' && s >= 500 ? 'GitHub responde con error de servidor'
-          : typeof s === 'number' ? `GitHub responde con HTTP ${s}` : 'respuesta inesperada de GitHub';
-    return { ok: false, error: `${why}: ${specLabel(spec)}` };
+    return { ok: false, error: `${statusWhy(res.status)}: ${specLabel(spec)}` };
   }
   let sha;
   try {
@@ -88,18 +117,84 @@ async function resolveCommit(spec, { fetchImpl, timeoutMs }) {
     sha = undefined;
   }
   if (typeof sha !== 'string' || !isFullSha(sha)) {
-    return { ok: false, error: `respuesta inesperada de GitHub: ${specLabel(spec)}` };
+    return { ok: false, error: `${WHY.unexpected}: ${specLabel(spec)}` };
   }
   return { ok: true, sha };
+}
+
+// Downloads the archive at the resolved commit from the public
+// endpoints — codeload first, the API as fallback: a failed
+// request says nothing about the next endpoint. Both the
+// declared length and the received body are bounded by
+// maxBytes. Returns { ok: true, body } or { ok: false, error }.
+async function downloadArchive(spec, sha, { fetchImpl, timeoutMs, maxBytes }) {
+  let response = null;
+  let unreachable = true;
+  let thrown = 0;
+  let timedOut = 0;
+  const statuses = [];
+  for (const url of repoUrls(spec, sha)) {
+    try {
+      const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
+      if (res.ok) {
+        response = res;
+        break;
+      }
+      unreachable = false;
+      if (typeof res.status === 'number') statuses.push(res.status);
+    } catch (error) {
+      thrown += 1;
+      if (isAbort(error)) timedOut += 1;
+    }
+  }
+  if (response === null) {
+    const why = unreachable
+      ? (timedOut === thrown ? timeoutWhy(timeoutMs) : WHY.unreachable)
+      : statusesWhy(statuses);
+    return { ok: false, error: `${why}: ${specLabel(spec)}` };
+  }
+
+  const declared = Number(response.headers?.get?.('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    return { ok: false, error: `la descarga excede el tamaño máximo (${maxBytes} bytes): ${specLabel(spec)}` };
+  }
+
+  let body;
+  try {
+    body = Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    const why = isAbort(error) ? `tiempo máximo excedido (${timeoutMs} ms)` : `la descarga falló: ${error.message}`;
+    return { ok: false, error: `${why}: ${specLabel(spec)}` };
+  }
+  if (body.byteLength > maxBytes) {
+    return { ok: false, error: `la descarga excede el tamaño máximo (${maxBytes} bytes): ${specLabel(spec)}` };
+  }
+  return { ok: true, body };
+}
+
+// Writes the tarball under the temp root and extracts it into
+// `dir`, removing the archive afterwards. The extracted tree is
+// remote content: `tar` sanitization (no "..", no absolute
+// paths, no symlink escapes) is the security boundary, not a
+// courtesy.
+async function extractArchive(root, dir, body) {
+  try {
+    const archive = path.join(root, 'repo.tar.gz');
+    fs.writeFileSync(archive, body);
+    fs.mkdirSync(dir);
+    await extract({ file: archive, cwd: dir, strip: 1 });
+    fs.rmSync(archive);
+  } catch (error) {
+    return { ok: false, error: `no se pudo extraer el archivo: ${error.message}` };
+  }
+  return { ok: true };
 }
 
 // Downloads the public archive of a GitHub repository — no git, no
 // credentials — and extracts it under a temp dir as {tmp}/{repo},
 // so the package directory basename matches the manifest name rule.
 // The fetch implementation comes from the caller (the CLI injects
-// it for tests); the extracted tree is remote content, so `tar`
-// sanitization (no "..", no absolute paths, no symlink escapes) is
-// the security boundary, not a courtesy.
+// it for tests).
 // Returns { ok: true, dir, cleanup, commit } — the commit the tree
 // was fetched at — or { ok: false, error }.
 export async function fetchRepoTree(spec, {
@@ -119,75 +214,23 @@ export async function fetchRepoTree(spec, {
     return { ok: false, error: `no se pudo crear el directorio temporal: ${error.message}` };
   }
   const cleanup = () => fs.rmSync(root, { recursive: true, force: true });
+  // Every failure past this point releases the temp root through
+  // the same point of cleanup.
+  const fail = (error) => {
+    cleanup();
+    return { ok: false, error };
+  };
   const dir = path.join(root, spec.name);
 
   const resolved = await resolveCommit(spec, { fetchImpl, timeoutMs });
-  if (!resolved.ok) {
-    cleanup();
-    return resolved;
-  }
-  const commit = resolved.sha;
+  if (!resolved.ok) return fail(resolved.error);
 
-  let response = null;
-  let unreachable = true;
-  let thrown = 0;
-  let timedOut = 0;
-  const statuses = [];
-  for (const url of repoUrls(spec, commit)) {
-    try {
-      const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
-      if (res.ok) {
-        response = res;
-        break;
-      }
-      unreachable = false;
-      if (typeof res.status === 'number') statuses.push(res.status);
-    } catch (error) {
-      // A failed request says nothing about the next endpoint:
-      // codeload may be down while the API is reachable.
-      thrown += 1;
-      if (isAbort(error)) timedOut += 1;
-    }
-  }
-  if (response === null) {
-    cleanup();
-    const why = unreachable
-      ? timedOut === thrown ? `no se pudo contactar con GitHub: tiempo máximo excedido (${timeoutMs} ms)` : 'no se pudo contactar con GitHub'
-      : statuses.some((s) => s >= 500) ? 'GitHub responde con error de servidor'
-        : statuses.length > 0 && statuses.every((s) => s === 404) ? 'repositorio o referencia no encontrados'
-          : statuses.some((s) => s === 401 || s === 403) ? 'acceso denegado o límite de peticiones'
-            : statuses.length > 0 ? `GitHub responde con HTTP ${statuses.at(-1)}` : 'respuesta inesperada de GitHub';
-    return { ok: false, error: `${why}: ${specLabel(spec)}` };
-  }
+  const downloaded = await downloadArchive(spec, resolved.sha,
+    { fetchImpl, timeoutMs, maxBytes });
+  if (!downloaded.ok) return fail(downloaded.error);
 
-  const declared = Number(response.headers?.get?.('content-length'));
-  if (Number.isFinite(declared) && declared > maxBytes) {
-    cleanup();
-    return { ok: false, error: `la descarga excede el tamaño máximo (${maxBytes} bytes): ${specLabel(spec)}` };
-  }
+  const extracted = await extractArchive(root, dir, downloaded.body);
+  if (!extracted.ok) return fail(extracted.error);
 
-  let body;
-  try {
-    body = Buffer.from(await response.arrayBuffer());
-  } catch (error) {
-    cleanup();
-    const why = isAbort(error) ? `tiempo máximo excedido (${timeoutMs} ms)` : `la descarga falló: ${error.message}`;
-    return { ok: false, error: `${why}: ${specLabel(spec)}` };
-  }
-  if (body.byteLength > maxBytes) {
-    cleanup();
-    return { ok: false, error: `la descarga excede el tamaño máximo (${maxBytes} bytes): ${specLabel(spec)}` };
-  }
-
-  try {
-    const archive = path.join(root, 'repo.tar.gz');
-    fs.writeFileSync(archive, body);
-    fs.mkdirSync(dir);
-    await extract({ file: archive, cwd: dir, strip: 1 });
-    fs.rmSync(archive);
-  } catch (error) {
-    cleanup();
-    return { ok: false, error: `no se pudo extraer el archivo: ${error.message}` };
-  }
-  return { ok: true, dir, cleanup, commit };
+  return { ok: true, dir, cleanup, commit: resolved.sha };
 }
