@@ -4,7 +4,7 @@
 
 ## Hito 2: Saneamiento de la complejidad interna
 
-- [r] docs/tasks/053-descomponer-fetchrepo-unificar-fallo-github.md — Descomponer fetchRepoTree y unificar el fallo de GitHub
+- [x] docs/tasks/053-descomponer-fetchrepo-unificar-fallo-github.md — Descomponer fetchRepoTree y unificar el fallo de GitHub
 - [ ] docs/tasks/054-despachar-executeplan-por-accion.md — Despachar executePlan por acción
 - [ ] docs/tasks/055-compartir-clasificacion-entrantes-plan.md — Compartir la clasificación de entrantes entre los constructores de plan
 - [ ] docs/tasks/056-reutilizar-validadores-manifiesto-coleccion.md — Reutilizar los validadores de manifiesto en la carga de colección

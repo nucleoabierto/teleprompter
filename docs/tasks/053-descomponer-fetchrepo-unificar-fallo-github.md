@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -162,5 +162,5 @@ superficie pública es `parseRepoSpec`, `fetchRepoTree`,
 ## Revisión
 
 - Subagente: 2026-10-29 — Aprueba
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-10-29 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
