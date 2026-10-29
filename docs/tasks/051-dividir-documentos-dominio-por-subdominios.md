@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[r] En revisión
 
 ## Tipo
 
@@ -82,8 +82,94 @@ que defienden.
   fronteras de módulos ya están asentadas, para no re-anclar
   dos veces.
 
+## Contexto
+
+- `002-instalacion.md` (385 líneas) aglutina tres subdominios
+  reales hoy separados en el código: ciclo de vida (plan,
+  ejecución, update/uninstall —`plan.js`, `execute.js`,
+  `commands.js`), registro (lock, propiedad, deriva, consultas
+  —`lock.js`, `drift.js`, `queries.js`) y resolución de
+  conflictos (política, diff, respaldo —`prompt.js`, `diff.js`,
+  `backupConflict`/`backupName`).
+- Inventario del documento: 13 conceptos de lenguaje ubicuo, 5
+  entidades, 12 invariantes y 11 operaciones.
+- `001-paquete.md` (97 líneas) figura como entrada pero ya es un
+  solo subdominio —sirve de plantilla de formato (Propósito,
+  Referencia del modelo, Explicación, Estado de salud)—; no se
+  divide.
+- Los anclas ya apuntan a los archivos vigentes —las tareas
+  046–052 los re-anclaron al mover código—; el reparto no
+  re-ancla símbolos, solo los reubica por subdominio.
+- `docs/instalador.md` existe y sostiene las referencias de
+  contrato citadas por los anclas.
+- La serie sin huecos exige que `002` siga existiendo: la
+  instalación como flujo es un subdominio propio —queda como
+  el documento del ciclo de vida—.
+
+## Conectividad
+
+Verificada durante la recolección: inventario completo del
+documento, plantilla de formato confirmada en `001`, contratos
+referenciados existentes, ausencia de linter de documentación
+—la verificación será mecánica sobre los anclas—. Veredicto:
+**conectada**.
+
+## Plan técnico
+
+- [x] Crear `003-registro.md` con la plantilla de `001`:
+  Registro (lock), Propiedad, Deriva; Hash de recurso;
+  invariantes lock-ilegible, `identical` conserva registro y
+  `.teleprompter/` gestionado; operaciones registrar, guide,
+  list, check; D007, D011–D013, D014; la divergencia conocida.
+- [x] Crear `004-resolucion-conflictos.md`: Resolución, Diff de
+  conflicto, Respaldo; invariantes `--force`/`--skip`, no
+  afirmativa = `skip`, anuncio sin leer fuera; D006; sección
+  Operaciones mínima —la política es fase de los flujos—.
+- [x] Reducir `002-instalacion.md` al ciclo de vida; ajustar
+  solo Fronteras/Relaciones para declarar los subdominios.
+- [x] Actualizar `docs/domains/README.md` con la serie completa.
+- [x] Verificar: cada ancla nombra un símbolo existente en el
+  archivo citado; inventario 13+5+12+11 sin duplicados ni
+  huérfanos; `npm test` intacto.
+
+## Decisiones
+
+- `002` permanece como el documento del ciclo de vida: la serie
+  no admite huecos y la instalación como flujo es subdominio
+  propio.
+- Commit resuelto → 002 (es el anclaje de la obtención; el
+  campo registrado ya lo describe el concepto Registro).
+- Hash de recurso → 003 (mecanismo de propiedad y deriva).
+- `.teleprompter/` → 003 (territorio gestionado «igual que el
+  lock»; su pre-verificación referencia D005, que queda en 002).
+- Divergencia conocida → 003 (hecho sobre lo que el registro
+  registra como verdad).
+- Códigos de salida → 002 (tabla única; las consultas citan en
+  línea los códigos que producen).
+- Política de conflictos íntegra en 004 —definida una vez,
+  referenciada desde 002—.
+
+## Desviaciones
+
+- Tras la revisión: corregidas las cuentas del inventario en este
+  archivo (son 12 invariantes y 11 operaciones, no 13+12) y
+  precisado el «Dentro» del 002 —el alta en el registro es
+  dominio 003, ya lo declara «Relaciones»—.
+- D010 quedó en la lista de decisiones del 003, donde vive el
+  invariante de `.teleprompter/` que la cita —el plan la situaba
+  en el 002—.
+
+## Suite de pruebas esperada
+
+- Verificación mecánica de anclas: cada `símbolo` citado existe
+  en el `src/archivo.js` que el ancla nombra.
+- Inventario completo repartido: 13 conceptos + 5 entidades +
+  12 invariantes + 11 operaciones, cada hecho en exactamente un
+  documento.
+- `npm test` en verde —ningún archivo de código cambia—.
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-29 — Aprueba
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
