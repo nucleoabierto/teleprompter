@@ -160,18 +160,24 @@ instalado.
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
     - Ancla: `verifyPackage` en `src/verify.js`
-  - `Plan` — `{ mkdirs, resources, conflicts }`; cada recurso lleva
-    `source`, `target`, `status` y, tras resolver, `resolution`.
-    - Ancla: `buildPlan` y `resolveConflicts` en `src/plan.js`
-  - `UpdatePlan` — `{ upToDate, mkdirs, resources, conflicts,
-    retired }`; `resources` incluye las entradas del manifiesto y
-    los retirados con deriva marcados `removal`, `retired` solo las
-    marcas `retire`.
+  - `Plan` — forma canónica compartida por los tres constructores:
+    `{ upToDate, mkdirs, resources, conflicts, retired }`; cada
+    recurso lleva `source`, `target`, `status` y, tras resolver,
+    `resolution`. `upToDate` solo es verdadero en el plan de
+    actualización —neutro `false` donde el concepto no se
+    pregunta— y `retired` queda vacío fuera de la actualización.
+    - Ancla: `buildPlan`, `buildUpdatePlan`, `buildUninstallPlan` y
+      `resolveConflicts` en `src/plan.js`
+  - `UpdatePlan` — el `Plan` de una versión entrante distinta;
+    `resources` incluye las entradas del manifiesto y los retirados
+    con deriva marcados `removal`, `retired` solo las marcas
+    `retire`, y `upToDate` cortocircuita cuando la versión es la
+    registrada.
     - Ancla: `buildUpdatePlan` en `src/plan.js`
-  - `UninstallPlan` — `{ mkdirs, resources, conflicts, retired }` con
-    la misma forma: `resources` lleva las marcas `retire` y los
-    divergentes `conflict`/`removal` en el orden registrado, y
-    `conflicts` recoge estos últimos para la política compartida.
+  - `UninstallPlan` — el `Plan` de la retirada: `resources` lleva
+    las marcas `retire` y los divergentes `conflict`/`removal` en el
+    orden registrado, y `conflicts` recoge estos últimos para la
+    política compartida.
     - Ancla: `buildUninstallPlan` en `src/plan.js`
   - Hash de recurso — SHA-256 sobre dominios separados (`file\n`,
     `link\n`, `dir\n`) para que tipos distintos nunca colisionen;
@@ -371,7 +377,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-26 (tarea
-  `docs/tasks/047-separar-gramatica-y-ayuda-cli.md`)
+  `docs/tasks/048-uniformar-forma-plan.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
