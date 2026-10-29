@@ -64,9 +64,12 @@ function backupConflict(destDir, backupRoot, target) {
 // reaches a destructive step —overwrite or remove— was resolved to
 // overwrite: with `backupRoot` set, its previous content is mirrored
 // under that root first, and the applied entry carries the location.
-// If anything throws midway, the ExecutionError carries `applied` —
-// the actions already performed — so the caller can report them.
-export function executePlan(pkgDir, destDir, plan, backupRoot = null) {
+// `sides.src` is the package directory copy actions read from: a
+// removal-only plan declares no package side by omitting it — its
+// entries carry no `source` and never reach the copy. If anything
+// throws midway, the ExecutionError carries `applied` — the actions
+// already performed — so the caller can report them.
+export function executePlan({ src, dest: destDir }, plan, backupRoot = null) {
   const applied = [];
   try {
     for (const dir of plan.mkdirs) {
@@ -118,7 +121,7 @@ export function executePlan(pkgDir, destDir, plan, backupRoot = null) {
           fs.rmSync(dest, { recursive: true, force: true });
         }
         applied.push(entry);
-        copyResource(path.join(pkgDir, r.source), dest);
+        copyResource(path.join(src, r.source), dest);
         entry.sha256 = hashPath(dest);
       } else if (action === 'identical') {
         // The plan already proved the content equal; the hash goes

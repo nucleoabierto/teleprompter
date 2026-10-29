@@ -314,7 +314,7 @@ test('executePlan refuses a mkdir that escapes the destination root', async () =
   const outside = tmp();
   fs.symlinkSync(outside, path.join(dest, 'vendor'));
   assert.throws(
-    () => executePlan(tmp(), dest, {
+    () => executePlan({ dest }, {
       mkdirs: ['vendor/sub'], resources: [], retired: [],
     }),
     /escapa de la raíz/,
@@ -324,9 +324,8 @@ test('executePlan refuses a mkdir that escapes the destination root', async () =
 test('executePlan refuses a conflict left without resolution', async () => {
   const { executePlan } = await import('../src/execute.js');
   const dest = tmp();
-  const pkg = pkgWith('sin-resolver', { 'a.txt': 'a' });
   assert.throws(
-    () => executePlan(pkg, dest, {
+    () => executePlan({ dest }, {
       mkdirs: [],
       resources: [{ source: 'a.txt', target: 'a.txt', status: 'conflict' }],
       retired: [],
@@ -348,7 +347,7 @@ test('a failed execution throws an ExecutionError carrying applied and cause', a
     retired: [],
   };
   assert.throws(
-    () => executePlan(pkg, dest, plan),
+    () => executePlan({ src: pkg, dest }, plan),
     (error) => error instanceof ExecutionError
       && error.applied.length === 1
       && error.applied[0].target === 'a.txt'
@@ -537,7 +536,7 @@ test('executePlan keeps its own backup escape guard as an API', async () => {
     retired: [],
   };
   assert.throws(
-    () => executePlan(pkg, dest, plan, '.teleprompter/backups/op'),
+    () => executePlan({ src: pkg, dest }, plan, '.teleprompter/backups/op'),
     /escapa de la raíz/,
   );
   assert.equal(fs.existsSync(path.join(outside, 'backups')), false);

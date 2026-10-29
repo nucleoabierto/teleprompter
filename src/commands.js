@@ -175,7 +175,7 @@ function checkVerified(result, out, err, expectedName) {
 // decision is made seeing what would change. A `removal` conflict
 // asks about removing and reports the decision as remove/keep —
 // the plan's `overwrite`/`skip` vocabulary stays internal.
-async function settleConflicts(io, out, err, flags, plan, destDir, pkgDir) {
+async function settleConflicts(io, out, err, flags, plan, destDir, pkgDir = null) {
   if (plan.conflicts.length === 0) return null;
   if (flags.has('--force')) {
     await resolveConflicts(plan, () => 'overwrite');
@@ -278,7 +278,7 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, ori
   let guide;
   let guideContent = null;
   try {
-    actions = executePlan(pkgDir, destDir, plan, backupRoot);
+    actions = executePlan({ src: pkgDir, dest: destDir }, plan, backupRoot);
     guide = installPersonalization(pkgDir, destDir, manifest);
     writeLock(destDir, lock, manifest, actions, origin);
     // Deliver what was installed, not the package source — the
@@ -419,7 +419,7 @@ export async function runUninstall(io, out, err, parsed) {
   printPlan(plan, out, 'plan de retirada:');
 
   const unresolved = await settleConflicts(
-    io, out, err, parsed.flags, plan, destDir, destDir);
+    io, out, err, parsed.flags, plan, destDir);
   if (unresolved !== null) return unresolved;
   const unsafeBackup = checkBackupDestination(destDir, plan, err);
   if (unsafeBackup !== null) return unsafeBackup;
@@ -433,9 +433,7 @@ export async function runUninstall(io, out, err, parsed) {
     : null;
   let actions;
   try {
-    // No package side: the removal plan never reads a `source`, so
-    // the destination stands in for the unused pkgDir argument.
-    actions = executePlan(destDir, destDir, plan, backupRoot);
+    actions = executePlan({ dest: destDir }, plan, backupRoot);
     removeLockEntry(destDir, lock, parsed.pkg);
   } catch (error) {
     return reportExecutionFailure(out, err, error, actions, backupRoot);
