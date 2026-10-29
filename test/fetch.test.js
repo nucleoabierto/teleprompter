@@ -269,6 +269,16 @@ test('fetchRepoTree reports an unexpected response without a status', async () =
   assert.match(res.error, /respuesta inesperada.*o\/r/);
 });
 
+test('fetchRepoTree reports an unexpected download response without a status', async () => {
+  const { fetch } = spyFetch([commitResponse(), { ok: false }]);
+  const res = await fetchRepoTree(
+    { owner: 'o', name: 'r', ref: null },
+    { fetch, tmpBase: tmp() },
+  );
+  assert.equal(res.ok, false);
+  assert.match(res.error, /respuesta inesperada.*o\/r/);
+});
+
 test('fetchRepoTree rejects an oversized declared length without reading the body', async () => {
   let bodyRead = false;
   const impl = async (url) => url.includes('/commits/') ? commitResponse() : ({
