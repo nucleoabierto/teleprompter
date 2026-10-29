@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -101,6 +101,12 @@ constructores (`buildUninstallPlan` nunca emite `create`/
 - El test «executePlan refuses a conflict left without
   resolution» perdió su fixture `pkg` al quedar sin uso —el plan
   aborta antes de cualquier copia—; sin efecto.
+- La observación adyacente del revisor —`settleConflicts`
+  recibía `destDir` dos veces desde `runUninstall`, mismo patrón
+  H5— se resolvió en la misma rama a petición del usuario:
+  `pkgDir` pasó a parámetro opcional (`= null`) y el llamador de
+  retirada lo omite; `diffResource` ya ignoraba `pkgDir` en
+  entradas `removal`, que son las únicas que ese plan produce.
 
 ## Decisiones
 
@@ -122,5 +128,5 @@ constructores (`buildUninstallPlan` nunca emite `create`/
 ## Revisión
 
 - Subagente: 2026-10-26 — Aprueba
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-10-26 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

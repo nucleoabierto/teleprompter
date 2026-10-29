@@ -175,7 +175,7 @@ function checkVerified(result, out, err, expectedName) {
 // decision is made seeing what would change. A `removal` conflict
 // asks about removing and reports the decision as remove/keep —
 // the plan's `overwrite`/`skip` vocabulary stays internal.
-async function settleConflicts(io, out, err, flags, plan, destDir, pkgDir) {
+async function settleConflicts(io, out, err, flags, plan, destDir, pkgDir = null) {
   if (plan.conflicts.length === 0) return null;
   if (flags.has('--force')) {
     await resolveConflicts(plan, () => 'overwrite');
@@ -419,7 +419,7 @@ export async function runUninstall(io, out, err, parsed) {
   printPlan(plan, out, 'plan de retirada:');
 
   const unresolved = await settleConflicts(
-    io, out, err, parsed.flags, plan, destDir, destDir);
+    io, out, err, parsed.flags, plan, destDir);
   if (unresolved !== null) return unresolved;
   const unsafeBackup = checkBackupDestination(destDir, plan, err);
   if (unsafeBackup !== null) return unsafeBackup;
