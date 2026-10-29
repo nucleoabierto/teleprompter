@@ -288,7 +288,7 @@ instalado.
     instalación. Sin guía que mostrar es código 4; la ruta
     registrada insegura o el archivo ausente es código 3 —el lock
     es dato versionado y se revalida antes de leer.
-    - Ancla: `showGuide` en `src/commands.js`, que aplica el nivel hoja de
+    - Ancla: `showGuide` en `src/queries.js`, que aplica el nivel hoja de
       la defensa de rutas registradas (`resolveRecordedPath` en
       `src/paths.js`); D011
   - Consultar el registro: `teleprompter list` lee el registro del
@@ -298,7 +298,7 @@ instalado.
     una omisión— y no se exponen hashes ni acciones. Sin
     instalaciones responde «no hay paquetes instalados» con código
     0: es una respuesta, no un fallo.
-    - Ancla: `showList` en `src/commands.js`; D012
+    - Ancla: `showList` en `src/queries.js`; D012
   - Calcular el plan de actualización: confronta la versión entrante
     con el registro y el disco; devuelve `upToDate` si la versión es
     la registrada, o el plan clasificado con los retirados según su
@@ -333,7 +333,7 @@ instalado.
     deriva por recurso registrado; las entradas `skip` no se
     verifican y encontrar deriva no es un fallo —la consulta siempre
     termina con código 0—.
-    - Ancla: `showCheck` en `src/commands.js` y `classifyResource` en
+    - Ancla: `showCheck` en `src/queries.js` y `classifyResource` en
       `src/drift.js`; D013
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
@@ -377,8 +377,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-26 (tarea
-  `docs/tasks/049-extraer-resolucion-miembro-coleccion.md`)
+- Última revisión: 2026-10-29 (tarea
+  `docs/tasks/052-separar-comandos-consulta-ciclo-vida.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
