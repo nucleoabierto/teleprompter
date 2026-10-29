@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[~] En progreso
 
 ## Tipo
 
