@@ -278,7 +278,7 @@ function executeAndReport(out, err, { pkgDir, destDir, lock, plan, manifest, ori
   let guide;
   let guideContent = null;
   try {
-    actions = executePlan(pkgDir, destDir, plan, backupRoot);
+    actions = executePlan({ src: pkgDir, dest: destDir }, plan, backupRoot);
     guide = installPersonalization(pkgDir, destDir, manifest);
     writeLock(destDir, lock, manifest, actions, origin);
     // Deliver what was installed, not the package source — the
@@ -433,9 +433,7 @@ export async function runUninstall(io, out, err, parsed) {
     : null;
   let actions;
   try {
-    // No package side: the removal plan never reads a `source`, so
-    // the destination stands in for the unused pkgDir argument.
-    actions = executePlan(destDir, destDir, plan, backupRoot);
+    actions = executePlan({ dest: destDir }, plan, backupRoot);
     removeLockEntry(destDir, lock, parsed.pkg);
   } catch (error) {
     return reportExecutionFailure(out, err, error, actions, backupRoot);

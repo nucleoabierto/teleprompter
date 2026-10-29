@@ -2,7 +2,7 @@
 
 ## Estado
 
-[~] En progreso
+[r] En revisión
 
 ## Tipo
 
@@ -55,8 +55,72 @@ truco de pasar `destDir` dos veces.
 - Derivada de la revisión de arquitectura
   (`docs/architecture-reviews/004-arquitectura-general.md`).
 
+## Contexto
+
+- Hallazgo H5 de la revisión 004: `executePlan` exige `pkgDir`
+  que el plan de retirada no tiene —`runUninstall` pasa `destDir`
+  dos veces con un comentario que admite el truco
+  (`src/commands.js:436-438`).
+- `pkgDir` solo se lee en `src/execute.js:121`
+  (`copyResource(path.join(pkgDir, r.source), dest)`): las
+  acciones `create`/`overwrite` son las únicas que tocan el lado
+  paquete, y las entradas `removal` nunca llevan `source` —un
+  plan de retirada nunca alcanza esa línea—.
+- Consumidores: `executeAndReport` (`src/commands.js:281`, install
+  y update con `pkgDir` real) y `runUninstall`
+  (`src/commands.js:438`, el truco). Los tests de
+  `execute.test.js` también llaman a `executePlan` directamente.
+- `installPersonalization(pkgDir, destDir, manifest)` conserva su
+  firma —siempre tiene lado paquete—.
+- Estilo del código: funciones con varios argumentos ya usan
+  objetos desestructurados —`executeAndReport(out, err,
+  { pkgDir, destDir, lock, ... })`, `installUnit(io, out, err,
+  { source, unit, ... })`—.
+
+## Conectividad
+
+Verificada durante la recolección: único punto de uso de `pkgDir`
+localizado, ambos consumidores leídos, invariante «acciones de
+copia ⇒ lado paquete» confirmada por construcción de los
+constructores (`buildUninstallPlan` nunca emite `create`/
+`overwrite`). Veredicto: **conectada**.
+
+## Plan técnico
+
+- [x] Firma `executePlan({ src, dest }, plan, backupRoot = null)`;
+  el cuerpo lee `path.join(src, r.source)` en la copia.
+- [x] `executeAndReport` pasa `{ src: pkgDir, dest: destDir }`.
+- [x] `runUninstall` pasa `{ dest: destDir }` y pierde el
+  comentario del truco.
+- [x] Migrar los llamadores de `test/execute.test.js`.
+- [x] Correr la suite completa y confirmar el 100 % de cobertura
+  en `src/`.
+
+## Desviaciones
+
+- El test «executePlan refuses a conflict left without
+  resolution» perdió su fixture `pkg` al quedar sin uso —el plan
+  aborta antes de cualquier copia—; sin efecto.
+
+## Decisiones
+
+- Forma `{ src, dest }`: la ausencia de `src` declara el plan sin
+  lado paquete; sigue el estilo de objetos desestructurados del
+  código (`executeAndReport`, `installUnit`). Descartadas:
+  `pkgDir = null` posicional —sigue exigiendo el argumento— y
+  vías separadas —duplican el bucle—.
+- Sin guarda extra para «copia sin `src`»: estado imposible por
+  construcción y el fallo queda en la frontera `ExecutionError`.
+
+## Suite de pruebas esperada
+
+- Regresión completa en verde; solo cambian las llamadas a
+  `executePlan` en `execute.test.js`, mismas expectativas.
+- Cobertura 100 % en `src/` —la firma nueva no añade ramas—.
+- Sin casos nuevos: refactor puro.
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-10-26 — Aprueba
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
