@@ -24,7 +24,7 @@ instalado.
   - **Resolución:** la decisión sobre un `conflict` —`overwrite` o
     `skip`— por flag, por respuesta interactiva o por aborto.
     - Ancla: `resolveConflicts` en `src/plan.js` (la asignación es
-      operación del plan), `settleConflicts` en `src/cli.js` (la
+      operación del plan), `settleConflicts` en `src/commands.js` (la
       política) y `createAsker` en `src/prompt.js`
   - **Diff de conflicto:** la comparación visible destino↔paquete que
     acompaña el anuncio de cada `conflict` —tras `conflicto sin
@@ -39,7 +39,7 @@ instalado.
     hojas ilegibles o binarias degradan a un marcador. `--force` y
     `--skip` no lo emiten: resuelven sin anuncio.
     - Ancla: `diffResource`, `diffLines` y `show` en `src/diff.js`;
-      `settleConflicts` en `src/cli.js`
+      `settleConflicts` en `src/commands.js`
     - Origen: tarea
       `docs/tasks/041-mostrar-diff-archivos-conflicto.md`
   - **Respaldo:** la copia del contenido previo del destino que un
@@ -56,8 +56,8 @@ instalado.
     el paso destructivo falle después.
     - Ancla: `backupConflict` en `src/execute.js` —la copia usa la
       misma escritura y la misma guarda de escape del plan—;
-      `backupName`, `checkBackupDestination` y `reportBackup` en
-      `src/cli.js`
+      `backupName` y `checkBackupDestination` en
+      `src/commands.js`; `reportBackup` en `src/report.js`
     - Origen: tarea
       `docs/tasks/040-respaldar-conflictos-sobrescritos.md`
   - **Registro (lock):** `teleprompter-lock.json` en la raíz del
@@ -82,14 +82,14 @@ instalado.
       registro solo se navega desde ese módulo, `lockEntry` lleva
       la guarda de propiedad propia e `isWritten` nombra la entrada
       registrada como escrita (toda `action` salvo `skip`)— y
-      `originOf` en `src/cli.js`; D007, D014, D019
+      `originOf` en `src/commands.js`; D007, D014, D019
   - **Unidad de colección:** cada paquete que una selección nombra
     dentro de una colección; se instala como instalación plena e
     independiente —plan, colisiones, guía y registro propios—, en
     ejecución secuencial y atómica por unidad. La actualización
     re-resuelve el miembro por su nombre en el índice del árbol
     recién obtenido.
-    - Ancla: `selectUnits` e `installUnit` en `src/cli.js`,
+    - Ancla: `selectUnits` e `installUnit` en `src/commands.js`,
       `resolveSelection` en `src/collection.js`; D019
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
@@ -104,7 +104,7 @@ instalado.
     expresa la intención —«seguir esta rama»—, `commit` dice qué
     árbol produjo la instalación.
     - Ancla: `resolveCommit` y `repoUrls` en `src/fetch.js`;
-      `originOf` en `src/cli.js` lo escribe en el origen
+      `originOf` en `src/commands.js` lo escribe en el origen
   - **Deriva:** el estado de un recurso registrado al confrontarlo
     con el disco —`intact` (el hash coincide), `modified` (difiere),
     `missing` (la ruta ya no existe) o `unverifiable` (sin `sha256`
@@ -182,12 +182,12 @@ instalado.
   - El plan completo se calcula antes de escribir; un plan no
     ejecutable aborta sin escribir nada —ni recursos ni registro
     (D005). Ancla: `runInstall`/`runUpdate` y las fases
-    `settleConflicts`/`checkGuideDestination` en `src/cli.js`
+    `settleConflicts`/`checkGuideDestination` en `src/commands.js`
   - «Existe» significa «hay una entrada en el directorio», sin seguir
     enlaces: un enlace colgado ocupa su ruta.
     Ancla: `hasEntry` en `src/paths.js`
   - `--force` y `--skip` son mutuamente excluyentes; el error es de
-    invocación (código 4). Ancla: `parseArgs` en `src/cli.js`
+    invocación (código 4). Ancla: `parseArgs` en `src/usage.js`
   - `managed-update` exige hash registrado coincidente **y** versión
     del paquete ≥ versión registrada; un downgrade es `conflict`.
     Ancla: `semverAtLeast` en `src/plan.js`
@@ -217,7 +217,7 @@ instalado.
     (D005)—.
     Ancla: `installPersonalization` y `backupConflict` en
     `src/execute.js`, `MANAGED_DIR` en `src/paths.js` y la
-    pre-verificación en `src/cli.js`; D010
+    pre-verificación en `src/commands.js`; D010
   - Un recurso `identical` conserva el registro previo que sigue
     siendo veraz —una omisión `skip`, un hash que coincide— y
     registra el recurso en los demás casos: el paquete lo gestiona
@@ -258,7 +258,7 @@ instalado.
     `cause`, para que el informe muestre el estado parcial —respaldo
     incluido—.
     - Ancla: `executePlan`, `backupConflict` y `ExecutionError` en
-      `src/execute.js`; `reportBackup` en `src/cli.js`
+      `src/execute.js`; `reportBackup` en `src/report.js`
   - Registrar la instalación: fusiona el lock preservando otros
     paquetes; `identical` conserva el registro previo veraz o se
     registra con su acción y su hash, y `skip` va sin hash; la
@@ -274,14 +274,14 @@ instalado.
     entrega el contenido de la copia materializada —no el fuente,
     que en origen remoto ya no existe—.
     - Ancla: `installPersonalization` en `src/execute.js` y
-      `printGuide` en `src/cli.js`
+      `printGuide` en `src/report.js`
   - Consultar la guía: `teleprompter guide [<paquete>]` lee el campo
     `personalization` del registro del directorio de trabajo y
     muestra el mismo bloque; no hay destino ni opciones de
     instalación. Sin guía que mostrar es código 4; la ruta
     registrada insegura o el archivo ausente es código 3 —el lock
     es dato versionado y se revalida antes de leer.
-    - Ancla: `showGuide` en `src/cli.js`, que aplica el nivel hoja de
+    - Ancla: `showGuide` en `src/commands.js`, que aplica el nivel hoja de
       la defensa de rutas registradas (`resolveRecordedPath` en
       `src/paths.js`); D011
   - Consultar el registro: `teleprompter list` lee el registro del
@@ -291,7 +291,7 @@ instalado.
     una omisión— y no se exponen hashes ni acciones. Sin
     instalaciones responde «no hay paquetes instalados» con código
     0: es una respuesta, no un fallo.
-    - Ancla: `showList` en `src/cli.js`; D012
+    - Ancla: `showList` en `src/commands.js`; D012
   - Calcular el plan de actualización: confronta la versión entrante
     con el registro y el disco; devuelve `upToDate` si la versión es
     la registrada, o el plan clasificado con los retirados según su
@@ -304,7 +304,7 @@ instalado.
     de instalación con el plan de actualización. Los conflicts
     `removal` preguntan por quitar y resuelven `remove`/`keep`; el
     registro queda a la versión nueva con el origen efectivo.
-    - Ancla: `runUpdate` en `src/cli.js`; D016
+    - Ancla: `runUpdate` en `src/commands.js`; D016
   - Retirar un paquete: `teleprompter uninstall <paquete>` opera
     sobre el directorio de trabajo —sin destino—; nombra el paquete
     por su entrada del registro, presenta el plan de retirada
@@ -318,7 +318,7 @@ instalado.
     quede vacío. Pedir un paquete no instalado es error de
     invocación (4), un plan no ejecutable sale con 2 y `--dry-run`
     muestra el plan sin escribir.
-    - Ancla: `runUninstall` en `src/cli.js`, `buildUninstallPlan` en
+    - Ancla: `runUninstall` en `src/commands.js`, `buildUninstallPlan` en
       `src/plan.js` y `removeLockEntry` en `src/lock.js`
   - Verificar el estado de lo instalado: `teleprompter check`
     confronta el registro del directorio de trabajo con el disco
@@ -326,12 +326,12 @@ instalado.
     deriva por recurso registrado; las entradas `skip` no se
     verifican y encontrar deriva no es un fallo —la consulta siempre
     termina con código 0—.
-    - Ancla: `showCheck` en `src/cli.js` y `classifyResource` en
+    - Ancla: `showCheck` en `src/commands.js` y `classifyResource` en
       `src/drift.js`; D013
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
-    - Ancla: `EXIT_*` en `src/cli.js`; contrato en
+    - Ancla: `EXIT_*` en `src/exits.js`; contrato en
       `docs/instalador.md` «Resultado y errores»
 
 ## Explicación del dominio
@@ -371,7 +371,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-26 (tarea
-  `docs/tasks/046-extraer-informes-y-predicados-cli.md`)
+  `docs/tasks/047-separar-gramatica-y-ayuda-cli.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en
