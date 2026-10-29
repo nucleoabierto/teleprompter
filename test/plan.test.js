@@ -6,7 +6,9 @@ import path from 'node:path';
 import {
   main, EXIT_OK, EXIT_PLAN,
 } from '../src/cli.js';
-import { buildUpdatePlan, buildUninstallPlan, resolveConflicts } from '../src/plan.js';
+import {
+  buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts,
+} from '../src/plan.js';
 import { hashPath } from '../src/hash.js';
 
 function tmp() {
@@ -1017,8 +1019,22 @@ test('resolveConflicts awaits a promised decision', async () => {
 test('buildUninstallPlan tolerates a record without files', () => {
   const plan = buildUninstallPlan(tmp(), {});
   assert.deepEqual(plan, {
-    mkdirs: [], resources: [], conflicts: [], retired: [],
+    upToDate: false, mkdirs: [], resources: [], conflicts: [], retired: [],
   });
+});
+
+test('the three plan builders emit the same field set', () => {
+  const dest = tmp();
+  const pkg = pkgWith('paquete', { 'a.txt': 'a' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  const lock = { packages: {} };
+  const shape = ['conflicts', 'mkdirs', 'resources', 'retired', 'upToDate'];
+  const fields = (o) => Object.keys(o).sort();
+  assert.deepEqual(fields(buildPlan(pkg, manifest, dest, [], lock)), shape);
+  assert.deepEqual(fields(buildUpdatePlan(pkg, manifest, dest, [], lock)), shape);
+  assert.deepEqual(fields(buildUninstallPlan(dest, { files: [] })), shape);
 });
 
 test('buildUninstallPlan classifies each recorded entry by drift', () => {

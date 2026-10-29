@@ -314,7 +314,9 @@ test('executePlan refuses a mkdir that escapes the destination root', async () =
   const outside = tmp();
   fs.symlinkSync(outside, path.join(dest, 'vendor'));
   assert.throws(
-    () => executePlan(tmp(), dest, { mkdirs: ['vendor/sub'], resources: [] }),
+    () => executePlan(tmp(), dest, {
+      mkdirs: ['vendor/sub'], resources: [], retired: [],
+    }),
     /escapa de la raíz/,
   );
 });
@@ -325,7 +327,9 @@ test('executePlan refuses a conflict left without resolution', async () => {
   const pkg = pkgWith('sin-resolver', { 'a.txt': 'a' });
   assert.throws(
     () => executePlan(pkg, dest, {
-      mkdirs: [], resources: [{ source: 'a.txt', target: 'a.txt', status: 'conflict' }],
+      mkdirs: [],
+      resources: [{ source: 'a.txt', target: 'a.txt', status: 'conflict' }],
+      retired: [],
     }),
     /plan sin resolver: a\.txt/,
   );
@@ -341,6 +345,7 @@ test('a failed execution throws an ExecutionError carrying applied and cause', a
       { source: 'a.txt', target: 'a.txt', status: 'create' },
       { source: 'b.txt', target: 'b.txt', status: 'conflict' },
     ],
+    retired: [],
   };
   assert.throws(
     () => executePlan(pkg, dest, plan),
@@ -529,6 +534,7 @@ test('executePlan keeps its own backup escape guard as an API', async () => {
     mkdirs: [],
     conflicts: [{ source: 'a.txt', target: 'a.txt', status: 'conflict', resolution: 'overwrite' }],
     resources: [{ source: 'a.txt', target: 'a.txt', status: 'conflict', resolution: 'overwrite' }],
+    retired: [],
   };
   assert.throws(
     () => executePlan(pkg, dest, plan, '.teleprompter/backups/op'),

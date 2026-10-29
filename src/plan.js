@@ -41,9 +41,11 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
     return { source, target, status };
   });
   return {
+    upToDate: false,
     mkdirs: creates,
     resources,
     conflicts: resources.filter((r) => r.status === 'conflict'),
+    retired: [],
   };
 }
 
@@ -228,8 +230,9 @@ function classifyRemoval(destDir, f, replacedGuide) {
 // `replacedGuide` exception belongs to update, whose incoming
 // version rewrites the guide; nothing rewrites anything on the
 // way out. Entries keep the recorded order, and the plan keeps
-// the usual shape: nothing to create, the resources list carrying
-// the marks, `conflicts` by filter, `retired` empty.
+// the canonical shape: `upToDate` never applies, nothing to
+// create, the resources list carrying the marks, `conflicts` by
+// filter, `retired` empty.
 export function buildUninstallPlan(destDir, record) {
   const resources = (record.files ?? []).flatMap((f) => {
     if (!isWritten(f)) return [];
@@ -239,6 +242,7 @@ export function buildUninstallPlan(destDir, record) {
     return [{ target: f.target, status: 'conflict', removal: true }];
   });
   return {
+    upToDate: false,
     mkdirs: [],
     resources,
     conflicts: resources.filter((r) => r.status === 'conflict'),

@@ -77,7 +77,7 @@ export function executePlan(pkgDir, destDir, plan, backupRoot = null) {
       fs.mkdirSync(dest, { recursive: true });
       applied.push({ target: dir, action: 'mkdir' });
     }
-    for (const r of [...plan.resources, ...(plan.retired ?? [])]) {
+    for (const r of [...plan.resources, ...plan.retired]) {
       const action = r.removal === true
         ? REMOVAL_RESOLUTION[r.resolution]
         : ACTION[r.status] ?? r.resolution;
