@@ -25,6 +25,7 @@ que defienden.
 - docs/tasks/048-uniformar-forma-plan.md
 - docs/tasks/049-extraer-resolucion-miembro-coleccion.md
 - docs/tasks/050-declarar-forma-ejecucion-sin-paquete.md
+- docs/tasks/052-separar-comandos-consulta-ciclo-vida.md
 
 ## Entrada
 
