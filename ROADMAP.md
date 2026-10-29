@@ -14,7 +14,20 @@ reconstrucción del destino.
 
 ## Now
 
-- 1. Revisión de desactualizados — consultar qué paquetes ofrecen
+- 1. Hito 2: Saneamiento de la complejidad interna — siete
+  tareas derivadas de la revisión de arquitectura 005: unificar
+  el fallo de GitHub y descomponer `fetchRepoTree`, despachar
+  `executePlan`, compartir la clasificación de entrantes,
+  reutilizar validadores de manifiesto, nombrar los predicados
+  del lock, extraer el origen de `runUpdate` y adoptar
+  `util.parseArgs`.
+  - Estado: pendiente de arrancar.
+  - Justificación: la revisión 005 detectó duplicaciones y
+    operaciones largas justo donde la revisión de
+    desactualizados añadirá un comando nuevo —parser,
+    orquestación de `commands.js`, obtención remota—; sanear
+    primero abarata ese trabajo y es acotado e invariante.
+- 2. Revisión de desactualizados — consultar qué paquetes ofrecen
   versión nueva y actualizar lo revisado en una invocación (idea
   008; conjunto por planificar).
   - Estado: pendiente de arrancar.
