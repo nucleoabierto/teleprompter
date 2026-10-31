@@ -89,5 +89,5 @@ del contenido previo antes del paso destructivo.
 ## Estado de salud
 
 - Última revisión: 2026-10-29 (tarea
-  `docs/tasks/054-despachar-executeplan-por-accion.md`)
+  `docs/tasks/055-compartir-clasificacion-entrantes-plan.md`)
 - Divergencias conocidas: Ninguna
