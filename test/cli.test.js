@@ -1259,6 +1259,7 @@ test('a lock with a malformed origin degrades to no history', async () => {
     null,
     [],
     { type: 'desconocido' },
+    { type: ['github'], repo: 'o/r' },
     { type: 'github' },
     { type: 'github', repo: 'o/r', ref: 5 },
     { type: 'github', repo: 'o/r', commit: 5 },

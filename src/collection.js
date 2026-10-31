@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadManifest } from './manifest.js';
+import { isPlainObject } from './shape.js';
 
 // Peeks the root manifest without validating it: anything that is
 // not parseable JSON with `collection: true` goes down the package
@@ -10,8 +11,7 @@ export function isCollectionDir(dir) {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(dir, 'teleprompter.json'), 'utf8'),
     );
-    return typeof manifest === 'object' && manifest !== null
-      && manifest.collection === true;
+    return isPlainObject(manifest) && manifest.collection === true;
   } catch {
     return false;
   }

@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   canonTarget, isSafeRelative, hasEntry, MANAGED_DIR,
 } from './paths.js';
+import { isPlainObject } from './shape.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
 export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -26,7 +27,6 @@ const OBJECT_KEYS = {
   packagesEntry: new Set(['path']),
 };
 
-const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNonEmptyString = (v) => typeof v === 'string' && v.length > 0;
 
 function checkKeys(obj, allowed, where, errors) {
