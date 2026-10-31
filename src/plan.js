@@ -21,25 +21,17 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
     (record?.files ?? []).map((f) => [path.normalize(f.target), f.sha256]),
   );
   const updatesAllowed = semverAtLeast(manifest.version, record?.version);
-  const resources = manifest.install.map(({ source, target }) => {
-    const dest = path.join(destDir, target);
-    if (!hasEntry(dest)) {
-      // A write whose parent chain escapes the root cannot be a
-      // create: the path may be free here but not where it lands.
-      const status = resolvesUnder(destDir, path.dirname(dest)) ? 'create' : 'conflict';
-      return { source, target, status };
-    }
-    const destHash = hashPath(dest);
-    const status = destHash === hashPath(path.join(pkgDir, source)) ? 'identical'
-      : updatesAllowed && recorded.get(path.normalize(target)) === destHash
-        ? 'managed-update'
-        : 'conflict';
-    if (status !== 'identical' && status !== 'conflict'
-        && !resolvesUnder(destDir, path.dirname(dest))) {
-      return { source, target, status: 'conflict' };
-    }
-    return { source, target, status };
-  });
+  const ctx = {
+    pkgDir,
+    destDir,
+    updatesAllowed,
+    // Ours and intact: the destination still holds exactly what a
+    // previous install recorded, so overwriting it is safe.
+    overwrite: ({ target, destHash }) => (
+      recorded.get(path.normalize(target)) === destHash ? 'managed-update' : undefined
+    ),
+  };
+  const resources = manifest.install.map((entry) => classifyIncoming(ctx, entry));
   return {
     upToDate: false,
     mkdirs: creates,
@@ -118,26 +110,65 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
     }
     return undefined;
   };
-  const resources = manifest.install.map(({ source, target }) => {
-    const dest = path.join(destDir, target);
-    if (!hasEntry(dest)) {
-      const status = resolvesUnder(destDir, path.dirname(dest)) ? 'create' : 'conflict';
-      return { source, target, status };
-    }
-    const destHash = hashPath(dest);
-    const pkgHash = hashPath(path.join(pkgDir, source));
-    const recHash = recordedHash(canonTarget(target), destHash);
-    let status;
-    if (destHash === pkgHash) status = 'identical';
-    else if (updatesAllowed && destHash === recHash && pkgHash !== recHash) {
-      status = 'update';
-    } else status = 'conflict';
-    if (status !== 'identical' && status !== 'conflict'
-        && !resolvesUnder(destDir, path.dirname(dest))) {
-      return { source, target, status: 'conflict' };
-    }
+  const ctx = {
+    pkgDir,
+    destDir,
+    updatesAllowed,
+    // Ours, intact, and changed by the version: the destination
+    // still holds the recorded content and the incoming differs
+    // from it, so overwriting it is safe.
+    overwrite: ({ target, destHash, pkgHash }) => {
+      const recHash = recordedHash(canonTarget(target), destHash);
+      return destHash === recHash && pkgHash !== recHash ? 'update' : undefined;
+    },
+  };
+  const resources = manifest.install.map((entry) => classifyIncoming(ctx, entry));
+  const { retired, removalConflicts } = plannedRemovals(
+    destDir, manifest, record, shipped, recordedFiles, recordedByTarget,
+  );
+  resources.push(...removalConflicts);
+  return {
+    upToDate: false,
+    mkdirs: creates,
+    resources,
+    conflicts: resources.filter((r) => r.status === 'conflict'),
+    retired,
+  };
+}
+
+// The skeleton every incoming-resource classification shares:
+// a target whose destination does not exist is a `create` — or a
+// `conflict` when its parent chain escapes the root, because the
+// path may be free here but not where it lands —, identical
+// content is `identical`, and anything else asks the caller's
+// `overwrite` rule for its mark or degrades to `conflict` — a
+// downgrade (`updatesAllowed` false) always degrades. A mark that
+// would write through an escaping chain degrades too.
+function classifyIncoming({ pkgDir, destDir, updatesAllowed, overwrite }, { source, target }) {
+  const dest = path.join(destDir, target);
+  if (!hasEntry(dest)) {
+    const status = resolvesUnder(destDir, path.dirname(dest)) ? 'create' : 'conflict';
     return { source, target, status };
-  });
+  }
+  const destHash = hashPath(dest);
+  const pkgHash = hashPath(path.join(pkgDir, source));
+  let status;
+  if (destHash === pkgHash) status = 'identical';
+  else if (updatesAllowed) status = overwrite({ target, destHash, pkgHash }) ?? 'conflict';
+  else status = 'conflict';
+  if (status !== 'identical' && status !== 'conflict'
+      && !resolvesUnder(destDir, path.dirname(dest))) {
+    return { source, target, status: 'conflict' };
+  }
+  return { source, target, status };
+}
+
+// The recorded targets the incoming manifest no longer ships:
+// intact ones retire — what is ours and untouched is managed —
+// while modified or unverifiable ones degrade to removal
+// conflicts. Returns the `retired` list and the removal conflicts
+// that join `resources` after the incoming entries.
+function plannedRemovals(destDir, manifest, record, shipped, recordedFiles, recordedByTarget) {
   // The managed guide is excluded from retirements only while the
   // incoming manifest still declares it — the incoming target is the
   // one that gets rewritten; when the version drops the field —or
@@ -153,6 +184,7 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const shippedArr = [...shipped];
   const recordedTargets = new Set(recordedByTarget.keys());
   const retired = [];
+  const removalConflicts = [];
   const removals = recordedFiles
     .filter((f) => isWritten(f) && canonTarget(f.target) !== guideTarget
       && !shipped.has(canonTarget(f.target)))
@@ -186,15 +218,9 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
       return [{ target: f.target, status: 'conflict', removal: true }];
     });
   for (const entry of removals) {
-    (entry.status === 'retire' ? retired : resources).push(entry);
+    (entry.status === 'retire' ? retired : removalConflicts).push(entry);
   }
-  return {
-    upToDate: false,
-    mkdirs: creates,
-    resources,
-    conflicts: resources.filter((r) => r.status === 'conflict'),
-    retired,
-  };
+  return { retired, removalConflicts };
 }
 
 // The retirement of one recorded entry, whole: intact leaves
