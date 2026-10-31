@@ -225,7 +225,7 @@ instalado.
 ## Estado de salud
 
 - Última revisión: 2026-10-29 (tarea
-  `docs/tasks/053-descomponer-fetchrepo-unificar-fallo-github.md`)
+  `docs/tasks/054-despachar-executeplan-por-accion.md`)
 - Divergencias conocidas: Ninguna —la divergencia de registro
   coexistiendo con contenido sobrescrito por otro paquete vive en el
   dominio 003—.
