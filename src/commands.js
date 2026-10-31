@@ -207,35 +207,9 @@ export async function runUpdate(io, out, err, parsed) {
     err(`el paquete "${parsed.pkg}" no está instalado`);
     return EXIT_USAGE;
   }
-  let source = parsed.source;
-  if (source === null) {
-    const { origin } = record;
-    if (origin === undefined) {
-      err(`el paquete "${parsed.pkg}" no registra un origen: indica <user/repo[@ref]> o --path <dir>`);
-      return EXIT_USAGE;
-    }
-    if (origin.type === 'path') {
-      if (parsed.ref !== undefined) {
-        err('un --ref no aplica a un origen local');
-        return EXIT_USAGE;
-      }
-      source = { kind: 'path', dir: origin.path };
-    } else {
-      // The lock is repository data: a `repo` that cannot parse back
-      // into a spec is an unusable origin, not a crash.
-      const spec = parseRepoSpec(origin.repo);
-      if (spec === null) {
-        err(`el origen registrado no es un repositorio válido: ${origin.repo}`);
-        return EXIT_USAGE;
-      }
-      spec.ref = parsed.ref ?? origin.ref ?? null;
-      source = { kind: 'repo', spec };
-    }
-  }
-  if (source.kind === 'path' && !isDir(source.dir)) {
-    err(`la ruta no es un directorio: ${source.dir}`);
-    return EXIT_USAGE;
-  }
+  const resolved = updateSource(err, parsed, record);
+  if (resolved.source === undefined) return resolved.code;
+  const { source } = resolved;
 
   const obtained = await obtainPackage(io, out, err, source);
   if (!obtained.ok) return obtained.code;
@@ -365,6 +339,48 @@ function originOf(source, commit) {
     : { type: 'github', repo, ref };
   if (commit !== undefined) origin.commit = commit;
   return origin;
+}
+
+// The inverse of `originOf`: the recorded origin translates back
+// into the source the update re-fetches — a local dir or a repo
+// spec parsed by the same grammar the invocation used. The lock is
+// repository data: a `repo` that cannot parse back into a spec is
+// an unusable origin, not a crash.
+function sourceOf(err, parsed, origin) {
+  if (origin === undefined) {
+    err(`el paquete "${parsed.pkg}" no registra un origen: indica <user/repo[@ref]> o --path <dir>`);
+    return { code: EXIT_USAGE };
+  }
+  if (origin.type === 'path') {
+    if (parsed.ref !== undefined) {
+      err('un --ref no aplica a un origen local');
+      return { code: EXIT_USAGE };
+    }
+    return { source: { kind: 'path', dir: origin.path } };
+  }
+  const spec = parseRepoSpec(origin.repo);
+  if (spec === null) {
+    err(`el origen registrado no es un repositorio válido: ${origin.repo}`);
+    return { code: EXIT_USAGE };
+  }
+  spec.ref = parsed.ref ?? origin.ref ?? null;
+  return { source: { kind: 'repo', spec } };
+}
+
+// Where an update re-fetches from: an explicit source on the
+// invocation wins; otherwise the recorded origin decides. Whatever
+// produced it, a local source must still exist before the pipeline
+// obtains anything from it.
+function updateSource(err, parsed, record) {
+  const resolved = parsed.source === null
+    ? sourceOf(err, parsed, record.origin)
+    : { source: parsed.source };
+  const { source } = resolved;
+  if (source !== undefined && source.kind === 'path' && !isDir(source.dir)) {
+    err(`la ruta no es un directorio: ${source.dir}`);
+    return { code: EXIT_USAGE };
+  }
+  return resolved;
 }
 
 // The shared member-resolution sequence inside a collection
