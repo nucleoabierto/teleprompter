@@ -41,29 +41,29 @@ export function lockEntries(lock) {
 // A recorded file entry asserts the tool wrote the resource —
 // `skip` records a decision that wrote nothing: a conflict kept
 // foreign content. Every other action counts as written.
-export function isWritten(f) {
-  return f.action !== 'skip';
+export function isWritten(file) {
+  return file.action !== 'skip';
 }
 
 // A file entry records one target the install touched: the path
 // always, the hash only when the action produced content — a `skip`
 // records a decision, not a file.
-function isValidFileEntry(f) {
-  return isPlainObject(f)
-    && typeof f.target === 'string'
-    && isOptionalString(f.sha256);
+function isValidFileEntry(file) {
+  return isPlainObject(file)
+    && typeof file.target === 'string'
+    && isOptionalString(file.sha256);
 }
 
 // A package entry is the unit the registry maps a name to: the
 // installed version, the files the install wrote and optionally the
 // origin they were fetched from — everything else is corrupt even
 // when it parses as JSON.
-function isValidPackageEntry(p) {
-  return isPlainObject(p)
-    && typeof p.version === 'string'
-    && Array.isArray(p.files)
-    && p.files.every(isValidFileEntry)
-    && (p.origin === undefined || isValidOrigin(p.origin));
+function isValidPackageEntry(pkg) {
+  return isPlainObject(pkg)
+    && typeof pkg.version === 'string'
+    && Array.isArray(pkg.files)
+    && pkg.files.every(isValidFileEntry)
+    && (pkg.origin === undefined || isValidOrigin(pkg.origin));
 }
 
 // A lock is only trustworthy if it is a plain object whose packages
@@ -82,10 +82,10 @@ function isValidLock(data) {
 // invoking an inherited function.
 const ORIGIN_SHAPES = {
   __proto__: null,
-  github: (o) => typeof o.repo === 'string'
-    && isOptionalString(o.ref)
-    && isOptionalString(o.commit),
-  path: (o) => typeof o.path === 'string',
+  github: (origin) => typeof origin.repo === 'string'
+    && isOptionalString(origin.ref)
+    && isOptionalString(origin.commit),
+  path: (origin) => typeof origin.path === 'string',
 };
 
 // `origin` is optional — locks written before it existed stay
@@ -93,13 +93,13 @@ const ORIGIN_SHAPES = {
 // a GitHub repo with its optional ref, or a local path. A
 // collection install adds the selected member's name, which a
 // later update re-resolves through the index.
-function isValidOrigin(o) {
-  if (!isPlainObject(o) || !isOptionalString(o.package)) return false;
+function isValidOrigin(origin) {
+  if (!isPlainObject(origin) || !isOptionalString(origin.package)) return false;
   // `type` must be a string: a table lookup coerces the key, so an
   // array like ["github"] would dispatch where strict equality —
   // the original contract — rejected it.
-  const shape = typeof o.type === 'string' ? ORIGIN_SHAPES[o.type] : undefined;
-  return (shape ?? (() => false))(o);
+  const shape = typeof origin.type === 'string' ? ORIGIN_SHAPES[origin.type] : undefined;
+  return (shape ?? (() => false))(origin);
 }
 
 // Merges the new install into the existing history: other packages'

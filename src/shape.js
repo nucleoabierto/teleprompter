@@ -3,8 +3,8 @@
 // guard their contract with the same checks. An array is not a plain
 // object — it indexes by position, not by the named fields the
 // contracts require.
-export const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+export const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // Optional string field: absent means "not declared", present means
 // it must be a string — anything else is malformed input.
-export const isOptionalString = (v) => v === undefined || typeof v === 'string';
+export const isOptionalString = (value) => value === undefined || typeof value === 'string';
