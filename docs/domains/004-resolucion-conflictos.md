@@ -89,5 +89,5 @@ del contenido previo antes del paso destructivo.
 ## Estado de salud
 
 - Última revisión: 2026-10-29 (tarea
-  `docs/tasks/051-dividir-documentos-dominio-por-subdominios.md`)
+  `docs/tasks/054-despachar-executeplan-por-accion.md`)
 - Divergencias conocidas: Ninguna

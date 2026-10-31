@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -185,5 +185,5 @@ cualquier acción ajena al vocabulario. Veredicto:
 ## Revisión
 
 - Subagente: 2026-10-29 — Aprueba
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-10-29 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
