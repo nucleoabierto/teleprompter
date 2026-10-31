@@ -80,10 +80,53 @@ function checkRequiresEntry(entry, index, errors) {
   }
 }
 
-// Each validator owns one field of the manifest. They receive the
-// parsed object, the package directory and the error sink, so adding
-// a field means adding one entry to VALIDATORS, not touching control
-// flow.
+// The field validators both contracts share. Each receives the
+// parsed object, the loading context and the error sink, and owns
+// one field — composing them is picking entries for a table.
+function checkFormat(manifest, _ctx, errors) {
+  if (manifest.format !== undefined && manifest.format !== KNOWN_FORMAT) {
+    errors.push(`format: desconocido "${manifest.format}" (esperado "${KNOWN_FORMAT}")`);
+  }
+}
+
+// The name shape alone — kebab-case, no required check, no
+// directory match — so the collection contract, where the name is
+// cosmetic, composes just this rule.
+function checkNameShape(manifest, _ctx, errors) {
+  if (manifest.name !== undefined
+    && (!isNonEmptyString(manifest.name)
+      || manifest.name.length > 64 || !NAME_RE.test(manifest.name))) {
+    errors.push('name: debe ser kebab-case (minúsculas, números y guiones, máx. 64)');
+  }
+}
+
+function checkAuthor(manifest, _ctx, errors) {
+  if (manifest.author === undefined) return;
+  if (!isPlainObject(manifest.author)) {
+    errors.push('author: debe ser un objeto { "name", "email"?, "url"? }');
+    return;
+  }
+  checkKeys(manifest.author, OBJECT_KEYS.author, 'author', errors);
+  if (!isNonEmptyString(manifest.author.name)) {
+    errors.push('author.name: obligatorio dentro de author');
+  }
+}
+
+function checkMetadata(manifest, _ctx, errors) {
+  if (manifest.metadata !== undefined && !isPlainObject(manifest.metadata)) {
+    errors.push('metadata: debe ser un objeto');
+  }
+}
+
+const checkStringField = (field) => (manifest, _ctx, errors) => {
+  if (manifest[field] !== undefined && typeof manifest[field] !== 'string') {
+    errors.push(`${field}: debe ser una cadena`);
+  }
+};
+
+// Each validator owns one field of the manifest. The order of the
+// table is the order of the reported errors, so adding a field
+// means adding one entry, not touching control flow.
 const VALIDATORS = [
   function checkCollection(manifest, _ctx, errors) {
     if (manifest.collection === true) {
@@ -92,19 +135,13 @@ const VALIDATORS = [
       errors.push('collection: debe ser booleano');
     }
   },
-  function checkFormat(manifest, _ctx, errors) {
-    if (manifest.format !== undefined && manifest.format !== KNOWN_FORMAT) {
-      errors.push(`format: desconocido "${manifest.format}" (esperado "${KNOWN_FORMAT}")`);
-    }
-  },
+  checkFormat,
   function checkName(manifest, { pkgDir }, errors) {
     if (!isNonEmptyString(manifest.name)) {
       errors.push('name: obligatorio, cadena no vacía');
       return;
     }
-    if (manifest.name.length > 64 || !NAME_RE.test(manifest.name)) {
-      errors.push('name: debe ser kebab-case (minúsculas, números y guiones, máx. 64)');
-    }
+    checkNameShape(manifest, null, errors);
     if (manifest.name !== path.basename(path.resolve(pkgDir))) {
       errors.push(`name: "${manifest.name}" no coincide con el nombre del directorio`);
     }
@@ -156,17 +193,7 @@ const VALIDATORS = [
     }
     manifest.requires.paths.forEach((entry, index) => checkRequiresEntry(entry, index, errors));
   },
-  function checkAuthor(manifest, _ctx, errors) {
-    if (manifest.author === undefined) return;
-    if (!isPlainObject(manifest.author)) {
-      errors.push('author: debe ser un objeto { "name", "email"?, "url"? }');
-      return;
-    }
-    checkKeys(manifest.author, OBJECT_KEYS.author, 'author', errors);
-    if (!isNonEmptyString(manifest.author.name)) {
-      errors.push('author.name: obligatorio dentro de author');
-    }
-  },
+  checkAuthor,
   function checkPersonalization(manifest, { pkgDir }, errors) {
     if (manifest.personalization === undefined) return;
     if (!checkRelativePath(manifest.personalization, 'personalization', errors)) return;
@@ -192,16 +219,8 @@ const VALIDATORS = [
       errors.push(`personalization: "${manifest.personalization}" apunta fuera del paquete`);
     }
   },
-  function checkMetadata(manifest, _ctx, errors) {
-    if (manifest.metadata !== undefined && !isPlainObject(manifest.metadata)) {
-      errors.push('metadata: debe ser un objeto');
-    }
-  },
-  ...['description', 'license'].map((field) => (manifest, _ctx, errors) => {
-    if (manifest[field] !== undefined && typeof manifest[field] !== 'string') {
-      errors.push(`${field}: debe ser una cadena`);
-    }
-  }),
+  checkMetadata,
+  ...['description', 'license'].map(checkStringField),
 ];
 
 // The shared preamble: read and parse the manifest file. Never
@@ -226,19 +245,26 @@ function readManifestFile(dir) {
   }
 }
 
-export function loadManifest(pkgDir) {
+// The loading skeleton both contracts share: read and parse, warn
+// about the fields the contract does not know, and run its table in
+// order — the order of the table is the order of the errors.
+function loadContract(dir, knownFields, validators, ctx) {
   const warnings = [];
-  const { manifest, errors } = readManifestFile(pkgDir);
+  const { manifest, errors } = readManifestFile(dir);
   if (manifest === null) return { manifest: null, warnings, errors };
 
   for (const key of Object.keys(manifest)) {
-    if (!TOP_LEVEL_FIELDS.has(key)) {
+    if (!knownFields.has(key)) {
       warnings.push(`campo desconocido ignorado: "${key}"`);
     }
   }
-  for (const validate of VALIDATORS) validate(manifest, { pkgDir }, errors);
+  for (const validate of validators) validate(manifest, ctx, errors);
 
   return { manifest: errors.length === 0 ? manifest : null, warnings, errors };
+}
+
+export function loadManifest(pkgDir) {
+  return loadContract(pkgDir, TOP_LEVEL_FIELDS, VALIDATORS, { pkgDir });
 }
 
 const COLLECTION_FIELDS = new Set([
@@ -246,40 +272,36 @@ const COLLECTION_FIELDS = new Set([
   'collection', 'packages', 'metadata',
 ]);
 
-const PACKAGE_ONLY_FIELDS = ['version', 'install', 'requires', 'personalization'];
+// Forbidden fields in a collection are exactly what the package
+// contract knows that the collection does not: a new package field
+// becomes forbidden here without touching the list.
+const PACKAGE_ONLY_FIELDS = [...TOP_LEVEL_FIELDS]
+  .filter((field) => !COLLECTION_FIELDS.has(field));
 
-// A collection manifest describes the index, not an installable
-// unit: the package contract's own fields are errors here, and the
-// name is cosmetic — no directory match, just the name shape.
-export function loadCollectionManifest(colDir) {
-  const warnings = [];
-  const { manifest, errors } = readManifestFile(colDir);
-  if (manifest === null) return { manifest: null, warnings, errors };
-
-  for (const key of Object.keys(manifest)) {
-    if (!COLLECTION_FIELDS.has(key)) {
-      warnings.push(`campo desconocido ignorado: "${key}"`);
+// The collection contract declares only its differences on top of
+// the shared validators: `collection` required true, package fields
+// forbidden, the name reduced to its shape and its own `packages`
+// list.
+const COLLECTION_VALIDATORS = [
+  function checkCollectionTrue(manifest, _ctx, errors) {
+    if (manifest.collection !== true) {
+      errors.push('collection: debe ser true en un manifiesto de colección');
     }
-  }
-  if (manifest.collection !== true) {
-    errors.push('collection: debe ser true en un manifiesto de colección');
-  }
-  for (const field of PACKAGE_ONLY_FIELDS) {
-    if (manifest[field] !== undefined) {
-      errors.push(`${field}: campo de paquete no permitido en una colección`);
+  },
+  function checkPackageFieldsAbsent(manifest, _ctx, errors) {
+    for (const field of PACKAGE_ONLY_FIELDS) {
+      if (manifest[field] !== undefined) {
+        errors.push(`${field}: campo de paquete no permitido en una colección`);
+      }
     }
-  }
-  if (manifest.format !== undefined && manifest.format !== KNOWN_FORMAT) {
-    errors.push(`format: desconocido "${manifest.format}" (esperado "${KNOWN_FORMAT}")`);
-  }
-  if (manifest.name !== undefined
-    && (!isNonEmptyString(manifest.name)
-      || manifest.name.length > 64 || !NAME_RE.test(manifest.name))) {
-    errors.push('name: debe ser kebab-case (minúsculas, números y guiones, máx. 64)');
-  }
-  if (!Array.isArray(manifest.packages)) {
-    errors.push('packages: obligatorio, lista de { "path" }');
-  } else {
+  },
+  checkFormat,
+  checkNameShape,
+  function checkPackages(manifest, _ctx, errors) {
+    if (!Array.isArray(manifest.packages)) {
+      errors.push('packages: obligatorio, lista de { "path" }');
+      return;
+    }
     manifest.packages.forEach((entry, index) => {
       const where = `packages[${index}]`;
       if (!isPlainObject(entry)) {
@@ -289,25 +311,15 @@ export function loadCollectionManifest(colDir) {
       checkKeys(entry, OBJECT_KEYS.packagesEntry, where, errors);
       checkRelativePath(entry.path, `${where}.path`, errors);
     });
-  }
-  if (manifest.author !== undefined) {
-    if (!isPlainObject(manifest.author)) {
-      errors.push('author: debe ser un objeto { "name", "email"?, "url"? }');
-    } else {
-      checkKeys(manifest.author, OBJECT_KEYS.author, 'author', errors);
-      if (!isNonEmptyString(manifest.author.name)) {
-        errors.push('author.name: obligatorio dentro de author');
-      }
-    }
-  }
-  if (manifest.metadata !== undefined && !isPlainObject(manifest.metadata)) {
-    errors.push('metadata: debe ser un objeto');
-  }
-  for (const field of ['description', 'license']) {
-    if (manifest[field] !== undefined && typeof manifest[field] !== 'string') {
-      errors.push(`${field}: debe ser una cadena`);
-    }
-  }
+  },
+  checkAuthor,
+  checkMetadata,
+  ...['description', 'license'].map(checkStringField),
+];
 
-  return { manifest: errors.length === 0 ? manifest : null, warnings, errors };
+// A collection manifest describes the index, not an installable
+// unit: the package contract's own fields are errors here, and the
+// name is cosmetic — no directory match, just the name shape.
+export function loadCollectionManifest(colDir) {
+  return loadContract(colDir, COLLECTION_FIELDS, COLLECTION_VALIDATORS, { colDir });
 }
