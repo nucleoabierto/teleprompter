@@ -1,3 +1,4 @@
+import { parseArgs as scanTokens } from 'node:util';
 import { parseRepoSpec, isValidRef } from './fetch.js';
 import { EXIT_OK } from './exits.js';
 
@@ -92,35 +93,61 @@ conservarlos— y deja el registro sin su entrada
 muestra la ayuda general o la del comando indicado; «--help» tras
 una invocación pide la ayuda de ese comando`,
 };
-const KNOWN_FLAGS = new Set(['--force', '--skip', '--dry-run']);
-const VALUE_OPTIONS = new Set(['--path', '--ref']);
-const MULTI_OPTIONS = new Set(['--package']);
+// The token level — which options exist, which take a value, which
+// accumulate — is standard grammar the standard scanner validates.
+// Each command declares its own set: what a command does not
+// declare the scanner rejects on its own — `--package` outside
+// install, value options on uninstall — where the hand scanner
+// needed a manual check per command.
+const OPTION_TYPES = {
+  path: { type: 'string' },
+  ref: { type: 'string' },
+  package: { type: 'string', multiple: true },
+  force: { type: 'boolean' },
+  skip: { type: 'boolean' },
+  'dry-run': { type: 'boolean' },
+};
+const COMMAND_OPTIONS = {
+  install: new Set(Object.keys(OPTION_TYPES)),
+  update: new Set(['path', 'ref', 'force', 'skip', 'dry-run']),
+  uninstall: new Set(['force', 'skip', 'dry-run']),
+};
 
-function splitArgs(rest) {
-  const args = [];
-  const flags = new Set();
+// The standard scanner resolves the token level — unknown options,
+// missing values, the `--opt=value` form and the `--` terminator,
+// which the hand scanner used to reject. Two grammar rules stay
+// manual because they are ours, not the format's: a value option
+// given twice is rejected (the scanner goes last-wins, so `tokens`
+// makes the duplicate visible — repeated boolean flags collapse in
+// the Set anyway, as they always did) and `--force` excludes
+// `--skip`. Its errors map to `null` — the "invalid grammar"
+// idiom — instead of propagating.
+const BOOLEAN_OPTIONS = Object.keys(OPTION_TYPES)
+  .filter((name) => OPTION_TYPES[name].type === 'boolean');
+
+function splitArgs(command, rest) {
   const options = {};
-  for (let i = 0; i < rest.length; i++) {
-    const arg = rest[i];
-    if (VALUE_OPTIONS.has(arg) || MULTI_OPTIONS.has(arg)) {
-      const value = rest[++i];
-      if (value === undefined || value.startsWith('--')) return null;
-      if (MULTI_OPTIONS.has(arg)) {
-        options[arg] = [...(options[arg] ?? []), value];
-      } else if (options[arg] !== undefined) {
-        return null;
-      } else {
-        options[arg] = value;
-      }
-    } else if (arg.startsWith('--')) {
-      flags.add(arg);
-    } else {
-      args.push(arg);
-    }
+  for (const name of COMMAND_OPTIONS[command]) options[name] = OPTION_TYPES[name];
+  let scanned;
+  try {
+    scanned = scanTokens({
+      args: rest, options, strict: true, allowPositionals: true, tokens: true,
+    });
+  } catch {
+    return null;
   }
-  const unknown = [...flags].find((f) => !KNOWN_FLAGS.has(f));
-  if (unknown !== undefined || (flags.has('--force') && flags.has('--skip'))) return null;
-  return { args, flags, options };
+  const seen = new Set();
+  for (const token of scanned.tokens) {
+    if (token.kind !== 'option') continue;
+    const { type, multiple } = OPTION_TYPES[token.name];
+    if (type !== 'boolean' && multiple !== true && seen.has(token.name)) return null;
+    seen.add(token.name);
+  }
+  const flags = new Set(
+    BOOLEAN_OPTIONS.filter((name) => scanned.values[name]).map((name) => `--${name}`),
+  );
+  if (flags.has('--force') && flags.has('--skip')) return null;
+  return { args: scanned.positionals, flags, values: scanned.values };
 }
 
 // Grammar: an optional "install" alias, then either --path <dir> or a
@@ -164,68 +191,66 @@ export function parseArgs(argv) {
     return argv.length === 1 ? { command: argv[0] } : null;
   }
   if (argv[0] === 'update') {
-    const split = splitArgs(argv.slice(1));
+    const split = splitArgs('update', argv.slice(1));
     if (split === null) return null;
-    const { args, flags, options } = split;
-    if (options['--package'] !== undefined) return null;
+    const { args, flags, values } = split;
     if (args.length < 1 || args.length > 2) return null;
-    if (options['--ref'] !== undefined && !isValidRef(options['--ref'])) return null;
-    if (options['--path'] !== undefined) {
-      if (args.length > 1 || options['--ref'] !== undefined) return null;
+    if (values.ref !== undefined && !isValidRef(values.ref)) return null;
+    if (values.path !== undefined) {
+      if (args.length > 1 || values.ref !== undefined) return null;
       return {
         command: 'update',
         pkg: args[0],
-        source: { kind: 'path', dir: options['--path'] },
+        source: { kind: 'path', dir: values.path },
         flags,
       };
     }
     let spec = null;
     if (args[1] !== undefined) {
       spec = parseRepoSpec(args[1]);
-      if (spec === null || (spec.ref !== null && options['--ref'] !== undefined)) return null;
-      spec.ref = options['--ref'] ?? spec.ref;
+      if (spec === null || (spec.ref !== null && values.ref !== undefined)) return null;
+      spec.ref = values.ref ?? spec.ref;
     }
     return {
       command: 'update',
       pkg: args[0],
       source: spec === null ? null : { kind: 'repo', spec },
-      ref: options['--ref'],
+      ref: values.ref,
       flags,
     };
   }
   if (argv[0] === 'uninstall') {
-    const split = splitArgs(argv.slice(1));
+    const split = splitArgs('uninstall', argv.slice(1));
     if (split === null) return null;
-    const { args, flags, options } = split;
-    if (Object.keys(options).length > 0) return null;
+    const { args, flags } = split;
     if (args.length !== 1) return null;
     return { command: 'uninstall', pkg: args[0], flags };
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
-  const split = splitArgs(rest);
+  const split = splitArgs('install', rest);
   if (split === null) return null;
-  const { args, flags, options } = split;
-  if (options['--path'] !== undefined) {
-    if (args.length > 1 || options['--ref'] !== undefined) return null;
+  const { args, flags, values } = split;
+  if (values.path !== undefined) {
+    if (args.length > 1 || values.ref !== undefined) return null;
     return {
       command: 'install',
-      source: { kind: 'path', dir: options['--path'] },
+      source: { kind: 'path', dir: values.path },
       dest: args[0],
       flags,
-      packages: options['--package'] ?? [],
+      packages: values.package ?? [],
     };
   }
   if (args.length < 1 || args.length > 2) return null;
   const spec = parseRepoSpec(args[0]);
-  if (spec === null || (spec.ref !== null && options['--ref'] !== undefined)) return null;
-  if (options['--ref'] !== undefined && !isValidRef(options['--ref'])) return null;
-  spec.ref = options['--ref'] ?? spec.ref;
+  if (spec === null || (spec.ref !== null && values.ref !== undefined)) return null;
+  if (values.ref !== undefined && !isValidRef(values.ref)) return null;
+  spec.ref = values.ref ?? spec.ref;
   return {
     command: 'install',
     source: { kind: 'repo', spec },
     dest: args[1],
     flags,
-    packages: options['--package'] ?? [],
+    packages: values.package ?? [],
   };
 }
 
