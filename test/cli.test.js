@@ -622,6 +622,18 @@ test('usage errors: bad spec, excess args, --path combos, missing option values'
   }
 });
 
+test('the --opt=value form and the -- terminator parse like their long forms', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  assert.equal((await run(['--path=' + pkg, dest])).code, EXIT_OK);
+  assert.deepEqual(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+
+  const dest2 = tmp();
+  assert.equal((await run(['--path', pkg, '--', dest2])).code, EXIT_OK);
+  assert.deepEqual(fs.readFileSync(path.join(dest2, 'a.txt'), 'utf8'), 'a');
+});
+
 test('a missing repository exits 5 and writes nothing', async () => {
   const dest = tmp();
   const spy = spyFetch({ ok: false, status: 404 });
