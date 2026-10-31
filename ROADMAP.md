@@ -21,7 +21,7 @@ reconstrucción del destino.
   reutilizar validadores de manifiesto, nombrar los predicados
   del lock, extraer el origen de `runUpdate` y adoptar
   `util.parseArgs`.
-  - Estado: en curso —cinco de siete tareas completadas.
+  - Estado: en curso —seis de siete tareas completadas.
   - Justificación: la revisión 005 detectó duplicaciones y
     operaciones largas justo donde la revisión de
     desactualizados añadirá un comando nuevo —parser,
