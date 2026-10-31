@@ -94,5 +94,5 @@ destino— para que una instalación sea inspectable y repetible.
 ## Estado de salud
 
 - Última revisión: 2026-10-29 (tarea
-  `docs/tasks/056-reutilizar-validadores-manifiesto-coleccion.md`)
+  `docs/tasks/057-nombrar-predicados-forma-lock.md`)
 - Divergencias conocidas: Ninguna

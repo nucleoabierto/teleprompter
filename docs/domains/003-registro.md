@@ -134,7 +134,7 @@ verificar la deriva y responder qué hay y en qué estado quedó.
 ## Estado de salud
 
 - Última revisión: 2026-10-29 (tarea
-  `docs/tasks/055-compartir-clasificacion-entrantes-plan.md`)
+  `docs/tasks/057-nombrar-predicados-forma-lock.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

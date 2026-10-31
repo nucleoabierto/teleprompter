@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { hashPath } from './hash.js';
 import { personalizationTarget } from './paths.js';
+import { isPlainObject, isOptionalString } from './shape.js';
 
 const CORRUPT_WARNING = 'teleprompter-lock.json ilegible o corrupto: se ignora';
 const EMPTY = () => ({ packages: {}, warnings: [] });
@@ -40,45 +41,65 @@ export function lockEntries(lock) {
 // A recorded file entry asserts the tool wrote the resource —
 // `skip` records a decision that wrote nothing: a conflict kept
 // foreign content. Every other action counts as written.
-export function isWritten(f) {
-  return f.action !== 'skip';
+export function isWritten(file) {
+  return file.action !== 'skip';
 }
 
-// A lock is only trustworthy if every package entry holds a files
-// array of {target, sha256?} records — anything else is corrupt even
-// when it parses as JSON.
-function isValidLock(data) {
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) return false;
-  if (data.packages === undefined) return true;
-  const { packages } = data;
-  if (typeof packages !== 'object' || packages === null || Array.isArray(packages)) {
-    return false;
-  }
-  return Object.values(packages).every((p) => p !== null && typeof p === 'object'
-    && typeof p.version === 'string'
-    && Array.isArray(p.files)
-    && p.files.every((f) => f !== null && typeof f === 'object'
-      && typeof f.target === 'string'
-      && (f.sha256 === undefined || typeof f.sha256 === 'string'))
-    && (p.origin === undefined || isValidOrigin(p.origin)));
+// A file entry records one target the install touched: the path
+// always, the hash only when the action produced content — a `skip`
+// records a decision, not a file.
+function isValidFileEntry(file) {
+  return isPlainObject(file)
+    && typeof file.target === 'string'
+    && isOptionalString(file.sha256);
 }
+
+// A package entry is the unit the registry maps a name to: the
+// installed version, the files the install wrote and optionally the
+// origin they were fetched from — everything else is corrupt even
+// when it parses as JSON.
+function isValidPackageEntry(pkg) {
+  return isPlainObject(pkg)
+    && typeof pkg.version === 'string'
+    && Array.isArray(pkg.files)
+    && pkg.files.every(isValidFileEntry)
+    && (pkg.origin === undefined || isValidOrigin(pkg.origin));
+}
+
+// A lock is only trustworthy if it is a plain object whose packages
+// map — absent in locks written before any install — holds only
+// well-formed package entries.
+function isValidLock(data) {
+  if (!isPlainObject(data)) return false;
+  if (data.packages === undefined) return true;
+  return isPlainObject(data.packages)
+    && Object.values(data.packages).every(isValidPackageEntry);
+}
+
+// Each origin type declares the fields that make it re-fetchable —
+// the table has no prototype so a `type` naming a member of
+// `Object.prototype` falls through to "not valid" instead of
+// invoking an inherited function.
+const ORIGIN_SHAPES = {
+  __proto__: null,
+  github: (origin) => typeof origin.repo === 'string'
+    && isOptionalString(origin.ref)
+    && isOptionalString(origin.commit),
+  path: (origin) => typeof origin.path === 'string',
+};
 
 // `origin` is optional — locks written before it existed stay
 // valid — but when present it must name the re-fetchable source:
 // a GitHub repo with its optional ref, or a local path. A
 // collection install adds the selected member's name, which a
 // later update re-resolves through the index.
-function isValidOrigin(o) {
-  if (o === null || typeof o !== 'object' || Array.isArray(o)) return false;
-  const pkgOk = o.package === undefined || typeof o.package === 'string';
-  if (o.type === 'github') {
-    return pkgOk
-      && typeof o.repo === 'string'
-      && (o.ref === undefined || typeof o.ref === 'string')
-      && (o.commit === undefined || typeof o.commit === 'string');
-  }
-  if (o.type === 'path') return pkgOk && typeof o.path === 'string';
-  return false;
+function isValidOrigin(origin) {
+  if (!isPlainObject(origin) || !isOptionalString(origin.package)) return false;
+  // `type` must be a string: a table lookup coerces the key, so an
+  // array like ["github"] would dispatch where strict equality —
+  // the original contract — rejected it.
+  const shape = typeof origin.type === 'string' ? ORIGIN_SHAPES[origin.type] : undefined;
+  return (shape ?? (() => false))(origin);
 }
 
 // Merges the new install into the existing history: other packages'
