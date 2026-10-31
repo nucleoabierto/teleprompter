@@ -14,20 +14,7 @@ reconstrucción del destino.
 
 ## Now
 
-- 1. Hito 2: Saneamiento de la complejidad interna — siete
-  tareas derivadas de la revisión de arquitectura 005: unificar
-  el fallo de GitHub y descomponer `fetchRepoTree`, despachar
-  `executePlan`, compartir la clasificación de entrantes,
-  reutilizar validadores de manifiesto, nombrar los predicados
-  del lock, extraer el origen de `runUpdate` y adoptar
-  `util.parseArgs`.
-  - Estado: en curso —seis de siete tareas completadas.
-  - Justificación: la revisión 005 detectó duplicaciones y
-    operaciones largas justo donde la revisión de
-    desactualizados añadirá un comando nuevo —parser,
-    orquestación de `commands.js`, obtención remota—; sanear
-    primero abarata ese trabajo y es acotado e invariante.
-- 2. Revisión de desactualizados — consultar qué paquetes ofrecen
+- 1. Revisión de desactualizados — consultar qué paquetes ofrecen
   versión nueva y actualizar lo revisado en una invocación (idea
   008; conjunto por planificar).
   - Estado: pendiente de arrancar.
@@ -133,4 +120,13 @@ revisión y reproducción ordenadas entre Now y Next—.
   del plan, resolución de colección compartida y ejecución sin
   lado paquete— y los documentos de dominio quedaron divididos
   por subdominios sobre las fronteras asentadas; la revisión de
+  desactualizados queda sola en Now)
+- Usuario: 2026-10-29 — Aprueba (hito 2 «Saneamiento de la
+  complejidad interna» cerrado: las siete tareas materializaron
+  las correcciones de la revisión 005 —`fetchRepoTree`
+  descompuesto y fallo de GitHub unificado, `executePlan`
+  despachado por acción, clasificación de entrantes compartida,
+  validadores de manifiesto reutilizados, predicados del lock
+  nombrados sobre `shape.js`, origen de `runUpdate` extraído y
+  `util.parseArgs` adoptado como nivel token—; la revisión de
   desactualizados queda sola en Now)
