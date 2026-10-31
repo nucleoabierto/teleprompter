@@ -666,6 +666,18 @@ test('update plan marks update on a child the version changed under an intact tr
   assert.deepEqual(plan.retired, []);
 });
 
+test('update plan marks update on a nested child the version changed under an intact tree', () => {
+  const { dest, lock } = destWithLock({ 'd/': { 'sub': { 'x.txt': 'viejo' } } });
+  const pkg = pkgWith('paquete', { 'd/sub/x.txt': 'nuevo' });
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(pkg, 'teleprompter.json'), 'utf8'),
+  );
+  manifest.version = '2.0.0';
+  const plan = buildUpdatePlan(pkg, manifest, dest, [], lock);
+  assert.equal(plan.resources[0].status, 'update');
+  assert.deepEqual(plan.retired, []);
+});
+
 test('update plan marks each covered child by its own content', () => {
   const { dest, lock } = destWithLock({
     'd/': { 'a.txt': 'a', 'b.txt': 'viejo', 'sub': { 'x.txt': 'x' } },
