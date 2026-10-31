@@ -33,12 +33,12 @@ const REMOVAL_RESOLUTION = { overwrite: 'remove', skip: 'keep' };
 // conflict translates that resolution again, so `overwrite`/`skip`
 // become `remove`/`keep`. An entry that resolves to nothing means
 // the plan reached execution with a conflict still open.
-function actionOf(r) {
-  const action = r.removal === true
-    ? REMOVAL_RESOLUTION[r.resolution]
-    : ACTION[r.status] ?? r.resolution;
+function actionOf(resource) {
+  const action = resource.removal === true
+    ? REMOVAL_RESOLUTION[resource.resolution]
+    : ACTION[resource.status] ?? resource.resolution;
   if (action === undefined) {
-    throw new Error(`plan sin resolver: ${r.target}`);
+    throw new Error(`plan sin resolver: ${resource.target}`);
   }
   return action;
 }
@@ -88,17 +88,17 @@ function writableTarget(destDir, target) {
 // its previous content under the backup root first. The entry is
 // pushed before the copy so a failed write still reports the
 // destructive half it already ran.
-function writeResource({ src, destDir, backupRoot }, r, applied) {
-  const dest = writableTarget(destDir, r.target);
-  const entry = { target: r.target, action: r.action };
-  if (r.action === 'overwrite') {
-    if (backupRoot !== null && r.status === 'conflict') {
-      entry.backup = backupConflict(destDir, backupRoot, r.target);
+function writeResource({ src, destDir, backupRoot }, resource, applied) {
+  const dest = writableTarget(destDir, resource.target);
+  const entry = { target: resource.target, action: resource.action };
+  if (resource.action === 'overwrite') {
+    if (backupRoot !== null && resource.status === 'conflict') {
+      entry.backup = backupConflict(destDir, backupRoot, resource.target);
     }
     fs.rmSync(dest, { recursive: true, force: true });
   }
   applied.push(entry);
-  copyResource(path.join(src, r.source), dest);
+  copyResource(path.join(src, resource.source), dest);
   entry.sha256 = hashPath(dest);
 }
 
@@ -106,17 +106,17 @@ function writeResource({ src, destDir, backupRoot }, r, applied) {
 // to remove — a conflict gets the same backup an overwrite does.
 // A backup that already ran still belongs in the report even when
 // the removal that motivated it fails.
-function removeResource({ destDir, backupRoot }, r, applied) {
-  const dest = writableTarget(destDir, r.target);
-  const entry = { target: r.target, action: r.action };
-  if (backupRoot !== null && r.status === 'conflict') {
-    entry.backup = backupConflict(destDir, backupRoot, r.target);
+function removeResource({ destDir, backupRoot }, resource, applied) {
+  const dest = writableTarget(destDir, resource.target);
+  const entry = { target: resource.target, action: resource.action };
+  if (backupRoot !== null && resource.status === 'conflict') {
+    entry.backup = backupConflict(destDir, backupRoot, resource.target);
   }
   try {
     fs.rmSync(dest, { recursive: true, force: true });
   } catch (error) {
     if (entry.backup !== undefined) {
-      applied.push({ target: r.target, action: 'backup', backup: entry.backup });
+      applied.push({ target: resource.target, action: 'backup', backup: entry.backup });
     }
     throw error;
   }
@@ -127,11 +127,11 @@ function removeResource({ destDir, backupRoot }, r, applied) {
 // no write guard applies. The hash goes with the action so the
 // registry can record what the package manages even when nothing
 // was written.
-function recordIdentical({ destDir }, r, applied) {
+function recordIdentical({ destDir }, resource, applied) {
   applied.push({
-    target: r.target,
-    action: r.action,
-    sha256: hashPath(path.join(destDir, r.target)),
+    target: resource.target,
+    action: resource.action,
+    sha256: hashPath(path.join(destDir, resource.target)),
   });
 }
 
@@ -140,9 +140,9 @@ function recordIdentical({ destDir }, r, applied) {
 // The join is deliberate: the flat loop computed it for every
 // entry, so a malformed target still throws here even though
 // nothing is written.
-function recordDecision({ destDir }, r, applied) {
-  path.join(destDir, r.target);
-  applied.push({ target: r.target, action: r.action });
+function recordDecision({ destDir }, resource, applied) {
+  path.join(destDir, resource.target);
+  applied.push({ target: resource.target, action: resource.action });
 }
 
 // The actions that do work dispatch to their handler; everything
@@ -181,9 +181,9 @@ export function executePlan({ src, dest: destDir }, plan, backupRoot = null) {
       fs.mkdirSync(dest, { recursive: true });
       applied.push({ target: dir, action: 'mkdir' });
     }
-    for (const r of [...plan.resources, ...plan.retired]) {
-      const action = actionOf(r);
-      (EXECUTE[action] ?? recordDecision)(ctx, { ...r, action }, applied);
+    for (const resource of [...plan.resources, ...plan.retired]) {
+      const action = actionOf(resource);
+      (EXECUTE[action] ?? recordDecision)(ctx, { ...resource, action }, applied);
     }
   } catch (error) {
     throw new ExecutionError(applied, error);

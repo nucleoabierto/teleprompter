@@ -105,7 +105,7 @@ cualquier acción ajena al vocabulario. Veredicto:
 
 ## Plan técnico
 
-- [x] `actionOf(r)` junto a `ACTION`/`REMOVAL_RESOLUTION`:
+- [x] `actionOf(resource)` junto a `ACTION`/`REMOVAL_RESOLUTION`:
   compone la traducción —`removal` consulta
   `REMOVAL_RESOLUTION[resolution]`, si no
   `ACTION[status] ?? resolution`— y lanza `plan sin resolver`
