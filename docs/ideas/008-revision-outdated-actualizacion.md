@@ -1,5 +1,7 @@
 # Revisión de desactualizados: saber qué va a actualizar antes de actualizar
 
+> **Procesada en:** docs/proposals/010-revision-desactualizados/
+
 > **Tipo:** idea de funcionalidad — tamaño conjunto (complejidad media)
 > **Fecha:** 2026-10
 > **Orden sugerido:** 3 de 4 — segunda de Next (revisión del roadmap
