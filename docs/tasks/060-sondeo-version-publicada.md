@@ -1,5 +1,9 @@
 # Sondear la versión publicada de un origen
 
+## Estado
+
+[ ] Pendiente
+
 ## Tipo
 
 desarrollo
@@ -59,3 +63,9 @@ sea una colección y el paquete un miembro seleccionado.
   es la misma fuente que `install`/`update` consultan, así que la
   versión reportada es exactamente la que una actualización
   obtendría —la optimización ligera quedó fuera de alcance—.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

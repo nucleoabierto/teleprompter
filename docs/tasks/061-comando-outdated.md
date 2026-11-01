@@ -1,5 +1,9 @@
 # El comando `outdated` de punta a punta
 
+## Estado
+
+[ ] Pendiente
+
 ## Tipo
 
 desarrollo
@@ -13,7 +17,7 @@ el registro, ni los respaldos.
 
 ## Dependencias
 
-- Borrador 01 —el sondeo de la versión publicada—.
+- 060 —el sondeo de la versión publicada—.
 
 ## Entrada
 
@@ -67,3 +71,9 @@ el registro, ni los respaldos.
   decide el plan: degradar a aviso (como el lock corrupto) es la
   opción por defecto; que sea visible pero no abortivo es lo
   acordado en la propuesta.
+
+## Revisión
+
+- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

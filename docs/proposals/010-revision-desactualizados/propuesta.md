@@ -2,7 +2,7 @@
 
 ## Estado
 
-[p] Pendiente de revisión
+[a] Aprobada
 
 ## Problema
 
@@ -99,11 +99,11 @@ resto.
 
 ## Borradores
 
-- `01-sondeo-version-publicada.md` — sondear la versión
+- `docs/tasks/060-sondeo-version-publicada.md` — sondear la versión
   publicada de un origen
-- `02-comando-outdated.md` — el comando `outdated` de punta a
-  punta (depende de 01)
+- `docs/tasks/061-comando-outdated.md` — el comando `outdated` de punta a
+  punta (depende de 060)
 
 ## Revisión
 
-- Usuario: [fecha] — [Aprueba | Solicita cambios | Rechaza]
+- Usuario: 2026-10-29 — Aprueba
