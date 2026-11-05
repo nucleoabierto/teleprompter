@@ -93,6 +93,6 @@ destino— para que una instalación sea inspectable y repetible.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-29 (tarea
-  `docs/tasks/057-nombrar-predicados-forma-lock.md`)
+- Última revisión: 2026-11-03 (tarea
+  `docs/tasks/060-sondeo-version-publicada.md`)
 - Divergencias conocidas: Ninguna

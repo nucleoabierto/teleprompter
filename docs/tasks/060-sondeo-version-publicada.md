@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -127,5 +127,5 @@ propia—. Veredicto: **conectada**.
 ## Revisión
 
 - Subagente: 2026-11-03 — Aprueba
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-11-03 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

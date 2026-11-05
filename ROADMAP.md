@@ -16,8 +16,8 @@ reconstrucción del destino.
 
 - 1. Revisión de desactualizados — consultar qué paquetes ofrecen
   versión nueva y actualizar lo revisado en una invocación (idea
-  008; conjunto por planificar).
-  - Estado: pendiente de arrancar.
+  008; épica 009).
+  - Estado: en curso —una de dos tareas completadas.
   - Justificación: sus prerrequisitos ya están materializados —la
     obtención remota endurecida y pinneada le permite señalar el
     commit que avanzó sin bump, y la desinstalación dejó la lectura
