@@ -128,4 +128,4 @@ propia—. Veredicto: **conectada**.
 
 - Subagente: 2026-11-03 — Aprueba
 - Usuario (ejecución): 2026-11-03 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-03 — Aprueba
