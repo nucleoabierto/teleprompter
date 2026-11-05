@@ -23,7 +23,7 @@ nada, verificable en una sola invocación.
 
 ## Piezas
 
-- [ ] docs/tasks/060-sondeo-version-publicada.md — sondear la
+- [x] docs/tasks/060-sondeo-version-publicada.md — sondear la
   versión publicada de un origen
 - [ ] docs/tasks/061-comando-outdated.md — el comando `outdated`
   de punta a punta
