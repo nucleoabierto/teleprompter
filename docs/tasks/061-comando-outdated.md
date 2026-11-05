@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[/] En progreso
 
 ## Tipo
 
@@ -64,6 +64,79 @@ el registro, ni los respaldos.
   traducir cada `origin` vía `sourceOf`, sondear con el borrador
   01, comparar con la versión instalada y presentar.
 3. Correr la suite.
+
+## Contexto
+
+- **Archivos similares:** `src/queries.js` —`showGuide`/`showList`/
+  `showCheck` fijan el patrón de la familia: leer el lock,
+  `reportWarnings`, filtrar por nombre, una línea por paquete,
+  códigos de salida—.
+- **Patrones:** la consulta devuelve códigos de salida (D021); la
+  degradación es `aviso:` o marca por línea, nunca aborto —`check`
+  declara «la deriva es información, no un fallo»—.
+- **Dominio:** `docs/domains/003-registro.md` ancla `readLock`,
+  `lockEntries`, `lockEntry`; `002-instalacion.md` ancla el
+  consumo del `origin`.
+- **Producto:** PRD 009 CU-1/CU-2 —revisión de todo el registro
+  y de un paquete nombrado—.
+- **PRD:** `docs/prd/009-revision-desactualizados.md`.
+- **Lecciones:** `revision-tecnica-subagente.md` —el revisor debe
+  poder ejecutar comandos—.
+- **Decisiones:** D021 —códigos de salida en la invocación—;
+  D011/D012/D013 —la familia de consultas: subcomando propio,
+  sin `destino`, sobre el directorio de trabajo—; D014 —el
+  `origin` registrado alcanza para re-sondear—; D019 —el miembro
+  se re-resuelve por nombre—; D017 —misma versión es mismo
+  contenido: la comparación es por versión—; D003 —la autoridad
+  de la versión es el manifiesto—.
+- **Suite:** `test/cli.test.js` ejerce las consultas con `run` y
+  `spyFetch`; los comandos sin opciones se verifican en las
+  baterías de gramática y de ayuda —`outdated` entra en ambas—.
+
+## Conectividad
+
+Verificada durante la recolección: `sourceOf(err, parsed, origin)`
+(`commands.js:349`) traduce el origen grabado al `source` —emite
+sus motivos por `err`, que el comando puede colectar para
+degradar por línea—; `publishedVersion(io, source, member)`
+(`probe.js`) sondea la versión —`member` es el nombre del
+paquete, como `update` re-resuelve—; `semverAtLeast` (`plan.js`,
+privada) es la comparación vigente: `instalada >= publicada` →
+al día. `queries.js` es síncrono porque sus consultas son
+locales; la asincronía del sondeo no cambia la familia —`main`
+ya despacha promesas—. Veredicto: **conectada**.
+
+## Plan técnico
+
+- [x] `src/origin.js` —módulo nuevo— recibe el par
+  `originOf`/`sourceOf` que sale de `commands.js`: la traducción
+  registro↔source gana un segundo consumidor fuera del módulo
+  de comandos con escritura, y el par inverso sigue junto.
+- [x] `src/plan.js`: `semverAtLeast` pasa a exportada —la
+  comparación de versiones que el plan ya usa—.
+- [x] `src/queries.js`: `showOutdated(io, out, err, pkgName)`
+  asíncrona —lee el lock, filtra por nombre, por entrada llama
+  `sourceOf` con un colector de motivos, sondea
+  `publishedVersion`, compara con `semverAtLeast` y presenta
+  una línea por paquete; los fallos se degradan en su línea—.
+- [x] `src/usage.js`: `COMMAND_OPTIONS.outdated = new Set()` —
+  el escáner rechaza toda opción por no declarada—; rama en
+  `parseArgs` con aridad 0-1; entradas en `USAGE` y `HELP`.
+- [x] `src/cli.js`: despacho `outdated` → `showOutdated`.
+- [x] `test/cli.test.js`: casos nuevos del comando + altas en
+  las baterías de ayuda y gramática; suite al 100 %.
+
+## Suite de pruebas esperada
+
+- Casos nuevos: registro vacío, nombrado no instalado, al día,
+  desactualizado, instalada por encima de la publicada, origen
+  sin `origin`, origen local desaparecido, fallo de obtención
+  remota, colección con miembro, lock corrupto con su aviso.
+- Gramática: `outdated a b`, `outdated --force`,
+  `outdated --path x`, `outdated -x` rechazados; `outdated` y
+  `outdated <paquete>` aceptados; `help outdated` y
+  `outdated --help`.
+- Regresión completa en verde; cobertura 100 % en `src/`.
 
 ## Notas
 

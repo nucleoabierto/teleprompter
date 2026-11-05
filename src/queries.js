@@ -7,6 +7,9 @@ import { classifyResource } from './drift.js';
 import {
   printGuide, DRIFT_MARKS, reportWarnings,
 } from './report.js';
+import { sourceOf } from './origin.js';
+import { publishedVersion } from './probe.js';
+import { semverAtLeast } from './plan.js';
 import {
   EXIT_OK, EXIT_USAGE, EXIT_EXECUTION,
 } from './exits.js';
@@ -87,6 +90,44 @@ export function showList(io, out) {
     for (const f of entry.files) {
       if (isWritten(f)) out(`    ${f.target}`);
     }
+  }
+  return EXIT_OK;
+}
+
+// `outdated` confronts the registry with what each recorded origin
+// publishes today: one line per package —installed → published, and
+// the status. The review is read-only end to end; an origin that
+// cannot be translated or probed degrades to `no consultable` in
+// its own line — like `check`, the finding is information, not a
+// failure, so the command always exits 0. `sourceOf` emits its
+// reasons through `err`; here they are collected so they annotate
+// the line instead of aborting the review. The member is the
+// package's own name — the same re-resolution `update` runs.
+export async function showOutdated(io, out, err, pkgName) {
+  const lock = readLock(io.cwd);
+  reportWarnings(out, lock.warnings);
+  if (pkgName !== undefined && lockEntry(lock, pkgName) === undefined) {
+    err(`el paquete "${pkgName}" no está instalado`);
+    return EXIT_USAGE;
+  }
+  const entries = lockEntries(lock)
+    .filter(([name]) => pkgName === undefined || name === pkgName);
+  if (entries.length === 0) {
+    out('no hay paquetes instalados');
+    return EXIT_OK;
+  }
+  out('versiones frente al origen:');
+  for (const [name, entry] of entries) {
+    const problems = [];
+    const { source } = sourceOf((m) => problems.push(m), { pkg: name }, entry.origin);
+    if (source === undefined) {
+      out(`  ${name}@${entry.version} — no consultable: ${problems[0]}`);
+      continue;
+    }
+    const probed = await publishedVersion(io, source, name);
+    out(probed.ok
+      ? `  ${name}@${entry.version} → ${probed.version} — ${semverAtLeast(entry.version, probed.version) ? 'al día' : 'desactualizado'}`
+      : `  ${name}@${entry.version} — no consultable: ${probed.error}`);
   }
   return EXIT_OK;
 }
