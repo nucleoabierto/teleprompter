@@ -148,5 +148,5 @@ ya despacha promesas—. Veredicto: **conectada**.
 ## Revisión
 
 - Subagente: 2026-11-06 — Aprueba
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-11-06 — Aprueba
+- Usuario (cierre): 2026-11-06 — Aprueba
