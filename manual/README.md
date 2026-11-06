@@ -24,8 +24,12 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
 - [Referencia de `check`](referencia-check.md) — verificar el estado
   de los recursos instalados: intactos, modificados, ausentes o no
   verificables.
+- [Referencia de `outdated`](referencia-outdated.md) — revisar las
+  versiones que publican los orígenes registrados.
 - [Referencia de `update`](referencia-update.md) — actualizar un
   paquete instalado a la versión que publica su origen.
+- [Referencia de `uninstall`](referencia-uninstall.md) — retirar un
+  paquete instalado y sus recursos registrados.
 - [Referencia de `help`](referencia-help.md) — consultar la ayuda
   del CLI, general o por comando.
 
@@ -39,6 +43,12 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
   — qué informa `check` y los escenarios que la suite verifica.
 - [004 — Actualizar un paquete](004-actualizar-un-paquete.md) — qué
   hace `update` y los escenarios que la suite verifica.
+- [005 — Instalar desde una colección](005-instalar-desde-una-coleccion.md)
+  — qué hace `--package` y los escenarios que la suite verifica.
+- [006 — Desinstalar un paquete](006-desinstalar-un-paquete.md) — qué
+  hace `uninstall` y los escenarios que la suite verifica.
+- [007 — Revisar desactualizados](007-revisar-desactualizados.md) —
+  qué informa `outdated` y los escenarios que la suite verifica.
 
 ## Documentos relacionados
 

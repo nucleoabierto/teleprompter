@@ -80,7 +80,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
     assert.equal(code, EXIT_OK, argv.join(' '));
     assert.deepEqual(stderr, []);
     const shown = stdout.join('\n');
-    for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'uninstall', 'help']) {
+    for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'help']) {
       assert.match(shown, new RegExp(`^  *${cmd} `, 'm'), cmd);
     }
     for (const opt of ['--path', '--package', '--force', '--skip', '--dry-run', '--ref']) {
@@ -91,7 +91,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
 });
 
 test('help <comando> prints the synopsis of that command', async () => {
-  for (const cmd of ['install', 'guide', 'list', 'check', 'update', 'uninstall', 'help']) {
+  for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'help']) {
     const { code, stdout, stderr } = await run(['help', cmd]);
     assert.equal(code, EXIT_OK, cmd);
     assert.deepEqual(stderr, []);
@@ -105,6 +105,7 @@ test('--help beside an invocation prints that command\'s help', async () => {
     [['guide', '--help'], 'guide'],
     [['list', '--help'], 'list'],
     [['check', '--help'], 'check'],
+    [['outdated', '--help'], 'outdated'],
     [['update', '--help'], 'update'],
     [['uninstall', '--help'], 'uninstall'],
     [['help', '--help'], 'help'],
@@ -1204,6 +1205,161 @@ test('check rejects arguments and install options', async () => {
   for (const argv of [
     ['check', 'x'], ['check', 'a', 'b'], ['check', '--path', 'x'],
     ['check', '--dry-run'], ['check', '--force'], ['check', '-x'],
+  ]) {
+    const { code, stderr } = await run(argv, { cwd: tmp() });
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});
+
+// --- revisión de desactualizados ---
+
+test('outdated answers that nothing is installed when there is no lock', async () => {
+  const { code, stdout } = await run(['outdated'], { cwd: tmp() });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, ['no hay paquetes instalados']);
+});
+
+test('outdated reports al día when the origin publishes the installed version', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stdout, [
+    'versiones frente al origen:',
+    '  p@1.0.0 → 1.0.0 — al día',
+  ]);
+});
+
+test('outdated reports desactualizado when the origin publishes a newer version', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  writePkg(pkg, validManifest('p', { version: '1.2.0' }), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.0\.0 → 1\.2\.0 — desactualizado/);
+});
+
+test('outdated stays al día when the installed version is ahead of the published', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p', { version: '1.2.0' }), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.2\.0 → 1\.0\.0 — al día/);
+});
+
+test('outdated with a name reviews only that package and rejects a missing one', async () => {
+  const dest = tmp();
+  for (const name of ['uno', 'dos']) {
+    const pkg = path.join(tmp(), name);
+    writePkg(pkg, validManifest(name), { 'a.txt': 'a' });
+    await run(['--path', pkg, dest]);
+  }
+  const named = await run(['outdated', 'dos'], { cwd: dest });
+  assert.equal(named.code, EXIT_OK);
+  assert.match(named.stdout.join('\n'), /dos@1\.0\.0/);
+  assert.doesNotMatch(named.stdout.join('\n'), /uno@/);
+  const missing = await run(['outdated', 'tres'], { cwd: dest });
+  assert.equal(missing.code, EXIT_USAGE);
+  assert.match(missing.stderr.join('\n'), /"tres" no está instalado/);
+});
+
+test('outdated degrades an entry without recorded origin to no consultable', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), JSON.stringify({
+    packages: {
+      p: {
+        version: '1.0.0',
+        files: [{ target: 'a.txt', action: 'create' }],
+      },
+    },
+  }));
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'),
+    / {2}p@1\.0\.0 — no consultable:.*no registra un origen/);
+});
+
+test('outdated degrades a vanished local origin to no consultable', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  fs.rmSync(pkg, { recursive: true });
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}p@1\.0\.0 — no consultable:/);
+});
+
+test('outdated reviews a remote origin and degrades its failure to a warning', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const spy = spyFetch(remoteOk(await remotePkg()));
+  await run(['o/mi-paquete', dest], { tmpBase, fetch: spy.fetch });
+
+  const newer = spyFetch(remoteOk(await repoTarball('mi-paquete',
+    validManifest('mi-paquete', { version: '2.0.0' }), { 'a.txt': 'a' })));
+  const ahead = await run(['outdated'], { cwd: dest, tmpBase, fetch: newer.fetch });
+  assert.equal(ahead.code, EXIT_OK);
+  assert.match(ahead.stdout.join('\n'),
+    / {2}mi-paquete@1\.0\.0 → 2\.0\.0 — desactualizado/);
+
+  const failing = spyFetch({ ok: false, status: 404 });
+  const degraded = await run(['outdated'], { cwd: dest, tmpBase, fetch: failing.fetch });
+  assert.equal(degraded.code, EXIT_OK);
+  assert.match(degraded.stdout.join('\n'),
+    / {2}mi-paquete@1\.0\.0 — no consultable:/);
+});
+
+test('outdated probes the recorded member of a collection origin', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'familia');
+  writeCollection(coll, [
+    { path: 'alfa', manifest: validManifest('alfa') },
+    { path: 'beta', manifest: validManifest('beta') },
+  ]);
+  await run(['--path', coll, dest, '--package', 'beta']);
+  writePkg(path.join(coll, 'beta'),
+    validManifest('beta', { version: '2.0.0' }), { 'a.txt': 'a' });
+  const { code, stdout } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), / {2}beta@1\.0\.0 → 2\.0\.0 — desactualizado/);
+});
+
+test('outdated writes nothing: the destination and the lock stay untouched', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'p');
+  writePkg(pkg, validManifest('p'), { 'a.txt': 'a' });
+  await run(['--path', pkg, dest]);
+  const before = fs.readdirSync(dest).sort();
+  const lockBefore = fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8');
+  const { code } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(fs.readdirSync(dest).sort(), before);
+  assert.equal(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'), lockBefore);
+});
+
+test('outdated warns on a corrupt lock and answers nothing installed', async () => {
+  const dest = tmp();
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{roto');
+  const { code, stdout, stderr } = await run(['outdated'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.match(stdout.join('\n'), /aviso:.*corrupto/);
+  assert.match(stdout.join('\n'), /no hay paquetes instalados/);
+  assert.deepEqual(stderr, []);
+});
+
+test('outdated rejects extra arguments and any option', async () => {
+  for (const argv of [
+    ['outdated', 'a', 'b'], ['outdated', '--path', 'x'],
+    ['outdated', '--force'], ['outdated', '--package', 'a'], ['outdated', '-x'],
   ]) {
     const { code, stderr } = await run(argv, { cwd: tmp() });
     assert.equal(code, EXIT_USAGE, argv.join(' '));

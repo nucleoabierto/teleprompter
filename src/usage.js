@@ -15,6 +15,7 @@ comandos:
   guide [<paquete>]                       muestra la guía de personalización
   list                                    lista los paquetes instalados
   check                                   verifica los recursos instalados
+  outdated [<paquete>]                    revisa las versiones publicadas
   update <paquete> [<origen>]             actualiza un paquete instalado
   uninstall <paquete>                     retira un paquete instalado
   help [<comando>]                        muestra esta ayuda o la de un comando
@@ -65,6 +66,13 @@ instante de instalación y una línea por recurso escrito`,
 
 verifica los recursos instalados contrastando el lock con el disco:
 intacto, modificado, ausente o no verificable`,
+  outdated: `uso: teleprompter outdated [<paquete>]
+
+revisa lo que el origen registrado de cada paquete publica hoy
+frente a la versión instalada —al día, desactualizado o no
+consultable— sin escribir nada
+
+  <paquete>  con nombre, revisa solo ese paquete`,
   update: `uso: teleprompter update <paquete> [<user/repo[@ref]>] [--ref <ref>]
      teleprompter update <paquete> --path <paquete>
      [--force|--skip] [--dry-run]
@@ -111,6 +119,7 @@ const COMMAND_OPTIONS = {
   install: new Set(Object.keys(OPTION_TYPES)),
   update: new Set(['path', 'ref', 'force', 'skip', 'dry-run']),
   uninstall: new Set(['force', 'skip', 'dry-run']),
+  outdated: new Set(),
 };
 
 // The standard scanner resolves the token level — unknown options,
@@ -189,6 +198,11 @@ export function parseArgs(argv) {
   }
   if (argv[0] === 'list' || argv[0] === 'check') {
     return argv.length === 1 ? { command: argv[0] } : null;
+  }
+  if (argv[0] === 'outdated') {
+    const split = splitArgs('outdated', argv.slice(1));
+    if (split === null || split.args.length > 1) return null;
+    return { command: 'outdated', pkg: split.args[0] };
   }
   if (argv[0] === 'update') {
     const split = splitArgs('update', argv.slice(1));

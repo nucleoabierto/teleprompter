@@ -296,7 +296,7 @@ export function needsBackup(plan) {
 // Downgrades are not managed updates: writing older content over a
 // newer recorded install must surface as a conflict, not silently
 // pass as safe.
-function semverAtLeast(version, recordedVersion) {
+export function semverAtLeast(version, recordedVersion) {
   const parse = (v) => SEMVER_SHAPE.exec(v ?? '')?.slice(1).map(Number);
   const a = parse(version);
   const b = parse(recordedVersion);

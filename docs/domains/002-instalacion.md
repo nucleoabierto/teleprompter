@@ -40,7 +40,7 @@ instalado.
     expresa la intención —«seguir esta rama»—, `commit` dice qué
     árbol produjo la instalación.
     - Ancla: `resolveCommit` y `repoUrls` en `src/fetch.js`;
-      `originOf` en `src/commands.js` lo escribe en el origen
+      `originOf` en `src/origin.js` lo escribe en el origen
   - **Plan de actualización:** el plan de una versión entrante
     distinta de la registrada; además de las marcas de instalación
     añade `update` (la versión cambió el recurso y el destino sigue
@@ -224,8 +224,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-11-03 (tarea
-  `docs/tasks/060-sondeo-version-publicada.md`)
+- Última revisión: 2026-11-06 (tarea
+  `docs/tasks/061-comando-outdated.md`)
 - Divergencias conocidas: Ninguna —la divergencia de registro
   coexistiendo con contenido sobrescrito por otro paquete vive en el
   dominio 003—.

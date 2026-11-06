@@ -31,7 +31,7 @@ verificar la deriva y responder qué hay y en qué estado quedó.
       registro solo se navega desde ese módulo, `lockEntry` lleva
       la guarda de propiedad propia e `isWritten` nombra la entrada
       registrada como escrita (toda `action` salvo `skip`)— y
-      `originOf` en `src/commands.js`; D007, D014, D019
+      `originOf` en `src/origin.js`; D007, D014, D019
   - **Propiedad:** un recurso es propio cuando el destino actual
     hashea igual que lo que el registro anotó para él.
     - Ancla: `recorded.get(target) === destHash` en `src/plan.js`
@@ -105,6 +105,15 @@ verificar la deriva y responder qué hay y en qué estado quedó.
     termina con código 0—.
     - Ancla: `showCheck` en `src/queries.js` y `classifyResource` en
       `src/drift.js`; D013
+  - Revisar lo publicado: `teleprompter outdated [<paquete>]`
+    confronta el registro con lo que cada origen grabado publica
+    ahora —sin escribir nada— y muestra una línea por paquete:
+    instalada → publicada y `al día` / `desactualizado` /
+    `no consultable`; un origen que no responde degrada a su línea
+    sin abortar ni fallar —como `check`, la información no es un
+    fallo—.
+    - Ancla: `showOutdated` en `src/queries.js`, `sourceOf` en
+      `src/origin.js` y `publishedVersion` en `src/probe.js`
 
 ## Explicación del dominio
 
@@ -133,8 +142,8 @@ verificar la deriva y responder qué hay y en qué estado quedó.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-29 (tarea
-  `docs/tasks/058-extraer-resolucion-origen-runupdate.md`)
+- Última revisión: 2026-11-06 (tarea
+  `docs/tasks/061-comando-outdated.md`)
 - Divergencias conocidas: cuando un paquete sobrescribe un recurso
   registrado por otro, la entrada del primero queda intacta aunque su
   contenido ya no coincida —el plan siguiente lo marcará `conflict` en

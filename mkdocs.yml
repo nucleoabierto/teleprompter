@@ -18,7 +18,9 @@ nav:
     - Referencia de guide: referencia-guide.md
     - Referencia de list: referencia-list.md
     - Referencia de check: referencia-check.md
+    - Referencia de outdated: referencia-outdated.md
     - Referencia de update: referencia-update.md
+    - Referencia de uninstall: referencia-uninstall.md
     - Referencia de help: referencia-help.md
   - Funcionalidad:
     - Instalar un paquete: 001-instalar-un-paquete.md
@@ -26,6 +28,8 @@ nav:
     - Verificar los recursos instalados: 003-verificar-recursos-instalados.md
     - Actualizar un paquete: 004-actualizar-un-paquete.md
     - Instalar desde una colección: 005-instalar-desde-una-coleccion.md
+    - Desinstalar un paquete: 006-desinstalar-un-paquete.md
+    - Revisar desactualizados: 007-revisar-desactualizados.md
 # README.md es el índice del directorio en el repositorio y en el
 # paquete npm; la portada del sitio es index.md.
 exclude_docs: |

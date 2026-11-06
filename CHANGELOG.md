@@ -9,6 +9,7 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ### Added
 
+- `outdated [<paquete>]` revisa qué versión publica hoy el origen registrado de cada paquete instalado frente a la instalada —una línea por paquete: `al día`, `desactualizado` con ambas versiones o `no consultable` con el motivo— sin escribir nada; los orígenes que no responden degradan a su línea sin abortar la revisión (docs/epics/009-revision-desactualizados.md).
 - `uninstall <paquete>` retira un paquete instalado: presenta el plan de retirada completo antes de borrar —una línea por recurso registrado—, elimina lo que la instalación escribió y sigue intacto —incluida la guía gestionada—, decide lo que diverge del registro con la misma política de conflictos del resto del producto —diff del contenido local que se retiraría, decisión `remove`/`keep`, `--force`/`--skip` o listado y aborto sin consola—, respalda en `.teleprompter/backups/` lo decidido a retirar y deja el registro sin la entrada del paquete —desinstalación de paquetes (docs/epics/008-desinstalacion-paquetes.md).
 
 ### Fixed

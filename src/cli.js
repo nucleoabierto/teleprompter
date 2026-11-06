@@ -1,5 +1,7 @@
 import { parseArgs, showHelp, USAGE } from './usage.js';
-import { showGuide, showList, showCheck } from './queries.js';
+import {
+  showGuide, showList, showCheck, showOutdated,
+} from './queries.js';
 import { runInstall, runUpdate, runUninstall } from './commands.js';
 import { EXIT_USAGE } from './exits.js';
 
@@ -25,6 +27,7 @@ export async function main(argv, io = {}) {
   if (parsed.command === 'guide') return showGuide(io, out, err, parsed.pkg);
   if (parsed.command === 'list') return showList(io, out);
   if (parsed.command === 'check') return showCheck(io, out);
+  if (parsed.command === 'outdated') return showOutdated(io, out, err, parsed.pkg);
   if (parsed.command === 'update') return runUpdate(io, out, err, parsed);
   if (parsed.command === 'uninstall') return runUninstall(io, out, err, parsed);
   return runInstall(io, out, err, parsed);
