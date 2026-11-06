@@ -8,23 +8,11 @@ el producto distribuye, instala, entrega el criterio para adaptar,
 mantiene un ciclo de vida completo —instalar, revisar, actualizar y
 retirar, siempre con plan visible— y se publica en npm con cadena de
 release repetible, ejecutable con `npx`. Lo que falta para cerrar el
-círculo es hacer el ciclo informado —revisar qué ofrece versión
-nueva antes de actualizar— y convertir el registro en fuente de
+círculo es hacer la actualización informada —aplicar en lote lo
+que la revisión señala— y convertir el registro en fuente de
 reconstrucción del destino.
 
 ## Now
-
-- 1. Revisión de desactualizados — consultar qué paquetes ofrecen
-  versión nueva y actualizar lo revisado en una invocación (idea
-  008; épica 009).
-  - Estado: en curso —una de dos tareas completadas.
-  - Justificación: sus prerrequisitos ya están materializados —la
-    obtención remota endurecida y pinneada le permite señalar el
-    commit que avanzó sin bump, y la desinstalación dejó la lectura
-    del registro por unidad—; va tras la 044 para no heredar el
-    defecto de lectura en la superficie nueva que abre.
-
-## Next
 
 - 1. Reproducción del destino desde el registro — reinstalar de una
   vez lo que el lock de un repo declara, desde sus orígenes (idea
@@ -34,6 +22,15 @@ reconstrucción del destino.
     desinstalación y la mecánica multi-unidad que la revisión de
     desactualizados establece—; ejecutarla última la hace exacta en
     lugar de aproximada.
+
+## Next
+
+- 1. Actualización en lote de lo revisado — actualizar en una
+  invocación los paquetes que la revisión señala (idea 008, resto).
+  - Justificación: la consulta sin efectos ya existe —`outdated`
+    dice qué hay desactualizado—; aplicar lo revisado consume esa
+    salida y la mecánica multi-unidad que la propia revisión
+    estableció.
 
 ## Later
 
@@ -130,3 +127,9 @@ revisión y reproducción ordenadas entre Now y Next—.
   nombrados sobre `shape.js`, origen de `runUpdate` extraído y
   `util.parseArgs` adoptado como nivel token—; la revisión de
   desactualizados queda sola en Now)
+- Usuario: 2026-11-06 — Aprueba (la épica 009 «Revisión de
+  desactualizados» cerró: la consulta sin efectos materializó el
+  comando `outdated` —instalada frente a publicada por línea,
+  orígenes sin respuesta degradados a aviso, sin escritura—; la
+  actualización en lote de lo revisado queda descompuesta en Next
+  y la reproducción del destino pasa a Now como línea única)

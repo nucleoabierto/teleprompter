@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada | [ ] Completada
+[ ] Planificada | [x] Completada
 
 ## Objetivo
 
@@ -25,7 +25,7 @@ nada, verificable en una sola invocación.
 
 - [x] docs/tasks/060-sondeo-version-publicada.md — sondear la
   versión publicada de un origen
-- [ ] docs/tasks/061-comando-outdated.md — el comando `outdated`
+- [x] docs/tasks/061-comando-outdated.md — el comando `outdated`
   de punta a punta
 
 ## Plan técnico

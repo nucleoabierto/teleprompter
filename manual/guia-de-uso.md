@@ -129,6 +129,25 @@ npx @nucleoabierto/teleprompter check
 
 Véase la [referencia de `check`](referencia-check.md).
 
+## Revisar los paquetes desactualizados
+
+Desde la raíz del repositorio destino, `outdated` compara la
+versión instalada de cada paquete con la que su origen registrado
+publica ahora, sin escribir nada:
+
+```sh
+npx @nucleoabierto/teleprompter outdated
+npx @nucleoabierto/teleprompter outdated ciclo-tareas   # solo ese paquete
+```
+
+Muestra una línea por paquete —`al día`, `desactualizado` con
+ambas versiones, o `no consultable` cuando el origen no responde—
+sin abortar la revisión del resto. Es la consulta previa a
+`update`: informa qué hay disponible; no cambia nada.
+
+Véase la [referencia de `outdated`](referencia-outdated.md) y los
+escenarios de [revisar desactualizados](007-revisar-desactualizados.md).
+
 ## Actualizar un paquete
 
 Desde la raíz del repositorio destino, `update` lleva un paquete

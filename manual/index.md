@@ -21,6 +21,8 @@ colisiones con lo que ya existe y registra la instalación en
   instalados con su versión, fecha y recursos.
 - [Referencia de `check`](referencia-check.md) — verificar el estado
   de los recursos instalados.
+- [Referencia de `outdated`](referencia-outdated.md) — revisar las
+  versiones que publican los orígenes registrados.
 - [Referencia de `update`](referencia-update.md) — actualizar un
   paquete instalado a la versión que publica su origen.
 - [Referencia de `uninstall`](referencia-uninstall.md) — retirar un
@@ -42,6 +44,8 @@ colisiones con lo que ya existe y registra la instalación en
   consumidor, declaración del índice para el mantenedor.
 - [Desinstalar un paquete](006-desinstalar-un-paquete.md) — la salida
   del ciclo de vida y los escenarios que la suite verifica.
+- [Revisar desactualizados](007-revisar-desactualizados.md) — la
+  comparación sin efectos y los escenarios que la suite verifica.
 
 ## En el repositorio
 

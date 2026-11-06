@@ -2,7 +2,7 @@
 
 ## Estado
 
-[/] En progreso
+[x] Completada
 
 ## Tipo
 
@@ -147,6 +147,6 @@ ya despacha promesas—. Veredicto: **conectada**.
 
 ## Revisión
 
-- Subagente: 2026-11-03 — Aprueba
+- Subagente: 2026-11-06 — Aprueba
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
