@@ -5,7 +5,7 @@ que un paquete instalado registró —solo lo que la instalación escribió—
 y deja el registro sin su entrada. Se ejecuta desde la raíz del
 repositorio destino.
 
-## Escenarios
+## Comportamiento
 
 - Un paquete instalado intacto se retira completo: el plan de retirada
   se muestra antes de borrar —una línea por recurso—, los recursos

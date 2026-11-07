@@ -8,7 +8,7 @@ el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/
 referencia completa del comando, en la
 [referencia de `list`](referencia-list.md).
 
-## Escenarios
+## Comportamiento
 
 - **`list` muestra una entrada por paquete instalado** con su
   `nombre@version`, el instante de la instalación y una línea por

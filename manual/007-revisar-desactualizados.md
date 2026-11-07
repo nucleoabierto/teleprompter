@@ -5,7 +5,7 @@ registrado de cada paquete instalado publica hoy frente a la
 versión instalada —una línea por paquete— sin escribir nada. Se
 ejecuta desde la raíz del repositorio destino.
 
-## Escenarios
+## Comportamiento
 
 - Sin registro responde «no hay paquetes instalados»: es una
   respuesta, no un fallo.

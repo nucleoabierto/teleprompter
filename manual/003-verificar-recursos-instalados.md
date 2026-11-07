@@ -9,7 +9,7 @@ el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/
 referencia completa del comando, en la
 [referencia de `check`](referencia-check.md).
 
-## Escenarios
+## Comportamiento
 
 - **`check` muestra una entrada por paquete instalado** con su
   `nombre@version` y una línea por recurso registrado con su marca

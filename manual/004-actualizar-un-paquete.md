@@ -5,7 +5,7 @@ versión que publica su origen —la registrada en `teleprompter-lock.json`,
 o una indicada en la invocación—. Se ejecuta desde la raíz del
 repositorio destino.
 
-## Escenarios
+## Comportamiento
 
 - Un paquete instalado desde un `--path` se actualiza desde ese
   origen sin indicarlo: lo que la versión cambió y sigue intacto se

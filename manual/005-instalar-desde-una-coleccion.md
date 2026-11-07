@@ -37,7 +37,7 @@ paquete, junto a [la misma familia empaquetada como un solo
 paquete](https://github.com/nucleoabierto/teleprompter/tree/master/examples/paquete-unico)
 —el contraste entre las dos formas es el ejemplo—.
 
-## Escenarios
+## Comportamiento
 
 - **Una colección sin selección imprime el índice y no escribe
   nada.**

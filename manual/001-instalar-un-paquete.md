@@ -9,7 +9,7 @@ Qué es un paquete y qué garantiza la instalación están definidos en
 [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/002-instalacion.md); la
 mecánica detallada, en la [referencia](referencia-install.md).
 
-## Escenarios
+## Comportamiento
 
 - **El paquete puede venir de un repositorio público de GitHub:**
   `user/repo` descarga el tarball por HTTP —sin git— e instala la raíz
