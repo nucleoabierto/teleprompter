@@ -76,4 +76,4 @@ y respecto a las páginas de referencia.
 
 - Subagente: 2026-11-06 — Aprueba
 - Usuario (ejecución): 2026-11-06 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-06 — Aprueba
