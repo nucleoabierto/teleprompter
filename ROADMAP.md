@@ -17,6 +17,7 @@ reconstrucción del destino.
 - 1. Reproducción del destino desde el registro — reinstalar de una
   vez lo que el lock de un repo declara, desde sus orígenes (idea
   009).
+  - Estado: pendiente de arrancar
   - Justificación: la más dependiente del conjunto —consume los
     orígenes pinneados, la lectura del registro que comparte con la
     desinstalación y la mecánica multi-unidad que la revisión de
