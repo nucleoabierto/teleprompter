@@ -30,22 +30,20 @@ colisiones con lo que ya existe y registra la instalación en
 - [Referencia de `help`](referencia-help.md) — consultar la ayuda
   del CLI, general o por comando.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
-  y los escenarios que la suite de pruebas verifica.
+  y los comportamientos que el usuario puede esperar.
 - [Listar los paquetes instalados](002-listar-paquetes-instalados.md)
-  — la consulta del registro y los escenarios que la suite verifica.
+  — la consulta del registro y lo que muestra de cada paquete.
 - [Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
-  — la verificación de la instalación y los escenarios que la suite
-  verifica.
+  — la verificación de la instalación y los estados que informa.
 - [Actualizar un paquete](004-actualizar-un-paquete.md) — la
-  actualización consciente de la deriva y los escenarios que la
-  suite verifica.
+  actualización consciente de la deriva y sus comportamientos.
 - [Instalar desde una colección](005-instalar-desde-una-coleccion.md)
   — repositorios multi-paquete: selección por nombre para el
   consumidor, declaración del índice para el mantenedor.
 - [Desinstalar un paquete](006-desinstalar-un-paquete.md) — la salida
-  del ciclo de vida y los escenarios que la suite verifica.
+  del ciclo de vida y sus comportamientos.
 - [Revisar desactualizados](007-revisar-desactualizados.md) — la
-  comparación sin efectos y los escenarios que la suite verifica.
+  comparación sin efectos y los estados que informa.
 
 ## En el repositorio
 

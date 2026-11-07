@@ -2,7 +2,7 @@
 
 ## Estado
 
-[ ] Pendiente
+[x] Completada
 
 ## Tipo
 
@@ -67,9 +67,13 @@ y respecto a las páginas de referencia.
   proyecto: viene del skill `documentar-producto`, que cita una
   D024 inexistente aquí —la decisión que tome el plan puede
   registrarla por primera vez—.
+- Decidido en la ejecución (2026-11-06): retirada asumida —las
+  páginas describen el comportamiento sin persistir la cita; el
+  respaldo en la suite se verifica al documentar. El usuario
+  descartó registrar la decisión en `docs/decisions`.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-11-06 — Aprueba
+- Usuario (ejecución): 2026-11-06 — Aprueba
+- Usuario (cierre): 2026-11-06 — Aprueba

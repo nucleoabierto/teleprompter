@@ -20,7 +20,7 @@ argumento—:
 npx @nucleoabierto/teleprompter nucleoabierto/ciclo-tareas .
 ```
 
-`user/repo` descarga el tarball público del repositorio de GitHub y
+`user/repo` descarga el archivo tar público del repositorio de GitHub y
 usa su raíz como paquete —el `name` del manifiesto debe coincidir con
 el nombre del repositorio, como exige la especificación—;
 `user/repo@v1.0.0` o `--ref v1.0.0` eligen
@@ -145,8 +145,8 @@ ambas versiones, o `no consultable` cuando el origen no responde—
 sin abortar la revisión del resto. Es la consulta previa a
 `update`: informa qué hay disponible; no cambia nada.
 
-Véase la [referencia de `outdated`](referencia-outdated.md) y los
-escenarios de [revisar desactualizados](007-revisar-desactualizados.md).
+Véase la [referencia de `outdated`](referencia-outdated.md) y el
+comportamiento de [revisar desactualizados](007-revisar-desactualizados.md).
 
 ## Actualizar un paquete
 
@@ -188,8 +188,8 @@ consola, las divergencias se listan y la operación aborta. Al
 terminar, el paquete deja de constar en el registro —`list` y `check`
 ya no lo reportan—.
 
-Véase la [referencia de `uninstall`](referencia-uninstall.md) y los
-escenarios de [desinstalar un paquete](006-desinstalar-un-paquete.md).
+Véase la [referencia de `uninstall`](referencia-uninstall.md) y el
+comportamiento de [desinstalar un paquete](006-desinstalar-un-paquete.md).
 
 ## Instalar desde una colección
 

@@ -14,10 +14,12 @@ la forma corta.
 
 ## El origen
 
-- `<user/repo>`: descarga el tarball público del repositorio de
+- `<user/repo>`: descarga el archivo tar público del repositorio de
   GitHub por HTTP —sin git ni credenciales—, lo extrae en un
-  directorio temporal y usa la raíz del árbol como paquete. El
-  temporal se elimina al terminar, también en error y en `--dry-run`.
+  directorio temporal y usa la raíz del árbol como paquete. Una
+  entrada del archivo cuya ruta escapa del temporal —`..`— no se
+  extrae. El temporal se elimina al terminar, también en error y en
+  `--dry-run`.
   La referencia se elige con `@ref` o `--ref` —declarar ambas es un
   error de invocación—; la obtención la resuelve al commit exacto
   que apuntaba en ese momento y descarga el árbol de ese commit —
