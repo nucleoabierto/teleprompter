@@ -4,7 +4,10 @@
 
 ## Comportamiento
 
-[Cada escenario describe un comportamiento observable en lenguaje ubicuo. La suite de pruebas respalda cada escenario —la correspondencia se verifica al documentar—, pero la cita no se persiste en el texto: la página describe el producto, no su verificación.]
+[Cada viñeta describe un comportamiento observable en lenguaje ubicuo, con el comportamiento o la condición en negrita. La suite de pruebas respalda cada comportamiento documentado —la correspondencia se verifica al documentar—, pero la cita no se persiste en el texto: la página describe el producto, no su verificación.]
 
-- **[Escenario en lenguaje de negocio].**
-- **[Escenario]:** [detalle observable].
+- **[Comportamiento en lenguaje de negocio].**
+- **[Comportamiento]:** [detalle observable].
+
+Véase la [referencia de `<comando>`](referencia-<comando>.md) para la
+gramática completa y los códigos de salida.

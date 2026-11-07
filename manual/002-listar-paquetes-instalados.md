@@ -4,9 +4,7 @@ El usuario ejecuta `teleprompter list` desde la raíz del
 repositorio destino para ver qué paquetes instaló Teleprompter —
 nombre, versión, fecha y recursos escritos— sin abrir
 `teleprompter-lock.json`. Qué contiene el registro está definido en
-el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/002-instalacion.md); la
-referencia completa del comando, en la
-[referencia de `list`](referencia-list.md).
+el [dominio del registro](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/003-registro.md).
 
 ## Comportamiento
 
@@ -28,3 +26,6 @@ referencia completa del comando, en la
   directorio de trabajo.
 - **`list` no admite argumentos ni opciones:** cualquiera es un
   error de invocación con código 4.
+
+Véase la [referencia de `list`](referencia-list.md) para la
+gramática completa y los códigos de salida.

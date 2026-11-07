@@ -5,9 +5,7 @@ repositorio destino para saber en qué estado quedó cada recurso que
 Teleprompter escribió —intacto, modificado, ausente o no
 verificable— confrontando el registro con el disco, sin abrir
 `teleprompter-lock.json`. Qué contiene el registro está definido en
-el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/002-instalacion.md); la
-referencia completa del comando, en la
-[referencia de `check`](referencia-check.md).
+el [dominio del registro](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/003-registro.md).
 
 ## Comportamiento
 
@@ -38,3 +36,6 @@ referencia completa del comando, en la
   registro corrupto añade un aviso y responde lo mismo.
 - **`check` no admite argumentos ni opciones:** cualquiera es un
   error de invocación con código 4.
+
+Véase la [referencia de `check`](referencia-check.md) para la
+gramática completa y los códigos de salida.

@@ -5,9 +5,8 @@ El usuario ejecuta `teleprompter <user/repo> [destino]` —o
 llevar los recursos de un paquete a un repositorio existente, con el
 plan completo visible antes de escribir y un registro de lo instalado.
 Qué es un paquete y qué garantiza la instalación están definidos en
-[dominio de paquete](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/001-paquete.md) y
-[dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/002-instalacion.md); la
-mecánica detallada, en la [referencia](referencia-install.md).
+el [dominio de paquete](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/001-paquete.md) y
+el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domains/002-instalacion.md).
 
 ## Comportamiento
 
@@ -69,7 +68,11 @@ mecánica detallada, en la [referencia](referencia-install.md).
   `.teleprompter/<paquete>/` y su contenido se entrega tal cual al
   final del resultado.**
 - **`--dry-run` no entrega la guía:** solo muestra el plan.
-- **`teleprompter guide [<paquete>]` relee la guía instalada** desde
-  el directorio de trabajo, sin reinstalar ni redescargar.
+- **[`teleprompter guide [<paquete>]`](referencia-guide.md) relee la
+  guía instalada** desde el directorio de trabajo, sin reinstalar ni
+  redescargar.
 - **La consulta distingue sus fallos:** sin guía que mostrar sale con
   código 4; el archivo registrado ausente, con código 3.
+
+Véase la [referencia de `install`](referencia-install.md) para la
+gramática completa y los códigos de salida.

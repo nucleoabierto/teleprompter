@@ -6,8 +6,7 @@ consumidor selecciona qué paquete instalar por nombre y cada paquete
 elegido se instala como una unidad independiente —con su plan, su
 guía y su entrada en el registro—. La colección en sí no se instala:
 no es un paquete. El contrato del manifiesto de colección está en la
-[sección Colecciones de la especificación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/especificacion-paquete.md);
-la mecánica detallada, en la [referencia](referencia-install.md#colecciones).
+[sección Colecciones de la especificación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/especificacion-paquete.md).
 
 ## Para el consumidor
 
@@ -56,3 +55,7 @@ paquete](https://github.com/nucleoabierto/teleprompter/tree/master/examples/paqu
   colección».**
 - **`list`, `check` y `guide` tratan el paquete de colección como
   cualquier otro.**
+
+Véase la [sección Colecciones de la referencia de
+`install`](referencia-install.md#colecciones) para la gramática
+completa y los códigos de salida.
