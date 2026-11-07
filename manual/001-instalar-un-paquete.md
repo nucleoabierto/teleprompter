@@ -13,138 +13,63 @@ mecánica detallada, en la [referencia](referencia-install.md).
 
 - **El paquete puede venir de un repositorio público de GitHub:**
   `user/repo` descarga el tarball por HTTP —sin git— e instala la raíz
-  del árbol extraído. — módulo `test/cli.test.js`, «user/repo with OUT
-  installs into it»
-- **`install` es un alias de la forma corta.** — módulo
-  `test/cli.test.js`, «install is an alias of the short form»
-- **El destino por defecto es el directorio de trabajo.** — módulo
-  `test/cli.test.js`, «user/repo without OUT installs into the working
-  directory»
-- **`--path` instala un paquete local sin peticiones HTTP.** — módulo
-  `test/cli.test.js`, «--path installs the local package without any
-  HTTP request»
+  del árbol extraído.
+- **`install` es un alias de la forma corta.**
+- **El destino por defecto es el directorio de trabajo.**
+- **`--path` instala un paquete local sin peticiones HTTP.**
 - **La referencia se elige con `@ref` o `--ref`;** declarar ambas es un
   error de invocación. La obtención resuelve la referencia al commit
   exacto y descarga el árbol de ese commit —sin indicación, el que la
-  rama por defecto resolvía en ese momento—. — módulos
-  `test/cli.test.js` («the ref reaches the resolution URL and the
-  download anchors to its commit», «declaring @ref and --ref at once
-  is a usage error») y `test/fetch.test.js` («fetchRepoTree resolves
-  the given ref and downloads by its commit», «fetchRepoTree takes a
-  full SHA as resolved without an API call»)
+  rama por defecto resolvía en ese momento—.
 - **Un repositorio inaccesible o una referencia inexistente abortan
-  con código 5 sin escribir nada.** — módulo `test/cli.test.js` («a
-  missing repository exits 5 and writes nothing», «a network failure
-  exits 5 and writes nothing»)
-- **El temporal de extracción se elimina siempre:** tras éxito, error
-  y `--dry-run`. — módulos `test/cli.test.js` («a repo without
-  teleprompter.json exits 1 and cleans the temp dir», «--dry-run with
-  a remote origin writes nothing and cleans the temp dir») y
-  `test/fetch.test.js`
-- **Un archivo hostil no escribe fuera del temporal** — las rutas con
-  `..` no se extraen. — módulo `test/fetch.test.js`, «fetchRepoTree
-  does not let a hostile entry escape the temp dir»
-- **Un paquete se instala de principio a fin con el binario real.** —
-  módulo `test/e2e.test.js`, «the reference package installs end to end
-  through the real binary»
+  con código 5 sin escribir nada.**
 - **El plan se presenta antes de escribir, con una marca por recurso.**
-  En un destino vacío todo es `create`. — módulo `test/plan.test.js`,
-  «plan marks every resource create on an empty destination»
+  En un destino vacío todo es `create`.
 - **Reinstalar es inocuo:** lo que ya coincide se marca `identical` y
-  no se escribe. — módulos `test/plan.test.js` («plan marks identical
-  when the destination already holds the same content») y
-  `test/execute.test.js` («reinstalling the same package reports
-  identical and keeps the recorded entry»)
+  no se escribe.
 - **Lo instalado por Teleprompter se actualiza sin preguntar** cuando
   el paquete trae una versión igual o posterior y el destino sigue
-  siendo lo que el registro anotó. — módulo `test/plan.test.js`, «plan
-  marks managed-update when the destination still holds what the lock
-  recorded»
+  siendo lo que el registro anotó.
 - **Lo modificado a mano es una colisión,** aunque el registro lo
-  reconozca como instalado. — módulo `test/plan.test.js`, «plan marks
-  conflict when a recorded resource was modified locally»
+  reconozca como instalado.
 - **Las colisiones se resuelven una a una en consola interactiva,**
   mostrando antes de cada pregunta el diff entre el contenido del
-  destino y el del paquete. — módulos `test/plan.test.js` («an
-  interactive console resolves each conflict per answer») y
-  `test/cli.test.js` («the interactive console shows each conflict
-  diff before its question»)
+  destino y el del paquete.
 - **Sin forma de preguntar ni opciones de resolución, las colisiones
   abortan la operación sin escribir** — cada conflicto del listado se
-  anuncia con su diff. — módulos `test/plan.test.js` («an interactive
-  console without an asker reports conflicts and aborts») y
-  `test/cli.test.js` («install shows the conflict diff in the
-  non-interactive listing», «a pending conflict lists the diff of what
-  would change»)
+  anuncia con su diff.
 - **Una carpeta en colisión muestra el diff solo de sus archivos
   divergentes** — los idénticos no producen salida —; un enlace lo
   muestra como cambio de su destino, y `--force`/`--skip` no emiten
-  diff porque resuelven sin anunciar. — módulo `test/cli.test.js`
-  («a directory conflict shows the diff of each diverging file only»,
-  «a symlink conflict diffs the link target», «--force and --skip
-  resolve conflicts without showing a diff»)
+  diff porque resuelven sin anunciar.
 - **`--force` y `--skip` resuelven todas las colisiones por adelantado**
-  y son mutuamente excluyentes. — módulos `test/plan.test.js`
-  («--force resolves every conflict as overwrite», «--skip resolves
-  every conflict as skip») y `test/cli.test.js` («main exits with usage
-  error on unknown or mutually exclusive flags»)
+  y son mutuamente excluyentes.
 - **Una colisión resuelta a sobrescribir no pierde el contenido
   previo:** antes de escribir se copia a
   `.teleprompter/backups/<operación>/`, espejo de su ruta —un
   directorio por operación con la marca UTC y el paquete—, y el
   resultado lo anuncia con `respaldo:`. Ni `skip`, ni `create`, ni
-  `identical` ni `managed-update` generan respaldo. — módulo
-  `test/execute.test.js` («an overwritten conflict is backed up under
-  .teleprompter/backups/», «interactive resolution backs up only the
-  accepted conflicts», «a skipped conflict leaves no backup», «a
-  managed update overwrites without backing up»)
+  `identical` ni `managed-update` generan respaldo.
 - **`--dry-run` muestra el plan y termina sin escribir ni registrar.**
-  — módulo `test/plan.test.js`, «--dry-run prints the plan and exits
-  without writing»
 - **Un manifiesto inválido aborta con código 1 sin tocar el destino.**
-  — módulo `test/cli.test.js`, «main exits 1 on an invalid manifest
-  without writing to the destination»
 - **Una precondición incumplida aborta con código 2 sin escribir;** con
-  `create: true` la ruta se crea como parte del plan. — módulo
-  `test/cli.test.js` («main exits 2 on an unmet precondition without
-  writing», «main passes when a missing precondition path allows
-  creation»)
+  `create: true` la ruta se crea como parte del plan.
 - **Un error de invocación —argumentos ausentes, de más o rutas que no
-  son directorios— sale con código 4.** — módulo `test/cli.test.js`,
-  «main exits with usage error on missing, wrong, or excess arguments»
+  son directorios— sale con código 4.**
 - **Cada instalación escribe `teleprompter-lock.json`** con los
   recursos instalados, sus acciones y sus hashes, y conserva lo
-  registrado por otros paquetes. — módulo `test/execute.test.js`
-  («install copies every resource and writes the lock on an empty
-  destination», «writeLock preserves records belonging to other
-  packages»)
+  registrado por otros paquetes.
 - **El registro guarda la procedencia:** el origen remoto declara
   el repositorio con la ref pedida —si la hubo— y el commit exacto
   que la obtención resolvió; el origen local declara la ruta
-  absoluta sin commit. — módulo `test/cli.test.js` («a remote
-  install records the repo, the used ref and the resolved commit»,
-  «a remote install without a ref records the repo and the resolved
-  commit», «a --path install records the local origin as an absolute
-  path»)
+  absoluta sin commit.
 - **Un error a mitad de ejecución sale con código 3 e informa de lo ya
-  aplicado.** — módulo `test/execute.test.js`, «a mid-execution error
-  exits 3 and reports what was applied»
+  aplicado.**
 - **Si el paquete declara personalización, la guía se copia a
   `.teleprompter/<paquete>/` y su contenido se entrega tal cual al
-  final del resultado.** — módulos `test/execute.test.js` («install
-  materializes the personalization guide in the managed namespace»)
-  y `test/cli.test.js` («install delivers the declared guide verbatim
-  after the result»)
-- **`--dry-run` no entrega la guía:** solo muestra el plan. — módulo
-  `test/cli.test.js`, «--dry-run shows the plan but never delivers
-  the guide»
+  final del resultado.**
+- **`--dry-run` no entrega la guía:** solo muestra el plan.
 - **`teleprompter guide [<paquete>]` relee la guía instalada** desde
-  el directorio de trabajo, sin reinstalar ni redescargar. — módulo
-  `test/cli.test.js` («guide prints the installed guide from the
-  working directory», «guide \<paquete\> shows only that package's
-  guide», «guide without a package shows every installed guide»)
+  el directorio de trabajo, sin reinstalar ni redescargar.
 - **La consulta distingue sus fallos:** sin guía que mostrar sale con
-  código 4; el archivo registrado ausente, con código 3. — módulo
-  `test/cli.test.js` («guide exits 4 without a lock, on unknown
-  packages, or without a guide», «guide exits 3 when the recorded
-  guide file is gone»)
+  código 4; el archivo registrado ausente, con código 3.

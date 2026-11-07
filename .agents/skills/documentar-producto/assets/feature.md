@@ -4,7 +4,7 @@
 
 ## Escenarios
 
-[Cada escenario describe un comportamiento observable en lenguaje ubicuo y se ancla a la suite de pruebas del proyecto citando el módulo y el título de la prueba que lo verifica —el nombre, no el número de línea, para que el ancla sobreviva a reordenamientos.]
+[Cada escenario describe un comportamiento observable en lenguaje ubicuo. La suite de pruebas respalda cada escenario —la correspondencia se verifica al documentar—, pero la cita no se persiste en el texto: la página describe el producto, no su verificación.]
 
-- **[Escenario en lenguaje de negocio].** — módulo `[nombre del módulo]`, «[título de la prueba]»
-- **[Escenario].** — módulos `[nombre]` («[título]», «[título]»)
+- **[Escenario en lenguaje de negocio].**
+- **[Escenario]:** [detalle observable].

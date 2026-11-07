@@ -36,19 +36,19 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
 ## Funcionalidades
 
 - [001 — Instalar un paquete](001-instalar-un-paquete.md) — qué hace
-  `install` y los escenarios que la suite de pruebas verifica.
+  `install` y qué puede esperar el usuario.
 - [002 — Listar los paquetes instalados](002-listar-paquetes-instalados.md)
-  — qué muestra `list` y los escenarios que la suite verifica.
+  — qué muestra `list` de cada paquete.
 - [003 — Verificar el estado de los recursos instalados](003-verificar-recursos-instalados.md)
-  — qué informa `check` y los escenarios que la suite verifica.
+  — qué informa `check` de cada recurso.
 - [004 — Actualizar un paquete](004-actualizar-un-paquete.md) — qué
-  hace `update` y los escenarios que la suite verifica.
+  hace `update` y cómo decide.
 - [005 — Instalar desde una colección](005-instalar-desde-una-coleccion.md)
-  — qué hace `--package` y los escenarios que la suite verifica.
+  — qué hace `--package` para consumidor y mantenedor.
 - [006 — Desinstalar un paquete](006-desinstalar-un-paquete.md) — qué
-  hace `uninstall` y los escenarios que la suite verifica.
+  hace `uninstall` y cómo decide.
 - [007 — Revisar desactualizados](007-revisar-desactualizados.md) —
-  qué informa `outdated` y los escenarios que la suite verifica.
+  qué informa `outdated` de cada paquete.
 
 ## Documentos relacionados
 

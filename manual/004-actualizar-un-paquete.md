@@ -5,7 +5,7 @@ versión que publica su origen —la registrada en `teleprompter-lock.json`,
 o una indicada en la invocación—. Se ejecuta desde la raíz del
 repositorio destino.
 
-## Escenarios que la suite verifica
+## Escenarios
 
 - Un paquete instalado desde un `--path` se actualiza desde ese
   origen sin indicarlo: lo que la versión cambió y sigue intacto se
@@ -26,32 +26,23 @@ repositorio destino.
 - Un recurso retirado por la versión pero modificado localmente se
   decide igual: quitar o conservar —conservarlo mantiene su registro
   previo—, con el diff mostrando el contenido local que se
-  retiraría. — módulo `test/cli.test.js`, «a removal conflict shows
-  the local content it would retire»
+  retiraría.
 - Una colisión decidida a favor de la versión —sobrescribir una
   edición local o quitar un retirado modificado— respalda el
   contenido previo en `.teleprompter/backups/<operación>/`, con la
   versión registrada que se desplaza en el nombre del directorio, y
-  lo anuncia con `respaldo:`; conservar no genera copia. — módulo
-  `test/cli.test.js` («update backs up an overwritten conflict under
-  the recorded version», «update backs up a removal conflict
-  resolved to remove», «update --skip creates no backup»)
+  lo anuncia con `respaldo:`; conservar no genera copia.
 - Si el mapa cambia de granularidad, el retirado baja a lo
   abandonado: un directorio instalado que la versión nueva declara
   por hijos conserva los hijos entrantes en disco y solo elimina el
-  contenido que el mapa nuevo ya no cubre —módulo
-  `test/cli.test.js` («update keeps incoming children when the map
-  moves from a directory to per-child targets»)—; el caso inverso
-  —hijos registrados que colapsan en un directorio entrante—
-  reemplaza el subárbol completo («update replaces the subtree
-  wholesale when the map collapses children into a directory
-  target»).
+  contenido que el mapa nuevo ya no cubre; el caso inverso —hijos
+  registrados que colapsan en un directorio entrante— reemplaza el
+  subárbol completo.
 - `--dry-run` muestra el plan de actualización completo sin escribir
   nada.
 - El origen remoto registrado refresca su commit con el de la
   obtención efectiva: el registro siempre dice qué árbol produjo la
-  instalación vigente. — módulo `test/cli.test.js`, «update records
-  the commit resolved in that fetch, not the previous one»
+  instalación vigente.
 - Si el origen publica un paquete con otro nombre, la invocación es
   un error —no se actualiza nada—.
 

@@ -12,33 +12,19 @@ referencia completa del comando, en la
 
 - **`list` muestra una entrada por paquete instalado** con su
   `nombre@version`, el instante de la instalación y una línea por
-  recurso escrito. — módulo `test/cli.test.js` («list shows name,
-  version, date and written resources of a package», «list shows
-  one entry per installed package»)
+  recurso escrito.
 - **La salida es lenguaje de producto:** los recursos se listan por
-  su ruta, sin hashes ni acciones internas del registro. — módulo
-  `test/cli.test.js`, «list shows recorded targets without hashes
-  or internal actions»
+  su ruta, sin hashes ni acciones internas del registro.
 - **Los recursos omitidos por colisión no se listan:** el registro
-  anota la decisión, pero la herramienta no escribió nada ahí. —
-  módulo `test/cli.test.js`, «list does not list resources recorded
-  as skipped»
-- **Una entrada sin fecha registrada se lista sin ella.** — módulo
-  `test/cli.test.js`, «list shows an entry without installedAt
-  without a date»
+  anota la decisión, pero la herramienta no escribió nada ahí.
+- **Una entrada sin fecha registrada se lista sin ella.**
 - **Un paquete con guía de personalización señala cómo consultarla**
-  con `guide`. — módulo `test/cli.test.js`, «list points to guide
-  for a package with personalization»
+  con `guide`.
 - **Sin instalaciones registradas responde «no hay paquetes
   instalados»** con código 0 —es una respuesta, no un fallo—; un
-  registro corrupto añade un aviso y responde lo mismo. — módulo
-  `test/cli.test.js` («list answers that nothing is installed when
-  there is no lock», «list warns on a corrupt lock and answers
-  nothing installed»)
+  registro corrupto añade un aviso y responde lo mismo.
 - **El listado no depende del origen de la instalación:** tras
   instalar remoto o con `--path`, lee solo el registro del
-  directorio de trabajo. — módulo `test/cli.test.js`, «list reads
-  the working directory lock whatever the install origin»
+  directorio de trabajo.
 - **`list` no admite argumentos ni opciones:** cualquiera es un
-  error de invocación con código 4. — módulo `test/cli.test.js`,
-  «list rejects arguments and install options»
+  error de invocación con código 4.
