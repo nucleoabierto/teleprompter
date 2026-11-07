@@ -14,7 +14,7 @@ la forma corta.
 
 ## El origen
 
-- `<user/repo>`: descarga el tarball público del repositorio de
+- `<user/repo>`: descarga el archivo tar público del repositorio de
   GitHub por HTTP —sin git ni credenciales—, lo extrae en un
   directorio temporal y usa la raíz del árbol como paquete. Una
   entrada del archivo cuya ruta escapa del temporal —`..`— no se

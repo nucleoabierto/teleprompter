@@ -38,23 +38,17 @@ paquete](https://github.com/nucleoabierto/teleprompter/tree/master/examples/paqu
 
 ## Comportamiento
 
-- **Una colección sin selección imprime el índice y no escribe
-  nada.**
-- **`--package` instala el miembro elegido de una colección local.**
 - **Una colección remota resuelve el miembro dentro del árbol
   descargado.**
-- **Varios `--package` instalan cada miembro en orden, con su propia
-  entrada de registro.**
 - **Repetir el mismo nombre instala el paquete una sola vez.**
 - **Un nombre ausente del índice aborta listando los disponibles.**
 - **`--package` sobre un origen que no es colección es un error de
   invocación.**
-- **Un fallo en la unidad N deja instaladas las anteriores.**
+- **Un fallo en un paquete de la selección deja instalados los
+  anteriores.**
 - **`update` re-resuelve el mismo paquete a través del índice.**
 - **Un paquete retirado del índice aborta con «ya no está en la
   colección».**
-- **`list`, `check` y `guide` tratan el paquete de colección como
-  cualquier otro.**
 
 Véase la [sección Colecciones de la referencia de
 `install`](referencia-install.md#colecciones) para la gramática

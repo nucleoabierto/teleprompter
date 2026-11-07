@@ -20,7 +20,7 @@ argumento—:
 npx @nucleoabierto/teleprompter nucleoabierto/ciclo-tareas .
 ```
 
-`user/repo` descarga el tarball público del repositorio de GitHub y
+`user/repo` descarga el archivo tar público del repositorio de GitHub y
 usa su raíz como paquete —el `name` del manifiesto debe coincidir con
 el nombre del repositorio, como exige la especificación—;
 `user/repo@v1.0.0` o `--ref v1.0.0` eligen
