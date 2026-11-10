@@ -13,7 +13,7 @@ import {
   resolvesUnder, personalizationTarget, MANAGED_DIR,
 } from './paths.js';
 import { fetchRepoTree, specLabel } from './fetch.js';
-import { originOf, sourceOf } from './origin.js';
+import { originOf, sourceOf, reproductionSourceOf } from './origin.js';
 import { loadCollectionManifest, NAME_RE, SEMVER_SHAPE } from './manifest.js';
 import { isCollectionDir, resolveSelection, describeIndex } from './collection.js';
 import {
@@ -446,6 +446,54 @@ export async function runInstall(io, out, err, { source, dest, flags, packages }
       if (code !== EXIT_OK) return code;
     }
     return EXIT_OK;
+  } finally {
+    if (cleanup !== null) cleanup();
+  }
+}
+
+// Re-obtains the unit a lock entry recorded, for the reproduction
+// plan: `reproductionSourceOf` pins the fetch to the recorded
+// commit, so the tree is the one the install consumed — the fresh
+// `commit` `obtainPackage` reports is dropped, because the rewrite
+// keeps the registered one. A recorded local path that no longer
+// exists is a non-reproducible unit — the record is what fails, not
+// the invocation — and so is a member the collection no longer
+// holds, which also lists what is still available. A collection
+// tree re-resolves its member through the fresh index by the
+// recorded `origin.package`, falling back to the entry name as
+// `update` does with `parsed.pkg` (D019). The result carries
+// `unitDir` beside the `cleanup` the caller releases: success hands
+// the ownership over by clearing the local handle, so the `finally`
+// frees the temp dir only when the composition fails after
+// obtaining — `runUpdate`'s discipline.
+export async function obtainRecordedUnit(io, out, err, name, entry) {
+  const resolved = reproductionSourceOf(err, name, entry.origin);
+  const { source } = resolved;
+  if (source === undefined) return { ok: false, code: resolved.code };
+  if (source.kind === 'path' && !isDir(source.dir)) {
+    err(`la unidad "${name}" no es reproducible: la ruta registrada ya no existe: ${source.dir}`);
+    return { ok: false, code: EXIT_USAGE };
+  }
+  const obtained = await obtainPackage(io, out, err, source);
+  if (!obtained.ok) return { ok: false, code: obtained.code };
+  const { pkgDir } = obtained;
+  let cleanup = obtained.cleanup;
+  try {
+    let unitDir = pkgDir;
+    if (isCollectionDir(pkgDir)) {
+      const member = entry.origin?.package ?? name;
+      const selected = resolveMembers(out, err, pkgDir, [member],
+        (unresolved) => {
+          for (const reason of unresolved.errors) {
+            err(`la unidad "${name}" no es reproducible: ${reason}`);
+          }
+        });
+      if (selected.units === undefined) return { ok: false, code: selected.code };
+      unitDir = selected.units[0].dir;
+    }
+    const done = { ok: true, unitDir, cleanup };
+    cleanup = null;
+    return done;
   } finally {
     if (cleanup !== null) cleanup();
   }

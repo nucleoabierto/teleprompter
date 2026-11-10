@@ -9,6 +9,7 @@ import { create as tarCreate } from 'tar';
 import {
   main, EXIT_OK, EXIT_MANIFEST, EXIT_PLAN, EXIT_USAGE, EXIT_FETCH, EXIT_EXECUTION,
 } from '../src/cli.js';
+import { obtainRecordedUnit } from '../src/commands.js';
 import { hashPath } from '../src/hash.js';
 
 const repoRoot = path.dirname(fileURLToPath(new URL('.', import.meta.url)));
@@ -3047,3 +3048,192 @@ function writePkg2(name) {
   }), { [`${name}.txt`]: name });
   return pkg;
 }
+
+// --- reobtención de la unidad registrada ---
+
+// `obtainRecordedUnit` is the per-entry composition the reproduction
+// plan will consume: it re-obtains exactly the tree the install
+// recorded. No command exposes it yet, so the suite calls it with the
+// same io `main` injects and captures the output channels directly.
+async function obtainUnit(name, entry, io = {}) {
+  const stdout = [];
+  const stderr = [];
+  const result = await obtainRecordedUnit(
+    io, (m) => stdout.push(m), (m) => stderr.push(m), name, entry,
+  );
+  return { result, stdout, stderr };
+}
+
+// A collection tarball: the index plus one package dir per member,
+// the shape a remote collection origin extracts to.
+async function collectionTarball(name, members, index = {}) {
+  const work = tmp();
+  const root = path.join(work, `${name}-abc123`);
+  writeCollection(root, members, index);
+  const archive = path.join(work, 'a.tgz');
+  await tarCreate({ gzip: true, file: archive, cwd: work }, [`${name}-abc123`]);
+  return fs.readFileSync(archive);
+}
+
+test('a github entry re-obtains the recorded commit, not the recorded ref', async () => {
+  const tmpBase = tmp();
+  const spy = spyFetch(remoteOk(await remotePkg()));
+  const entry = {
+    origin: { type: 'github', repo: 'o/mi-paquete', ref: 'v9', commit: RESOLVED },
+  };
+  const { result, stdout, stderr } = await obtainUnit(
+    'mi-paquete', entry, { fetch: spy.fetch, tmpBase },
+  );
+  assert.equal(result.ok, true, stderr.join('\n'));
+  assert.match(stdout.join('\n'), new RegExp(`obteniendo: o/mi-paquete@${RESOLVED}`));
+  // The recorded SHA is already resolved: the download asks for it
+  // with no commits call, whatever `ref` the entry recorded — the
+  // tree is the commit's, not what the ref publishes today.
+  assert.deepEqual(spy.urls, [
+    `https://codeload.github.com/o/mi-paquete/tar.gz/${RESOLVED}`,
+  ]);
+  assert.equal(path.basename(result.unitDir), 'mi-paquete');
+  assert.equal(fs.readFileSync(path.join(result.unitDir, 'a.txt'), 'utf8'), 'a');
+  result.cleanup();
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('a path entry re-obtains the recorded directory without any request', async () => {
+  const pkg = path.join(tmp(), 'local');
+  writePkg(pkg, validManifest('local'), { 'a.txt': 'a' });
+  const spy = spyFetch();
+  const { result, stderr } = await obtainUnit(
+    'local', { origin: { type: 'path', path: pkg } }, { fetch: spy.fetch },
+  );
+  assert.equal(result.ok, true, stderr.join('\n'));
+  assert.equal(result.unitDir, pkg);
+  assert.equal(result.cleanup, null);
+  assert.equal(spy.calls, 0);
+});
+
+test('an entry without origin is a non-reproducible unit and fetches nothing', async () => {
+  const spy = spyFetch();
+  const { result, stderr } = await obtainUnit('viejo', {}, { fetch: spy.fetch });
+  assert.deepEqual(result, { ok: false, code: EXIT_USAGE });
+  assert.match(stderr.join('\n'),
+    /la unidad "viejo" no es reproducible: la entrada no registra un origen/);
+  assert.equal(spy.calls, 0);
+});
+
+test('a github entry recorded before the commit anchor is non-reproducible, not approximated', async () => {
+  const spy = spyFetch();
+  const { result, stderr } = await obtainUnit(
+    'p', { origin: { type: 'github', repo: 'o/p', ref: 'v1' } }, { fetch: spy.fetch },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_USAGE });
+  assert.match(stderr.join('\n'),
+    /la unidad "p" no es reproducible: el origen no registra el commit de la instalación/);
+  assert.equal(spy.calls, 0);
+});
+
+test('a recorded repo the grammar cannot parse is non-reproducible, not a crash', async () => {
+  const spy = spyFetch();
+  const { result, stderr } = await obtainUnit(
+    'p',
+    { origin: { type: 'github', repo: 'no-es-repo', commit: RESOLVED } },
+    { fetch: spy.fetch },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_USAGE });
+  assert.match(stderr.join('\n'),
+    /la unidad "p" no es reproducible: el origen registrado no es un repositorio válido: no-es-repo/);
+  assert.equal(spy.calls, 0);
+});
+
+test('a recorded local path that vanished is a non-reproducible unit', async () => {
+  const gone = path.join(tmp(), 'desaparecido');
+  const { result, stderr } = await obtainUnit(
+    'p', { origin: { type: 'path', path: gone } },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_USAGE });
+  assert.match(stderr.join('\n'),
+    /la unidad "p" no es reproducible: la ruta registrada ya no existe/);
+});
+
+test('a collection tree re-resolves the recorded member and returns its directory', async () => {
+  const tmpBase = tmp();
+  const buf = await collectionTarball('familia', [
+    { path: 'alfa' },
+    { path: 'beta', files: { 'b.txt': 'b' } },
+  ]);
+  const spy = spyFetch(remoteOk(buf));
+  const entry = {
+    origin: { type: 'github', repo: 'o/familia', commit: RESOLVED, package: 'beta' },
+  };
+  const { result, stderr } = await obtainUnit(
+    'beta', entry, { fetch: spy.fetch, tmpBase },
+  );
+  assert.equal(result.ok, true, stderr.join('\n'));
+  assert.equal(path.basename(result.unitDir), 'beta');
+  assert.equal(path.basename(path.dirname(result.unitDir)), 'familia');
+  assert.equal(fs.readFileSync(path.join(result.unitDir, 'b.txt'), 'utf8'), 'b');
+  result.cleanup();
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('a collection origin without package re-resolves by the entry name', async () => {
+  const coll = path.join(tmp(), 'familia');
+  writeCollection(coll, [{ path: 'alfa' }, { path: 'beta' }]);
+  const { result, stderr } = await obtainUnit(
+    'beta', { origin: { type: 'path', path: coll } },
+  );
+  assert.equal(result.ok, true, stderr.join('\n'));
+  assert.equal(result.unitDir, path.join(coll, 'beta'));
+  assert.equal(result.cleanup, null);
+});
+
+test('a member the collection no longer holds is non-reproducible and frees the temp dir', async () => {
+  const tmpBase = tmp();
+  const buf = await collectionTarball('familia', [{ path: 'beta' }]);
+  const spy = spyFetch(remoteOk(buf));
+  const entry = {
+    origin: { type: 'github', repo: 'o/familia', commit: RESOLVED, package: 'alfa' },
+  };
+  const { result, stderr } = await obtainUnit(
+    'alfa', entry, { fetch: spy.fetch, tmpBase },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_USAGE });
+  const shown = stderr.join('\n');
+  assert.match(shown,
+    /la unidad "alfa" no es reproducible: la colección no tiene el paquete "alfa"/);
+  assert.match(shown, /disponibles: beta/);
+  // The obtained tree is released even though the re-resolution failed.
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('a collection tree with a corrupt index fails in the manifest vocabulary', async () => {
+  const tmpBase = tmp();
+  const buf = await collectionTarball(
+    'familia', [{ path: 'alfa' }], { version: '1.0.0' },
+  );
+  const spy = spyFetch(remoteOk(buf));
+  const entry = {
+    origin: { type: 'github', repo: 'o/familia', commit: RESOLVED, package: 'alfa' },
+  };
+  const { result, stderr } = await obtainUnit(
+    'alfa', entry, { fetch: spy.fetch, tmpBase },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_MANIFEST });
+  assert.match(stderr.join('\n'), /manifiesto de colección inválido/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('a failed obtain reports in the obtain vocabulary, not as non-reproducible', async () => {
+  const tmpBase = tmp();
+  const spy = spyFetch({ ok: false, status: 404 });
+  const entry = {
+    origin: { type: 'github', repo: 'o/privado', commit: RESOLVED },
+  };
+  const { result, stderr } = await obtainUnit(
+    'privado', entry, { fetch: spy.fetch, tmpBase },
+  );
+  assert.deepEqual(result, { ok: false, code: EXIT_FETCH });
+  const shown = stderr.join('\n');
+  assert.match(shown, /error de obtención: .*o\/privado/);
+  assert.doesNotMatch(shown, /no es reproducible/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
