@@ -5,6 +5,7 @@
 > **Orden sugerido:** 4 de 4 — última de Next (revisión del roadmap
 > 2026-10-04): la más dependiente; consume orígenes pinneados y la
 > lectura del registro que la desinstalación comparte
+> **Procesada en:** docs/proposals/011-reproduccion-destino/
 
 ## Problema
 
