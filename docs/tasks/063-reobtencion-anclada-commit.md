@@ -252,4 +252,4 @@ por unidad que la tarea 064 consumirá.
 
 - Subagente: 2026-11-09 — Aprueba
 - Usuario (ejecución): 2026-11-20 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-20 — Aprueba
