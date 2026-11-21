@@ -44,6 +44,11 @@ entero se muestra ejecutable.
    `.teleprompter/backups/` y el resultado lo anuncia con
    `respaldo:` y `reinstalado: <paquete>@<versión>`.
 
+La guía gestionada es territorio del instalador, no una divergencia
+decidible: si difiere de lo declarado se restaura en cada ejecución
+—también con `--skip`, que solo conserva los recursos en conflicto—,
+como en `install` y `update`.
+
 Sin registro, o con uno vacío o ilegible, responde `no hay paquetes
 instalados` —con `aviso:` cuando el archivo es ilegible—.
 
@@ -66,6 +71,6 @@ de obtención` con el mismo corte.
 | Argumentos, o una opción que no aplica (`--path`, `--ref`, `--package`) | `4` |
 | Una unidad no reproducible —sin origen, sin commit, ruta o miembro ausente— | `4` |
 | Manifiesto inválido en alguna unidad obtenida             | `1`    |
-| Plan no ejecutable: divergencias sin resolver, guía o respaldo fuera del destino | `2` |
+| Plan no ejecutable: precondiciones incumplidas, divergencias sin resolver, guía o respaldo fuera del destino | `2` |
 | Error de ejecución a mitad —reporta lo aplicado y las unidades pendientes— | `3` |
 | Error de obtención de un origen remoto                  | `5`    |

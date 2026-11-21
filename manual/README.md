@@ -30,6 +30,8 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
   paquete instalado a la versión que publica su origen.
 - [Referencia de `uninstall`](referencia-uninstall.md) — retirar un
   paquete instalado y sus recursos registrados.
+- [Referencia de `reinstall`](referencia-reinstall.md) — reinstalar
+  todo lo que el registro declara, anclado al commit registrado.
 - [Referencia de `help`](referencia-help.md) — consultar la ayuda
   del CLI, general o por comando.
 
@@ -49,6 +51,8 @@ El sitio se construye con [Material for MkDocs](https://squidfunk.github.io/mkdo
   hace `uninstall` y cómo decide.
 - [007 — Revisar desactualizados](007-revisar-desactualizados.md) —
   qué informa `outdated` de cada paquete.
+- [008 — Reinstalar lo registrado](008-reinstalar-lo-registrado.md) —
+  qué hace `reinstall` y cómo reproduce el registro.
 
 ## Documentos relacionados
 

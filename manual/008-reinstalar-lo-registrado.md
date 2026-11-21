@@ -25,13 +25,15 @@ conflictos](https://github.com/nucleoabierto/teleprompter/blob/master/docs/domai
 - **Lo borrado a mano reaparece con el contenido declarado** y lo
   divergente se decide como en cualquier operación de escritura:
   pregunta interactiva con su diff, `--force` que lo restaura todo,
-  `--skip` que lo conserva todo, o listado con diff y aborto sin
-  consola.
+  `--skip` que conserva las divergencias, o listado con diff y aborto
+  sin consola.
 - **Lo decidido a restaurar se respalda antes** bajo
   `.teleprompter/backups/<fecha>-<paquete>@<versión>` y el resultado
   lo anuncia con `respaldo:`.
 - **La guía gestionada se materializa de nuevo** como parte de cada
-  unidad: borrada a mano, vuelve con el contenido del paquete.
+  unidad: borrada a mano o divergente, vuelve con el contenido del
+  paquete —es territorio del instalador, no una divergencia que se
+  decide; `--skip` no la conserva—.
 - **Cada entrada reescrita queda como una instalación:** conserva el
   `origin` registrado —commit y miembro incluidos— y renueva su
   `installedAt`, así que la reproducción siguiente ancla al mismo

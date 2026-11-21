@@ -211,6 +211,18 @@ instalado.
     descarta —la reescritura conserva el registrado—.
     - Ancla: `obtainRecordedUnit` en `src/commands.js` y
       `reproductionSourceOf` en `src/origin.js`
+  - Reinstalar lo registrado: `teleprompter reinstall` opera sobre
+    el directorio de trabajo —sin destino ni selección— y reproduce
+    el registro como conjunto: obtiene cada unidad anclada a su
+    `commit` antes de planear, muestra cada plan etiquetado por
+    unidad antes de decidir, somete las divergencias a la política
+    compartida y valida guía y respaldo antes de escribir; una
+    unidad que ya coincide con lo declarado —recursos y guía
+    intactos, entrada veraz— se anuncia conforme sin acciones ni
+    reescritura, y cada unidad ejecutada se reescribe como una
+    instalación —`origin` intacto, `installedAt` renovado—. Un
+    fallo a mitad reporta lo aplicado y las unidades pendientes.
+    - Ancla: `runReinstall` en `src/commands.js`
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.

@@ -110,12 +110,22 @@ reescrita como la de una instalación.
   `reinstall <paquete>` por paralelismo con `uninstall` se
   cierra con la gramática: no acepta posicionales.
 - La guía gestionada vive fuera de `manifest.install`, así que
-  el plan de recursos no la ve: el chequeo de conforme añadió
-  la marca de deriva de la guía registrada (`classifyResource`
-  sobre `entry.personalization`) —una guía borrada o caída del
-  registro hace a la unidad no conforme y se restaura como
-  cualquier otro archivo declarado. Refinamiento dentro del
-  espíritu del plan («todo lo declarado vuelve»), no desviación.
+  el plan de recursos no la ve: conforme exige, además del plan
+  sin trabajo, que el registro diga la verdad contra el disco —
+  cada recurso del plan registrado en `files`, cada entrada
+  escrita intacta (`classifyResource`), el campo
+  `personalization` igual al target declarado y la guía íntegra
+  ahí—. Un registro mentiroso —`files` vaciado, campo caído o
+  manipulado, entrada de archivo huérfana— o una deriva hacen a
+  la unidad no conforme y la reescritura lo cura; la primera
+  versión del chequeo, anclada al campo registrado, anunciaba
+  «conforme» frente a un `check` que reportaba la guía ausente
+  —defecto que la revisión detectó y esta forma cerró—.
+- La guía restaurada es territorio gestionado: se materializa
+  sin decisión en cada ejecución —también bajo `--skip`, que
+  solo conserva los recursos en conflicto—, como en `install` y
+  `update`. La referencia y la guía 008 lo declaran para que la
+  lectura «skip lo conserva todo» no engañe.
 - La verificación del conjunto acumula sus fallos igual que la
   obtención —varios manifiestos inválidos se listan de una
   vez— y el nombre publicado se contrasta con el vocabulario

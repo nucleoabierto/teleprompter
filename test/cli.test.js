@@ -3759,6 +3759,74 @@ test('a guide dropped from the record still restores like drift', async () => {
   );
 });
 
+test('a dropped personalization field is rewritten, not announced conforme', async () => {
+  const { dest } = await installed(
+    validManifest('campo', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'a', 'PERSONALIZE.md': '# guía\n' },
+  );
+  const guideTarget = '.teleprompter/campo/PERSONALIZE.md';
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  delete lock.packages.campo.personalization;
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // The record no longer names the declared guide: the unit is not
+  // conforming and the rewrite heals the field, disk untouched.
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.equal(lockOf(dest).packages.campo.personalization, guideTarget);
+  assert.equal(fs.readFileSync(path.join(dest, guideTarget), 'utf8'), '# guía\n');
+});
+
+test('an emptied file record is rewritten, not announced conforme', async () => {
+  const { dest } = await installed(validManifest('miente'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.miente.files = [];
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // A conforming entry must record what the plan sees: an empty
+  // record lies even when the disk happens to match.
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.deepEqual(
+    lockOf(dest).packages.miente.files.map((f) => f.target), ['a.txt'],
+  );
+});
+
+test('a recorded file gone from the disk makes the unit not conforming', async () => {
+  const { dest } = await installed(validManifest('fantasma'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.fantasma.files.push(
+    { target: 'fantasma.txt', action: 'create', sha256: '0'.repeat(64) },
+  );
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // `check` would report the entry missing; the rewrite drops the
+  // stale record instead of blessing it with "conforme".
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.deepEqual(
+    lockOf(dest).packages.fantasma.files.map((f) => f.target), ['a.txt'],
+  );
+});
+
+test('reinstall --skip keeps the divergence but restores the managed guide', async () => {
+  const { dest } = await installed(
+    validManifest('mixta', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'viejo', 'PERSONALIZE.md': '# guía\n' },
+  );
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const guide = path.join(dest, '.teleprompter', 'mixta', 'PERSONALIZE.md');
+  fs.writeFileSync(guide, '# tocada\n');
+  const { code, stderr } = await run(['reinstall', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  // The guide is managed territory, not a conflict decision.
+  assert.equal(fs.readFileSync(guide, 'utf8'), '# guía\n');
+});
+
 test('a missing precondition directory is plan work, not conforming', async () => {
   const { dest } = await installed(validManifest('precisa', {
     requires: { paths: [{ path: 'cfg', create: true }] },

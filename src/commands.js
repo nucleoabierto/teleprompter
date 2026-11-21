@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { verifyPackage } from './verify.js';
 import {
-  readLock, writeLock, lockEntry, lockEntries, removeLockEntry,
+  readLock, writeLock, lockEntry, lockEntries, removeLockEntry, isWritten,
 } from './lock.js';
 import {
   buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts, needsBackup,
@@ -361,15 +361,26 @@ export async function runReinstall(io, out, err, parsed) {
       }
       const { manifest } = result;
       const plan = buildPlan(unit.unitDir, manifest, destDir, result.creates, lock);
-      // Conforming asks nothing of the plan — and of the managed
-      // guide, which lives outside its resources: a deleted guide is
-      // drift like any recorded file, so its mark joins the check.
-      const recorded = unit.entry.files.find((f) => f.target === unit.entry.personalization);
-      const conforme = plan.mkdirs.length === 0 && plan.conflicts.length === 0
-        && plan.resources.every((r) => r.status === 'identical')
-        && (unit.entry.personalization === undefined
-          || classifyResource(destDir, recorded ?? { target: unit.entry.personalization }) === 'intact');
-      if (conforme) {
+      // Conforming asks nothing of the plan and nothing of the
+      // record's agreement with the disk: every resource must be
+      // recorded, every written entry must verify intact, and a
+      // declared guide must be the recorded field —intact at its
+      // managed target—. A lying record (emptied files, a tampered
+      // field, a dropped file entry) or drifted content makes the
+      // unit not conforming, so the rewrite heals it like drift.
+      const guide = manifest.personalization === undefined ? undefined
+        : personalizationTarget(manifest.name, manifest.personalization);
+      const conforming = plan.mkdirs.length === 0 && plan.conflicts.length === 0
+        && plan.resources.every((r) => r.status === 'identical'
+          && unit.entry.files.some((f) => f.target === r.target))
+        && unit.entry.files.every((f) => !isWritten(f)
+          || classifyResource(destDir, f) === 'intact')
+        && unit.entry.personalization === guide
+        && (guide === undefined
+          || classifyResource(destDir,
+            unit.entry.files.find((f) => f.target === guide)
+              ?? { target: guide }) === 'intact');
+      if (conforming) {
         out(`${manifest.name}@${manifest.version} ya está conforme`);
         continue;
       }
