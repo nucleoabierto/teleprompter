@@ -2,7 +2,9 @@ import { parseArgs, showHelp, USAGE } from './usage.js';
 import {
   showGuide, showList, showCheck, showOutdated,
 } from './queries.js';
-import { runInstall, runUpdate, runUninstall } from './commands.js';
+import {
+  runInstall, runUpdate, runUninstall, runReinstall,
+} from './commands.js';
 import { EXIT_USAGE } from './exits.js';
 
 export {
@@ -30,5 +32,6 @@ export async function main(argv, io = {}) {
   if (parsed.command === 'outdated') return showOutdated(io, out, err, parsed.pkg);
   if (parsed.command === 'update') return runUpdate(io, out, err, parsed);
   if (parsed.command === 'uninstall') return runUninstall(io, out, err, parsed);
+  if (parsed.command === 'reinstall') return runReinstall(io, out, err, parsed);
   return runInstall(io, out, err, parsed);
 }

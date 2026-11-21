@@ -2,12 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { verifyPackage } from './verify.js';
 import {
-  readLock, writeLock, lockEntry, removeLockEntry,
+  readLock, writeLock, lockEntry, lockEntries, removeLockEntry,
 } from './lock.js';
 import {
   buildPlan, buildUpdatePlan, buildUninstallPlan, resolveConflicts, needsBackup,
 } from './plan.js';
 import { executePlan, installPersonalization } from './execute.js';
+import { classifyResource } from './drift.js';
 import { diffResource, show } from './diff.js';
 import {
   resolvesUnder, personalizationTarget, MANAGED_DIR,
@@ -311,6 +312,104 @@ export async function runUninstall(io, out, err, parsed) {
   reportBackup(out, actions, backupRoot);
   out(`desinstalado: ${parsed.pkg}@${record.version}`);
   return EXIT_OK;
+}
+
+// `reinstall` walks the lock's entries and restores what each one
+// declares, structured as a set: every unit is obtained first —a
+// non-reproducible or unobtainable unit aborts with all the affected
+// ones listed, never mid-write—, every install plan over the
+// anchored trees prints before any decision, and a unit already
+// conforming is announced as such with no actions. Only when the
+// whole set proves executable does the execution run unit by unit,
+// re-reading the lock like `installUnit` because the previous unit
+// already wrote its own entry. Each rewrite keeps the recorded
+// `origin` —commit included— so the next reproduction anchors to the
+// same tree again, and renews `installedAt` like any install. A mid
+// failure reports the applied actions and the units still pending.
+export async function runReinstall(io, out, err, parsed) {
+  const destDir = io.cwd;
+  const lock = readLock(destDir);
+  reportWarnings(out, lock.warnings);
+  const entries = lockEntries(lock);
+  if (entries.length === 0) {
+    out('no hay paquetes instalados');
+    return EXIT_OK;
+  }
+
+  const units = [];
+  const cleanups = [];
+  let failed = null;
+  try {
+    for (const [name, entry] of entries) {
+      const obtained = await obtainRecordedUnit(io, out, err, name, entry);
+      if (!obtained.ok) {
+        if (failed === null) failed = obtained.code;
+        continue;
+      }
+      units.push({ name, entry, unitDir: obtained.unitDir });
+      if (obtained.cleanup !== null) cleanups.push(obtained.cleanup);
+    }
+    if (failed !== null) return failed;
+
+    const pending = [];
+    for (const unit of units) {
+      const result = verifyPackage(unit.unitDir, destDir);
+      const invalid = checkVerified(result, out, err, unit.name);
+      if (invalid !== null) {
+        if (failed === null) failed = invalid;
+        continue;
+      }
+      const { manifest } = result;
+      const plan = buildPlan(unit.unitDir, manifest, destDir, result.creates, lock);
+      // Conforming asks nothing of the plan — and of the managed
+      // guide, which lives outside its resources: a deleted guide is
+      // drift like any recorded file, so its mark joins the check.
+      const recorded = unit.entry.files.find((f) => f.target === unit.entry.personalization);
+      const conforme = plan.mkdirs.length === 0 && plan.conflicts.length === 0
+        && plan.resources.every((r) => r.status === 'identical')
+        && (unit.entry.personalization === undefined
+          || classifyResource(destDir, recorded ?? { target: unit.entry.personalization }) === 'intact');
+      if (conforme) {
+        out(`${manifest.name}@${manifest.version} ya está conforme`);
+        continue;
+      }
+      printPlan(plan, out, `plan de instalación de "${unit.name}":`);
+      pending.push({ ...unit, manifest, plan });
+    }
+    if (failed !== null) return failed;
+
+    for (const unit of pending) {
+      const unresolved = await settleConflicts(
+        io, out, err, parsed.flags, unit.plan, destDir, unit.unitDir);
+      if (unresolved !== null) return unresolved;
+      const escaping = checkGuideDestination(destDir, unit.manifest, err);
+      if (escaping !== null) return escaping;
+      const unsafeBackup = checkBackupDestination(destDir, unit.plan, err);
+      if (unsafeBackup !== null) return unsafeBackup;
+    }
+    if (parsed.flags.has('--dry-run')) {
+      out('fin del plan (--dry-run): nada se escribió');
+      return EXIT_OK;
+    }
+
+    for (const [index, unit] of pending.entries()) {
+      const fresh = readLock(destDir);
+      reportWarnings(out, fresh.warnings);
+      const code = executeAndReport(out, err, {
+        pkgDir: unit.unitDir, destDir, lock: fresh,
+        plan: unit.plan, manifest: unit.manifest,
+        origin: unit.entry.origin, verb: 'reinstalado',
+      });
+      if (code !== EXIT_OK) {
+        const names = pending.slice(index + 1).map((u) => u.name).join(', ');
+        if (names.length > 0) err(`unidades pendientes: ${names}`);
+        return code;
+      }
+    }
+    return EXIT_OK;
+  } finally {
+    for (const cleanup of cleanups) cleanup();
+  }
 }
 
 const isDir = (p) => {

@@ -18,6 +18,7 @@ comandos:
   outdated [<paquete>]                    revisa las versiones publicadas
   update <paquete> [<origen>]             actualiza un paquete instalado
   uninstall <paquete>                     retira un paquete instalado
+  reinstall                               reinstala lo que el registro declara
   help [<comando>]                        muestra esta ayuda o la de un comando
                                           —«--help» pide la de cada comando—
 
@@ -25,9 +26,9 @@ opciones:
   --path <paquete>     origen local: un directorio con su teleprompter.json (install, update)
   --ref <ref>          referencia de GitHub —rama, tag o commit— (install, update)
   --package <nombre>   selecciona miembros de una colección, repetible (install)
-  --force              resuelve sin preguntar: sobrescribe o retira (install, update, uninstall)
-  --skip               resuelve sin preguntar: omite o conserva (install, update, uninstall)
-  --dry-run            muestra el plan sin escribir (install, update, uninstall)
+  --force              resuelve sin preguntar: sobrescribe o retira (install, update, uninstall, reinstall)
+  --skip               resuelve sin preguntar: omite o conserva (install, update, uninstall, reinstall)
+  --dry-run            muestra el plan sin escribir (install, update, uninstall, reinstall)
 
 ejemplos:
   teleprompter nucleoabierto/mis-skills
@@ -95,6 +96,17 @@ conservarlos— y deja el registro sin su entrada
   --force, --skip     resuelven las divergencias sin preguntar:
                       las retiran todas o las conservan todas
   --dry-run           muestra el plan de retirada sin escribir nada`,
+  reinstall: `uso: teleprompter reinstall [--force|--skip] [--dry-run]
+
+reinstala todo lo que el registro del repositorio declara: obtiene
+cada paquete anclado al commit que su origen registró, muestra el
+plan del conjunto por unidad antes de escribir y restaura las
+divergencias con la política de conflictos —respaldo incluido—;
+una unidad no reproducible aborta la operación sin escribir nada
+
+  --force, --skip     resuelven las divergencias sin preguntar:
+                      las restauran todas o las conservan todas
+  --dry-run           muestra el plan del conjunto sin escribir nada`,
   help: `uso: teleprompter help [<comando>]
      teleprompter [<comando>] --help
 
@@ -119,6 +131,7 @@ const COMMAND_OPTIONS = {
   install: new Set(Object.keys(OPTION_TYPES)),
   update: new Set(['path', 'ref', 'force', 'skip', 'dry-run']),
   uninstall: new Set(['force', 'skip', 'dry-run']),
+  reinstall: new Set(['force', 'skip', 'dry-run']),
   outdated: new Set(),
 };
 
@@ -171,6 +184,9 @@ function splitArgs(command, rest) {
 // `uninstall` takes just the package name —it works on the working
 // directory's lock— plus the resolution flags, which decide the
 // removal conflicts of drifted resources, and --dry-run.
+// `reinstall` takes nothing at all —it reinstalls what the working
+// directory's lock declares— plus those same flags, which decide the
+// divergences the reproduction finds.
 // `help` is the query command —an optional topic from HELP— and
 // `--help` its alias anywhere: as sole argument it asks for the
 // general help, and beside an invocation it asks for that command's
@@ -239,6 +255,11 @@ export function parseArgs(argv) {
     const { args, flags } = split;
     if (args.length !== 1) return null;
     return { command: 'uninstall', pkg: args[0], flags };
+  }
+  if (argv[0] === 'reinstall') {
+    const split = splitArgs('reinstall', argv.slice(1));
+    if (split === null || split.args.length > 0) return null;
+    return { command: 'reinstall', flags: split.flags };
   }
   const rest = argv[0] === 'install' ? argv.slice(1) : argv;
   const split = splitArgs('install', rest);

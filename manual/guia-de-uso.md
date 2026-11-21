@@ -219,9 +219,29 @@ npx @nucleoabierto/teleprompter nucleoabierto/ciclo-tareas . --dry-run
 Es la forma de ver qué haría una instalación —incluidas las colisiones
 que habría que resolver— antes de decidir.
 
-## Reinstalar
+## Reinstalar lo registrado
 
-Reinstalar un paquete ya instalado es una operación válida e inocua:
+Desde la raíz del repositorio destino, `reinstall` restaura todo lo
+que el registro declara: reobtiene cada paquete anclado al commit que
+su origen grabó y devuelve el destino al estado declarado, decidiendo
+las divergencias con la política de conflictos —respaldo incluido—:
+
+```sh
+npx @nucleoabierto/teleprompter reinstall
+```
+
+Cada unidad se anuncia conforme si ya coincide, o muestra su plan
+—todos antes de la primera decisión—; una unidad no reproducible
+aborta el conjunto sin escribir nada. `--dry-run` muestra el plan del
+conjunto sin escribir.
+
+Véase la [referencia de `reinstall`](referencia-reinstall.md) y el
+comportamiento de [reinstalar lo registrado](008-reinstalar-lo-registrado.md).
+
+## Volver a instalar el mismo paquete
+
+Reinstalar un paquete ya instalado —ejecutar `install` otra vez— es
+una operación válida e inocua:
 los recursos que siguen idénticos se marcan `identical` y no se
 escriben; los que difieren en contenido se actualizan
 (`managed-update`) solo si el paquete ofrece una versión igual o
