@@ -65,8 +65,8 @@ del contenido previo antes del paso destructivo.
   - Aplicar la política a los conflictos de un plan: cada `conflict`
     se anuncia con su diff y recibe su `resolution` —por flag, por
     respuesta interactiva o por aborto— antes de ejecutar nada. Es
-    una fase de los flujos de instalación, actualización y retirada
-    (dominio 002), no un comando propio.
+    una fase de los flujos de instalación, actualización, retirada
+    y reproducción (dominio 002), no un comando propio.
     - Ancla: `settleConflicts` en `src/commands.js` (la política),
       `resolveConflicts` en `src/plan.js` (la asignación) y
       `createAsker` en `src/prompt.js`
@@ -88,6 +88,6 @@ del contenido previo antes del paso destructivo.
 
 ## Estado de salud
 
-- Última revisión: 2026-10-29 (tarea
-  `docs/tasks/059-adoptar-util-parseargs-nivel-token.md`)
+- Última revisión: 2026-11-21 (tarea
+  `docs/tasks/064-comando-reinstall.md`)
 - Divergencias conocidas: Ninguna

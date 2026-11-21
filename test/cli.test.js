@@ -3510,6 +3510,20 @@ test('a github entry without the recorded commit is non-reproducible', async () 
     /la unidad "ancla" no es reproducible: el origen no registra el commit/);
 });
 
+test('a recorded repo the grammar cannot parse is non-reproducible', async () => {
+  const { dest } = await installed(validManifest('roto'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.roto.origin = {
+    type: 'github', repo: 'no-es-repo', commit: RESOLVED,
+  };
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'),
+    /la unidad "roto" no es reproducible: el origen registrado no es un repositorio válido: no-es-repo/);
+});
+
 test('an unreachable origin reports an obtain error, not non-reproducible', async () => {
   const dest = tmp();
   const tmpBase = tmp();
@@ -3825,6 +3839,19 @@ test('reinstall --skip keeps the divergence but restores the managed guide', asy
   assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
   // The guide is managed territory, not a conflict decision.
   assert.equal(fs.readFileSync(guide, 'utf8'), '# guía\n');
+});
+
+test('a record whose version the origin no longer publishes is rewritten', async () => {
+  const { dest, pkg } = await installed(validManifest('mudada'), { 'a.txt': 'a' });
+  // The recorded origin still exists but now declares 2.0.0: the
+  // entry's version lies and the rewrite records what was verified.
+  writePkg(pkg, validManifest('mudada', { version: '2.0.0' }), { 'a.txt': 'a' });
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /verificado: mudada@2\.0\.0/);
+  assert.doesNotMatch(shown, /ya está conforme/);
+  assert.equal(lockOf(dest).packages.mudada.version, '2.0.0');
 });
 
 test('a missing precondition directory is plan work, not conforming', async () => {

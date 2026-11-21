@@ -113,14 +113,15 @@ reescrita como la de una instalación.
   el plan de recursos no la ve: conforme exige, además del plan
   sin trabajo, que el registro diga la verdad contra el disco —
   cada recurso del plan registrado en `files`, cada entrada
-  escrita intacta (`classifyResource`), el campo
-  `personalization` igual al target declarado y la guía íntegra
-  ahí—. Un registro mentiroso —`files` vaciado, campo caído o
-  manipulado, entrada de archivo huérfana— o una deriva hacen a
-  la unidad no conforme y la reescritura lo cura; la primera
-  versión del chequeo, anclada al campo registrado, anunciaba
-  «conforme» frente a un `check` que reportaba la guía ausente
-  —defecto que la revisión detectó y esta forma cerró—.
+  escrita intacta (`classifyResource`), la `version` igual a la
+  del manifiesto verificado, el campo `personalization` igual al
+  target declarado y la guía íntegra ahí—. Un registro mentiroso
+  —`files` vaciado, versión o campo caído o manipulado, entrada
+  de archivo huérfana— o una deriva hacen a la unidad no
+  conforme y la reescritura lo cura; las versiones del chequeo
+  ancladas solo al disco o al campo registrado anunciaban
+  «conforme» frente a un registro que mentía —defectos que dos
+  rondas de revisión detectaron y esta forma cerró—.
 - La guía restaurada es territorio gestionado: se materializa
   sin decisión en cada ejecución —también bajo `--skip`, que
   solo conserva los recursos en conflicto—, como en `install` y

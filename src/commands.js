@@ -363,11 +363,12 @@ export async function runReinstall(io, out, err, parsed) {
       const plan = buildPlan(unit.unitDir, manifest, destDir, result.creates, lock);
       // Conforming asks nothing of the plan and nothing of the
       // record's agreement with the disk: every resource must be
-      // recorded, every written entry must verify intact, and a
-      // declared guide must be the recorded field —intact at its
-      // managed target—. A lying record (emptied files, a tampered
-      // field, a dropped file entry) or drifted content makes the
-      // unit not conforming, so the rewrite heals it like drift.
+      // recorded, every written entry must verify intact, and the
+      // version and guide field must be what the verified manifest
+      // declares —the guide intact at its managed target—. A lying
+      // record (emptied files, a stale version, a tampered field)
+      // or drifted content makes the unit not conforming, so the
+      // rewrite heals it like drift.
       const guide = manifest.personalization === undefined ? undefined
         : personalizationTarget(manifest.name, manifest.personalization);
       const conforming = plan.mkdirs.length === 0 && plan.conflicts.length === 0
@@ -375,6 +376,7 @@ export async function runReinstall(io, out, err, parsed) {
           && unit.entry.files.some((f) => f.target === r.target))
         && unit.entry.files.every((f) => !isWritten(f)
           || classifyResource(destDir, f) === 'intact')
+        && unit.entry.version === manifest.version
         && unit.entry.personalization === guide
         && (guide === undefined
           || classifyResource(destDir,

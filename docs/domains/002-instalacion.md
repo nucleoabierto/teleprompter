@@ -256,8 +256,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-11-20 (tarea
-  `docs/tasks/063-reobtencion-anclada-commit.md`)
+- Última revisión: 2026-11-21 (tarea
+  `docs/tasks/064-comando-reinstall.md`)
 - Divergencias conocidas: Ninguna —la divergencia de registro
   coexistiendo con contenido sobrescrito por otro paquete vive en el
   dominio 003—.
