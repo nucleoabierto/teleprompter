@@ -367,6 +367,23 @@ no es obtenible o el conjunto no es ejecutable (D005).
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: ronda 1 (2026-11-21) — Solicita cambios: el chequeo
+  «conforme» se anclaba al campo `personalization` registrado y
+  bendecía una guía ausente que `check` reportaba (re-anclado al
+  target declarado más la veracidad del registro contra el
+  disco); faltaban el alta en `manual/README.md`, la operación
+  en el dominio 002, la fila de precondiciones en la tabla de
+  errores y la nota de que `--skip` no cubre la guía gestionada.
+  Ronda 2 (2026-11-21) — Solicita cambios: la versión registrada
+  tampoco se contrastaba (un origen `path` que subió de versión
+  se anunciaba conforme con el lock mintiendo); el caso «`repo`
+  ilegible» no se ejercía a nivel comando y las fichas de salud
+  de los dominios 002/004 quedaron sin la revisión de la tarea.
+  Ronda 3 (2026-11-21) — **Aprueba**: hallazgos menores —la
+  entrada de `CHANGELOG.md` se añadió con la corrección—, una
+  asimetría `files`→plan conforme a PRD («retirar targets no
+  traídos» fuera de alcance, preserva la semántica `keep`) y el
+  nombre de unidad interpolado sin escapar, precedente mixto de
+  bajo riesgo.
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
