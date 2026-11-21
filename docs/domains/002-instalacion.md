@@ -82,6 +82,15 @@ instalado.
     - Origen: tareas
       `docs/tasks/042-uninstall-retira-paquete-intacto.md` y
       `docs/tasks/043-resolucion-divergencias-retirada.md`
+  - **Unidad no reproducible:** la entrada del registro que no
+    puede declarar el árbol que su instalación consumió —sin
+    `origin`, `github` sin `commit`, `repo` que no reparsea, ruta
+    local desaparecida o miembro disuelto de su colección—; la
+    reproducción la diagnostica con su motivo en lugar de
+    aproximar con lo que el origen publica hoy.
+    - Ancla: `reproductionSourceOf` en `src/origin.js` y
+      `obtainRecordedUnit` en `src/commands.js`
+    - Origen: tarea `docs/tasks/063-reobtencion-anclada-commit.md`
 - **Entidades / estado:**
   - `VerificationResult` — `kind: 'ok'|'manifest'|'requires'`, el
     manifiesto validado, `warnings`, `errors`, `creates` y `failures`.
@@ -192,6 +201,16 @@ instalado.
     muestra el plan sin escribir.
     - Ancla: `runUninstall` en `src/commands.js`, `buildUninstallPlan` en
       `src/plan.js` y `removeLockEntry` en `src/lock.js`
+  - Reobtener la unidad registrada: la reproducción traduce el
+    `origin` de cada entrada al source anclado a su `commit` —un
+    SHA ya resuelto que la descarga consume sin consulta— y
+    re-resuelve el miembro de colección por `origin.package`, con
+    el nombre de la entrada como reserva, como `update` hace; el
+    resultado lleva el `unitDir` junto al `cleanup` que el
+    llamador libera, y el `commit` fresco de la obtención se
+    descarta —la reescritura conserva el registrado—.
+    - Ancla: `obtainRecordedUnit` en `src/commands.js` y
+      `reproductionSourceOf` en `src/origin.js`
   - Códigos de salida: 0 éxito, 1 manifiesto inválido, 2 plan no
     ejecutable, 3 error de ejecución, 4 invocación, 5 obtención del
     repositorio remoto.
@@ -202,7 +221,8 @@ instalado.
 
 - **Fronteras:**
   - Dentro: la obtención, verificación, plan y ejecución de una
-    instalación, y los flujos de actualización y retirada.
+    instalación, y los flujos de actualización, retirada y
+    reproducción.
   - Fuera: la forma del manifiesto (dominio del paquete), la memoria
     del registro y sus consultas (dominio 003), la política que
     resuelve las colisiones (dominio 004), el contenido de la
@@ -224,8 +244,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-11-06 (tarea
-  `docs/tasks/061-comando-outdated.md`)
+- Última revisión: 2026-11-20 (tarea
+  `docs/tasks/063-reobtencion-anclada-commit.md`)
 - Divergencias conocidas: Ninguna —la divergencia de registro
   coexistiendo con contenido sobrescrito por otro paquete vive en el
   dominio 003—.

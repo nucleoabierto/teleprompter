@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -250,6 +250,6 @@ por unidad que la tarea 064 consumirá.
 
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-11-09 — Aprueba
+- Usuario (ejecución): 2026-11-20 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
