@@ -2,7 +2,7 @@
 
 ## Estado
 
-[~] En progreso
+[x] Completada
 
 ## Tipo
 
@@ -385,5 +385,5 @@ no es obtenible o el conjunto no es ejecutable (D005).
   traídos» fuera de alcance, preserva la semántica `keep`) y el
   nombre de unidad interpolado sin escapar, precedente mixto de
   bajo riesgo.
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-11-21 — Aprueba
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

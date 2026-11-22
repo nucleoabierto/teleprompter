@@ -5,26 +5,13 @@
 Que el paquete sea un canal completo del mantenedor al repositorio
 destino. El canal ya está abierto y el formato ya cubre colecciones:
 el producto distribuye, instala, entrega el criterio para adaptar,
-mantiene un ciclo de vida completo —instalar, revisar, actualizar y
-retirar, siempre con plan visible— y se publica en npm con cadena de
+mantiene un ciclo de vida completo —instalar, revisar, actualizar,
+retirar y reinstalar, siempre con plan visible— y se publica en npm con cadena de
 release repetible, ejecutable con `npx`. Lo que falta para cerrar el
 círculo es hacer la actualización informada —aplicar en lote lo
-que la revisión señala— y convertir el registro en fuente de
-reconstrucción del destino.
+que la revisión señala—.
 
 ## Now
-
-- 1. Reproducción del destino desde el registro — reinstalar de una
-  vez lo que el lock de un repo declara, desde sus orígenes (idea
-  009).
-  - Estado: en curso
-  - Justificación: la más dependiente del conjunto —consume los
-    orígenes pinneados, la lectura del registro que comparte con la
-    desinstalación y la mecánica multi-unidad que la revisión de
-    desactualizados establece—; ejecutarla última la hace exacta en
-    lugar de aproximada.
-
-## Next
 
 - 1. Actualización en lote de lo revisado — actualizar en una
   invocación los paquetes que la revisión señala (idea 008, resto).
@@ -32,6 +19,10 @@ reconstrucción del destino.
     dice qué hay desactualizado—; aplicar lo revisado consume esa
     salida y la mecánica multi-unidad que la propia revisión
     estableció.
+
+## Next
+
+Vacío.
 
 ## Later
 
@@ -134,3 +125,11 @@ revisión y reproducción ordenadas entre Now y Next—.
   orígenes sin respuesta degradados a aviso, sin escritura—; la
   actualización en lote de lo revisado queda descompuesta en Next
   y la reproducción del destino pasa a Now como línea única)
+- Usuario: 2026-11-21 — Aprueba (la épica 010 «Reproducción del
+  destino» cerró: `reinstall` devuelve el destino al estado que el
+  registro declara en una invocación —reobtención anclada al commit
+  registrado, plan del conjunto antes de escribir, divergencias por
+  la política compartida con respaldo y aborto sin efectos ante
+  unidades no reproducibles—; la actualización en lote de lo
+  revisado pasa a Now como línea única y el ciclo de vida gana la
+  reproducción)

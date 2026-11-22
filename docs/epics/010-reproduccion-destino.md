@@ -2,7 +2,7 @@
 
 ## Estado
 
-[x] Planificada | [ ] Completada
+[x] Planificada | [x] Completada
 
 ## Objetivo
 
@@ -29,9 +29,9 @@ invocación con el plan del conjunto antes de escribir.
 
 ## Piezas
 
-- [ ] docs/tasks/063-reobtencion-anclada-commit.md — Reobtener
+- [x] docs/tasks/063-reobtencion-anclada-commit.md — Reobtener
   el origen anclado al commit registrado
-- [ ] docs/tasks/064-comando-reinstall.md — El comando
+- [x] docs/tasks/064-comando-reinstall.md — El comando
   `reinstall` de punta a punta
 
 ## Plan técnico
