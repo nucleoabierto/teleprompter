@@ -386,4 +386,4 @@ no es obtenible o el conjunto no es ejecutable (D005).
   nombre de unidad interpolado sin escapar, precedente mixto de
   bajo riesgo.
 - Usuario (ejecución): 2026-11-21 — Aprueba
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-21 — Aprueba
