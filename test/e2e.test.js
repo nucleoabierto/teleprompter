@@ -183,3 +183,66 @@ test('the single-package example installs the whole familia as one deliverable',
   assert.deepEqual(lock.origin, { type: 'path', path: singlePackage });
   assert.match(installed.stdout, /personalización \(\.teleprompter\/paquete-unico\/PERSONALIZE\.md\):/);
 });
+
+test('reinstall restores the declared state of every recorded unit', () => {
+  const dest = destWithPriorWork();
+  // Two units on record: the reference package (its seeded collision
+  // forced through) and a small second one installed next.
+  assert.equal(install(dest, ['--force']).status, 0);
+  const other = path.join(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'teleprompter-pkg-')), 'extra');
+  fs.mkdirSync(other);
+  fs.writeFileSync(path.join(other, 'teleprompter.json'), JSON.stringify({
+    name: 'extra',
+    version: '1.0.0',
+    install: [{ source: 'extra.conf', target: 'extra.conf' }],
+  }));
+  fs.writeFileSync(path.join(other, 'extra.conf'), 'extra=1\n');
+  const second = spawnSync(
+    process.execPath, [bin, 'install', '--path', other, dest], { encoding: 'utf8' },
+  );
+  assert.equal(second.status, 0, second.stderr);
+
+  // One divergence per unit: a hand edit and a deletion.
+  const edited = path.join(dest, '.agents/skills/commit/SKILL.md');
+  fs.writeFileSync(edited, '# tocado a mano\n');
+  fs.rmSync(path.join(dest, 'extra.conf'));
+
+  const reinstalled = spawnSync(
+    process.execPath, [bin, 'reinstall', '--force'], { encoding: 'utf8', cwd: dest },
+  );
+  assert.equal(reinstalled.status, 0, reinstalled.stderr);
+  assert.match(reinstalled.stdout, /plan de instalación de "ciclo-tareas"/);
+  assert.match(reinstalled.stdout, /plan de instalación de "extra":\n  create\s+extra\.conf/);
+  assert.match(reinstalled.stdout, /reinstalado: ciclo-tareas@1\.0\.0/);
+  assert.match(reinstalled.stdout, /reinstalado: extra@1\.0\.0/);
+  assert.equal(
+    fs.readFileSync(edited, 'utf8'),
+    fs.readFileSync(
+      path.join(referencePkg, 'skills/commit/SKILL.md'), 'utf8'),
+  );
+  assert.equal(fs.readFileSync(path.join(dest, 'extra.conf'), 'utf8'), 'extra=1\n');
+  // The displaced local edit was backed up under the managed root —
+  // beside the one the install's forced collision already produced.
+  const backups = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(backups.length, 2);
+  const reinstallBackup = backups.find((d) => fs.existsSync(
+    path.join(
+      dest, '.teleprompter', 'backups', d, '.agents/skills/commit/SKILL.md'),
+  ));
+  assert.match(reinstallBackup, /-ciclo-tareas@1\.0\.0$/);
+  assert.equal(
+    fs.readFileSync(
+      path.join(
+        dest, '.teleprompter', 'backups', reinstallBackup,
+        '.agents/skills/commit/SKILL.md'), 'utf8'),
+    '# tocado a mano\n',
+  );
+
+  // `check` now sees the disk exactly as the registry declares it.
+  const checked = spawnSync(
+    process.execPath, [bin, 'check'], { encoding: 'utf8', cwd: dest },
+  );
+  assert.equal(checked.status, 0, checked.stderr);
+  assert.doesNotMatch(checked.stdout, /modificado|ausente|no verificable/);
+});

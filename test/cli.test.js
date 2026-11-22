@@ -81,7 +81,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
     assert.equal(code, EXIT_OK, argv.join(' '));
     assert.deepEqual(stderr, []);
     const shown = stdout.join('\n');
-    for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'help']) {
+    for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'reinstall', 'help']) {
       assert.match(shown, new RegExp(`^  *${cmd} `, 'm'), cmd);
     }
     for (const opt of ['--path', '--package', '--force', '--skip', '--dry-run', '--ref']) {
@@ -92,7 +92,7 @@ test('help and --help print the general help on stdout and exit 0', async () => 
 });
 
 test('help <comando> prints the synopsis of that command', async () => {
-  for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'help']) {
+  for (const cmd of ['install', 'guide', 'list', 'check', 'outdated', 'update', 'uninstall', 'reinstall', 'help']) {
     const { code, stdout, stderr } = await run(['help', cmd]);
     assert.equal(code, EXIT_OK, cmd);
     assert.deepEqual(stderr, []);
@@ -109,6 +109,7 @@ test('--help beside an invocation prints that command\'s help', async () => {
     [['outdated', '--help'], 'outdated'],
     [['update', '--help'], 'update'],
     [['uninstall', '--help'], 'uninstall'],
+    [['reinstall', '--help'], 'reinstall'],
     [['help', '--help'], 'help'],
     [['o/pkg', '--help'], 'install'],
     [['--path', 'x', '--help'], 'install'],
@@ -3236,4 +3237,672 @@ test('a failed obtain reports in the obtain vocabulary, not as non-reproducible'
   assert.match(shown, /error de obtención: .*o\/privado/);
   assert.doesNotMatch(shown, /no es reproducible/);
   assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+// --- reinstall: la reproducción del conjunto ---
+//
+// `installed` and `installedFromCollection` leave the lock the
+// command walks; each entry's recorded origin is re-obtained through
+// the same io `main` injects — a path origin needs no fetch, a github
+// one is fed the tarball its commit names.
+
+test('reinstall rejects positionals and options it does not declare', async () => {
+  for (const argv of [
+    ['reinstall', 'x'],
+    ['reinstall', '--path', 'p'],
+    ['reinstall', '--ref', 'v1'],
+    ['reinstall', '--package', 'a'],
+    ['reinstall', '--force', '--skip'],
+  ]) {
+    const { code, stderr } = await run(argv);
+    assert.equal(code, EXIT_USAGE, argv.join(' '));
+    assert.match(stderr[0], /uso:/);
+  }
+});
+
+test('reinstall on an empty or corrupt lock announces nothing installed', async () => {
+  const dest = tmp();
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK);
+  assert.deepEqual(stderr, []);
+  assert.deepEqual(stdout, ['no hay paquetes instalados']);
+
+  fs.writeFileSync(path.join(dest, 'teleprompter-lock.json'), '{corrupto');
+  const corrupt = await run(['reinstall'], { cwd: dest });
+  assert.equal(corrupt.code, EXIT_OK);
+  const shown = corrupt.stdout.join('\n');
+  assert.match(shown, /aviso: teleprompter-lock\.json ilegible o corrupto/);
+  assert.match(shown, /no hay paquetes instalados/);
+});
+
+test('a unit already matching the declaration is announced conforme with no plan', async () => {
+  const { dest } = await installed(validManifest('quieta'), { 'a.txt': 'a' });
+  const before = fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8');
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /verificado: quieta@1\.0\.0/);
+  assert.match(shown, /quieta@1\.0\.0 ya está conforme/);
+  assert.doesNotMatch(shown, /plan de instalación/);
+  // A conforming unit is not rewritten: its entry already tells the truth.
+  assert.equal(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'), before);
+});
+
+test('a resource deleted by hand comes back with the declared content', async () => {
+  const { dest } = await installed(validManifest('borrada', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'b.txt', target: 'b.txt' },
+    ],
+  }), { 'a.txt': 'a', 'b.txt': 'b' });
+  fs.rmSync(path.join(dest, 'b.txt'));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown,
+    /plan de instalación de "borrada":\n  identical\s+a\.txt\n  create\s+b\.txt/);
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+  assert.match(shown, /reinstalado: borrada@1\.0\.0/);
+});
+
+test('reinstall --force restores a divergence and backs the local edit up', async () => {
+  const { dest } = await installed(validManifest('diverge'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /conflict\s+a\.txt/);
+  assert.match(shown, /a\.txt → overwrite/);
+  assert.match(shown, /respaldo \(\.teleprompter\/backups\//);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo');
+  const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+  assert.equal(dirs.length, 1);
+  assert.match(dirs[0], /-diverge@1\.0\.0$/);
+  assert.equal(
+    fs.readFileSync(
+      path.join(dest, '.teleprompter', 'backups', dirs[0], 'a.txt'), 'utf8'),
+    'editado',
+  );
+});
+
+test('reinstall --skip keeps a divergence and records the decision', async () => {
+  const { dest } = await installed(validManifest('conserva'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['reinstall', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /a\.txt → skip/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  const kept = lockOf(dest).packages.conserva.files
+    .find((f) => f.target === 'a.txt');
+  assert.equal(kept.action, 'skip');
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+});
+
+test('each divergence is asked once on an interactive console', async () => {
+  const { dest } = await installed(validManifest('pregunta', {
+    install: [
+      { source: 'a.txt', target: 'a.txt' },
+      { source: 'b.txt', target: 'b.txt' },
+    ],
+  }), { 'a.txt': 'viejo', 'b.txt': 'b' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const questions = [];
+  const { code, stderr } = await run(['reinstall'], {
+    cwd: dest,
+    interactive: true,
+    createAsker: () => ({
+      ask: async (q) => { questions.push(q); return true; },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(questions.length, 1);
+  assert.match(questions[0], /colisión en a\.txt: ¿sobrescribir\?/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo');
+});
+
+test('unresolved divergences list their diffs and abort before writing', async () => {
+  const { dest } = await installed(validManifest('duda'), { 'a.txt': 'viejo\n' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'viejo\neditado\n');
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stdout.join('\n'),
+    /plan de instalación de "duda":\n  conflict\s+a\.txt/);
+  const shown = stderr.join('\n');
+  assert.match(shown, /conflicto sin resolver: a\.txt/);
+  assert.match(shown, /--- a\.txt \(destino\)[\s\S]*-editado/);
+  assert.match(shown, /plan no ejecutable/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo\neditado\n');
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+});
+
+// Two units into one destination, in lock order — the set scenarios
+// share this scaffold: `uno` and `dos` each own a file.
+async function installedPair(dest) {
+  for (const name of ['uno', 'dos']) {
+    const pkg = path.join(tmp(), name);
+    writePkg(
+      pkg,
+      validManifest(name, {
+        install: [{ source: `${name}.txt`, target: `${name}.txt` }],
+      }),
+      { [`${name}.txt`]: 'viejo' },
+    );
+    const r = await run(['--path', pkg, dest]);
+    assert.equal(r.code, EXIT_OK, r.stderr.join('\n'));
+  }
+  return dest;
+}
+
+test('every unit plan prints before the first question', async () => {
+  const dest = await installedPair(tmp());
+  fs.writeFileSync(path.join(dest, 'uno.txt'), 'editado uno');
+  fs.writeFileSync(path.join(dest, 'dos.txt'), 'editado dos');
+  const shown = [];
+  const asked = [];
+  const { code, stderr } = await run(['reinstall'], {
+    cwd: dest,
+    interactive: true,
+    out: (m) => shown.push(m),
+    createAsker: () => ({
+      ask: async (q) => { asked.push({ q, seen: shown.join('\n') }); return true; },
+      close: () => {},
+    }),
+  });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(asked.length, 2);
+  assert.match(asked[0].seen, /plan de instalación de "uno":[\s\S]*conflict\s+uno\.txt/);
+  assert.match(asked[0].seen, /plan de instalación de "dos":[\s\S]*conflict\s+dos\.txt/);
+  assert.match(asked[0].q, /uno\.txt/);
+  assert.match(asked[1].q, /dos\.txt/);
+});
+
+test('reinstall --dry-run shows the whole plan and cuts before writing', async () => {
+  const { dest } = await installed(validManifest('ensayo'), { 'a.txt': 'viejo' });
+  fs.rmSync(path.join(dest, 'a.txt'));
+  const lockBefore = fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8');
+  const { code, stdout, stderr } = await run(['reinstall', '--dry-run'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /plan de instalación de "ensayo":\n  create\s+a\.txt/);
+  assert.match(shown, /fin del plan \(--dry-run\): nada se escribió/);
+  assert.equal(fs.existsSync(path.join(dest, 'a.txt')), false);
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter')), false);
+  assert.equal(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'), lockBefore);
+});
+
+test('reinstall --dry-run --force settles the divergence ahead and still writes nothing', async () => {
+  const { dest } = await installed(validManifest('previo'), { 'a.txt': 'viejo' });
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(
+    ['reinstall', '--dry-run', '--force'], { cwd: dest },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /a\.txt → overwrite/);
+  assert.match(shown, /fin del plan \(--dry-run\): nada se escribió/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.equal(fs.existsSync(path.join(dest, '.teleprompter', 'backups')), false);
+});
+
+test('non-reproducible units list each reason and abort before writing', async () => {
+  const { dest } = await installed(validManifest('buena'), { 'a.txt': 'viejo' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages['sin-origen'] = { version: '1.0.0', files: [] };
+  lock.packages['ruta-muerta'] = {
+    version: '1.0.0',
+    files: [],
+    origin: { type: 'path', path: path.join(tmp(), 'desaparecido') },
+  };
+  fs.writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  const shown = stderr.join('\n');
+  assert.match(shown,
+    /la unidad "sin-origen" no es reproducible: la entrada no registra un origen/);
+  assert.match(shown,
+    /la unidad "ruta-muerta" no es reproducible: la ruta registrada ya no existe/);
+  // The obtainable unit was fetched but the set aborted before its
+  // plan: nothing of it was written.
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  assert.doesNotMatch(stdout.join('\n'), /reinstalado|plan de instalación/);
+});
+
+test('an obtainable unit is not written when a remote sibling fails, and its temp is released', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const spy1 = spyFetch(remoteOk(await remotePkg()));
+  const r = await run(['o/mi-paquete', dest], { tmpBase, fetch: spy1.fetch });
+  assert.equal(r.code, EXIT_OK, r.stderr.join('\n'));
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages['sin-origen'] = { version: '9.9.9', files: [] };
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+
+  const spy2 = spyFetch(remoteOk(await remotePkg()));
+  const { code, stderr } = await run(
+    ['reinstall', '--force'], { cwd: dest, tmpBase, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'),
+    /la unidad "sin-origen" no es reproducible/);
+  // mi-paquete was obtained — the tarball for its recorded commit —
+  // and released, but the abort left its drift untouched.
+  assert.deepEqual(spy2.urls, [
+    `https://codeload.github.com/o/mi-paquete/tar.gz/${RESOLVED}`,
+  ]);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+});
+
+test('a github entry without the recorded commit is non-reproducible', async () => {
+  const { dest } = await installed(validManifest('ancla'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.ancla.origin = { type: 'github', repo: 'o/ancla' };
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'),
+    /la unidad "ancla" no es reproducible: el origen no registra el commit/);
+});
+
+test('a recorded repo the grammar cannot parse is non-reproducible', async () => {
+  const { dest } = await installed(validManifest('roto'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.roto.origin = {
+    type: 'github', repo: 'no-es-repo', commit: RESOLVED,
+  };
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'),
+    /la unidad "roto" no es reproducible: el origen registrado no es un repositorio válido: no-es-repo/);
+});
+
+test('an unreachable origin reports an obtain error, not non-reproducible', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const spy1 = spyFetch(remoteOk(
+    await repoTarball('caida', validManifest('caida'), { 'a.txt': 'a' }),
+  ));
+  const r = await run(['o/caida', dest], { tmpBase, fetch: spy1.fetch });
+  assert.equal(r.code, EXIT_OK, r.stderr.join('\n'));
+  const spy2 = spyFetch({ ok: false, status: 503 });
+  const { code, stderr } = await run(
+    ['reinstall'], { cwd: dest, tmpBase, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_FETCH);
+  const shown = stderr.join('\n');
+  assert.match(shown, /error de obtención/);
+  assert.doesNotMatch(shown, /no es reproducible/);
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('the rewritten entry keeps the recorded origin and renews installedAt', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const buf = await remotePkg();
+  const spy1 = spyFetch(remoteOk(buf));
+  const r = await run(['o/mi-paquete@v9', dest], { tmpBase, fetch: spy1.fetch });
+  assert.equal(r.code, EXIT_OK, r.stderr.join('\n'));
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  assert.deepEqual(lock.packages['mi-paquete'].origin, {
+    type: 'github', repo: 'o/mi-paquete', ref: 'v9', commit: RESOLVED,
+  });
+  lock.packages['mi-paquete'].installedAt = '2020-01-01T00:00:00.000Z';
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+
+  const spy2 = spyFetch(remoteOk(buf));
+  const { code, stderr } = await run(
+    ['reinstall', '--force'], { cwd: dest, tmpBase, fetch: spy2.fetch },
+  );
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // The reproduction anchors to the commit: a single tarball call for
+  // the recorded SHA, whatever `ref` the entry keeps.
+  assert.deepEqual(spy2.urls, [
+    `https://codeload.github.com/o/mi-paquete/tar.gz/${RESOLVED}`,
+  ]);
+  const entry = lockOf(dest).packages['mi-paquete'];
+  assert.deepEqual(entry.origin, {
+    type: 'github', repo: 'o/mi-paquete', ref: 'v9', commit: RESOLVED,
+  });
+  assert.notEqual(entry.installedAt, '2020-01-01T00:00:00.000Z');
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  assert.deepEqual(fs.readdirSync(tmpBase), []);
+});
+
+test('a collection member re-resolves through the recorded index name', async () => {
+  const { dest, coll } = await installedFromCollection([
+    { path: 'alfa' },
+    {
+      path: 'beta',
+      manifest: validManifest('beta', {
+        install: [{ source: 'b.txt', target: 'b.txt' }],
+      }),
+      files: { 'b.txt': 'b' },
+    },
+  ]);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /plan de instalación de "alfa"/);
+  assert.match(shown, /beta@1\.0\.0 ya está conforme/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  assert.deepEqual(lockOf(dest).packages.alfa.origin,
+    { type: 'path', path: coll, package: 'alfa' });
+});
+
+test('a member dissolved from its collection is non-reproducible', async () => {
+  const { dest, coll } = await installedFromCollection([{ path: 'alfa' }]);
+  writePkg(coll, {
+    collection: true,
+    name: 'coleccion',
+    packages: [{ path: 'beta' }],
+  });
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  const shown = stderr.join('\n');
+  assert.match(shown,
+    /la unidad "alfa" no es reproducible: la colección no tiene el paquete "alfa"/);
+  assert.match(shown, /disponibles: beta/);
+});
+
+test('an invalid manifest in the set aborts before any unit writes', async () => {
+  const dest = tmp();
+  const pkgA = path.join(tmp(), 'sana');
+  writePkg(pkgA, validManifest('sana'), { 'a.txt': 'a' });
+  const pkgB = path.join(tmp(), 'rota');
+  writePkg(pkgB, validManifest('rota', {
+    install: [{ source: 'b.txt', target: 'b.txt' }],
+  }), { 'b.txt': 'b' });
+  await run(['--path', pkgA, dest]);
+  await run(['--path', pkgB, dest]);
+  // The recorded tree rots after the install; sana drifts and is
+  // verified and planned, but the set aborts before its write.
+  writePkg(pkgB, { name: 42 }, {});
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stdout, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_MANIFEST);
+  assert.match(stderr.join('\n'), /manifiesto inválido/);
+  assert.match(stdout.join('\n'), /verificado: sana@1\.0\.0/);
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+});
+
+test('two invalid manifests are both reported before the abort', async () => {
+  const dest = tmp();
+  for (const name of ['x', 'y']) {
+    const pkg = path.join(tmp(), name);
+    writePkg(pkg, validManifest(name), { 'a.txt': 'a' });
+    await run(['--path', pkg, dest]);
+  }
+  // Break the recorded paths: the manifest an origin publishes is the
+  // one in its directory, so corrupt each where it lives.
+  const lock = lockOf(dest);
+  fs.writeFileSync(
+    path.join(lock.packages.x.origin.path, 'teleprompter.json'),
+    JSON.stringify({ name: 1 }),
+  );
+  fs.writeFileSync(
+    path.join(lock.packages.y.origin.path, 'teleprompter.json'),
+    JSON.stringify({ name: 2 }),
+  );
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_MANIFEST);
+  assert.equal(
+    stderr.join('\n').match(/manifiesto inválido/g).length >= 2, true,
+    stderr.join('\n'),
+  );
+});
+
+test('a failure mid-set reports the applied actions and the pending units', async () => {
+  const dest = tmp();
+  const pkgA = path.join(tmp(), 'cae');
+  writePkg(pkgA, validManifest('cae', {
+    install: [
+      { source: 'g.txt', target: 'g.txt' },
+      { source: 'sub/f.txt', target: 'sub/f.txt' },
+    ],
+  }), { 'g.txt': 'g', 'sub/f.txt': 'f' });
+  const pkgB = path.join(tmp(), 'espera');
+  writePkg(pkgB, validManifest('espera', {
+    install: [{ source: 'b.txt', target: 'b.txt' }],
+  }), { 'b.txt': 'b' });
+  await run(['--path', pkgA, dest]);
+  await run(['--path', pkgB, dest]);
+  fs.writeFileSync(path.join(dest, 'g.txt'), 'editado g');
+  fs.writeFileSync(path.join(dest, 'sub', 'f.txt'), 'editado f');
+  fs.writeFileSync(path.join(dest, 'b.txt'), 'editado b');
+  fs.chmodSync(path.join(dest, 'sub'), 0o555);
+  try {
+    const { code, stdout, stderr } = await run(
+      ['reinstall', '--force'], { cwd: dest },
+    );
+    assert.equal(code, EXIT_EXECUTION);
+    // The applied half is listed: g.txt overwrote with its backup
+    // before sub/f.txt failed.
+    const out = stdout.join('\n');
+    assert.match(out, /overwrite\s+g\.txt/);
+    assert.match(out, /respaldo \(\.teleprompter\/backups\/[\s\S]*g\.txt/);
+    const shown = stderr.join('\n');
+    assert.match(shown, /error de ejecución/);
+    assert.match(shown, /unidades pendientes: espera/);
+    const dirs = fs.readdirSync(path.join(dest, '.teleprompter', 'backups'));
+    assert.equal(dirs.length, 1);
+    assert.match(dirs[0], /-cae@1\.0\.0$/);
+    assert.equal(
+      fs.readFileSync(
+        path.join(dest, '.teleprompter', 'backups', dirs[0], 'g.txt'), 'utf8'),
+      'editado g',
+    );
+    assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'editado b');
+  } finally {
+    fs.chmodSync(path.join(dest, 'sub'), 0o755);
+  }
+});
+
+test('a failure on the last unit reports nothing pending', async () => {
+  const dest = tmp();
+  const pkgA = path.join(tmp(), 'sube');
+  writePkg(pkgA, validManifest('sube'), { 'a.txt': 'viejo' });
+  const pkgB = path.join(tmp(), 'tarda');
+  writePkg(pkgB, validManifest('tarda', {
+    install: [{ source: 'sub/f.txt', target: 'sub/f.txt' }],
+  }), { 'sub/f.txt': 'f' });
+  await run(['--path', pkgA, dest]);
+  await run(['--path', pkgB, dest]);
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  fs.writeFileSync(path.join(dest, 'sub', 'f.txt'), 'editado');
+  fs.chmodSync(path.join(dest, 'sub'), 0o555);
+  try {
+    const { code, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+    assert.equal(code, EXIT_EXECUTION);
+    assert.match(stderr.join('\n'), /error de ejecución/);
+    assert.doesNotMatch(stderr.join('\n'), /unidades pendientes/);
+    // The first unit completed before the failure: its file and its
+    // lock entry are the declared ones.
+    assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'viejo');
+    assert.equal(
+      lockOf(dest).packages.sube.files.find((f) => f.target === 'a.txt').action,
+      'overwrite',
+    );
+  } finally {
+    fs.chmodSync(path.join(dest, 'sub'), 0o755);
+  }
+});
+
+test('a deleted managed guide comes back through the plan', async () => {
+  const { dest } = await installed(
+    validManifest('guion', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'a', 'PERSONALIZE.md': '# guía\n' },
+  );
+  const guide = path.join(dest, '.teleprompter', 'guion', 'PERSONALIZE.md');
+  assert.equal(fs.readFileSync(guide, 'utf8'), '# guía\n');
+  fs.rmSync(guide);
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.equal(fs.readFileSync(guide, 'utf8'), '# guía\n');
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+});
+
+test('a guide dropped from the record still restores like drift', async () => {
+  const { dest } = await installed(
+    validManifest('ficha', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'a', 'PERSONALIZE.md': '# guía\n' },
+  );
+  const guideTarget = '.teleprompter/ficha/PERSONALIZE.md';
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.ficha.files = lock.packages.ficha.files
+    .filter((f) => f.target !== guideTarget);
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  fs.rmSync(path.join(dest, guideTarget));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, guideTarget), 'utf8'), '# guía\n');
+  assert.ok(
+    lockOf(dest).packages.ficha.files.some((f) => f.target === guideTarget),
+  );
+});
+
+test('a dropped personalization field is rewritten, not announced conforme', async () => {
+  const { dest } = await installed(
+    validManifest('campo', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'a', 'PERSONALIZE.md': '# guía\n' },
+  );
+  const guideTarget = '.teleprompter/campo/PERSONALIZE.md';
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  delete lock.packages.campo.personalization;
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // The record no longer names the declared guide: the unit is not
+  // conforming and the rewrite heals the field, disk untouched.
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.equal(lockOf(dest).packages.campo.personalization, guideTarget);
+  assert.equal(fs.readFileSync(path.join(dest, guideTarget), 'utf8'), '# guía\n');
+});
+
+test('an emptied file record is rewritten, not announced conforme', async () => {
+  const { dest } = await installed(validManifest('miente'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.miente.files = [];
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // A conforming entry must record what the plan sees: an empty
+  // record lies even when the disk happens to match.
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.deepEqual(
+    lockOf(dest).packages.miente.files.map((f) => f.target), ['a.txt'],
+  );
+});
+
+test('a recorded file gone from the disk makes the unit not conforming', async () => {
+  const { dest } = await installed(validManifest('fantasma'), { 'a.txt': 'a' });
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.fantasma.files.push(
+    { target: 'fantasma.txt', action: 'create', sha256: '0'.repeat(64) },
+  );
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  // `check` would report the entry missing; the rewrite drops the
+  // stale record instead of blessing it with "conforme".
+  assert.doesNotMatch(stdout.join('\n'), /ya está conforme/);
+  assert.deepEqual(
+    lockOf(dest).packages.fantasma.files.map((f) => f.target), ['a.txt'],
+  );
+});
+
+test('reinstall --skip keeps the divergence but restores the managed guide', async () => {
+  const { dest } = await installed(
+    validManifest('mixta', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'viejo', 'PERSONALIZE.md': '# guía\n' },
+  );
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const guide = path.join(dest, '.teleprompter', 'mixta', 'PERSONALIZE.md');
+  fs.writeFileSync(guide, '# tocada\n');
+  const { code, stderr } = await run(['reinstall', '--skip'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'editado');
+  // The guide is managed territory, not a conflict decision.
+  assert.equal(fs.readFileSync(guide, 'utf8'), '# guía\n');
+});
+
+test('a record whose version the origin no longer publishes is rewritten', async () => {
+  const { dest, pkg } = await installed(validManifest('mudada'), { 'a.txt': 'a' });
+  // The recorded origin still exists but now declares 2.0.0: the
+  // entry's version lies and the rewrite records what was verified.
+  writePkg(pkg, validManifest('mudada', { version: '2.0.0' }), { 'a.txt': 'a' });
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.match(shown, /verificado: mudada@2\.0\.0/);
+  assert.doesNotMatch(shown, /ya está conforme/);
+  assert.equal(lockOf(dest).packages.mudada.version, '2.0.0');
+});
+
+test('a missing precondition directory is plan work, not conforming', async () => {
+  const { dest } = await installed(validManifest('precisa', {
+    requires: { paths: [{ path: 'cfg', create: true }] },
+  }), { 'a.txt': 'a' });
+  assert.ok(fs.statSync(path.join(dest, 'cfg')).isDirectory());
+  fs.rmSync(path.join(dest, 'cfg'), { recursive: true });
+  const { code, stdout, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /mkdir\s+cfg/);
+  assert.ok(fs.statSync(path.join(dest, 'cfg')).isDirectory());
+});
+
+test('an origin publishing a different package aborts as a usage error', async () => {
+  const { dest } = await installed(validManifest('omega'), { 'a.txt': 'a' });
+  // A hand-edited key asks the entry "alfa" for what the origin only
+  // publishes as "omega".
+  const lockPath = path.join(dest, 'teleprompter-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+  lock.packages.alfa = lock.packages.omega;
+  delete lock.packages.omega;
+  fs.writeFileSync(lockPath, JSON.stringify(lock));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest });
+  assert.equal(code, EXIT_USAGE);
+  assert.match(stderr.join('\n'), /el origen publica "omega", no "alfa"/);
+});
+
+test('an escaping managed guide destination aborts the set as non-executable', async () => {
+  const { dest } = await installed(
+    validManifest('fuga-guia', { personalization: 'PERSONALIZE.md' }),
+    { 'a.txt': 'a', 'PERSONALIZE.md': '# g\n' },
+  );
+  const outside = tmp();
+  fs.rmSync(path.join(dest, '.teleprompter'), { recursive: true, force: true });
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'fuga-guia')), false);
+});
+
+test('an escaping backup root aborts the set as non-executable', async () => {
+  const { dest } = await installed(validManifest('fuga'), { 'a.txt': 'viejo' });
+  const outside = tmp();
+  fs.mkdirSync(path.join(dest, '.teleprompter'), { recursive: true });
+  fs.symlinkSync(outside, path.join(dest, '.teleprompter', 'backups'));
+  fs.writeFileSync(path.join(dest, 'a.txt'), 'editado');
+  const { code, stderr } = await run(['reinstall', '--force'], { cwd: dest });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /escapa de la raíz/);
+  assert.equal(fs.existsSync(path.join(outside, 'a.txt')), false);
 });

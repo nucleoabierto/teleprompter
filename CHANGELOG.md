@@ -7,6 +7,10 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+### Added
+
+- `reinstall` reinstala todo lo que el registro declara: reobtiene cada paquete anclado al `commit` que su `origin` registró —el árbol exacto que la instalación consumió, con re-resolución del miembro en colecciones—, muestra el plan del conjunto por unidad antes de decidir, resuelve las divergencias con la política compartida (`--force`/`--skip`, interactiva o listado con aborto) y reescribe cada entrada como una instalación —`origin` intacto, `installedAt` renovado—; una unidad ya conforme se anuncia sin acciones y una no reproducible se diagnostica con su motivo, sin escribir nada hasta que el conjunto entero se muestra ejecutable (docs/epics/010-reproduccion-destino.md).
+
 ## [0.6.0] - 2026-11-06
 
 ### Added

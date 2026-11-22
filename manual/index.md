@@ -27,6 +27,8 @@ colisiones con lo que ya existe y registra la instalación en
   paquete instalado a la versión que publica su origen.
 - [Referencia de `uninstall`](referencia-uninstall.md) — retirar un
   paquete instalado y sus recursos registrados.
+- [Referencia de `reinstall`](referencia-reinstall.md) — reinstalar
+  todo lo que el registro declara, anclado a sus commits.
 - [Referencia de `help`](referencia-help.md) — consultar la ayuda
   del CLI, general o por comando.
 - [Instalar un paquete](001-instalar-un-paquete.md) — la funcionalidad
@@ -44,6 +46,8 @@ colisiones con lo que ya existe y registra la instalación en
   del ciclo de vida y sus comportamientos.
 - [Revisar desactualizados](007-revisar-desactualizados.md) — la
   comparación sin efectos y los estados que informa.
+- [Reinstalar lo registrado](008-reinstalar-lo-registrado.md) — la
+  reproducción del destino desde el registro y sus comportamientos.
 
 ## En el repositorio
 
