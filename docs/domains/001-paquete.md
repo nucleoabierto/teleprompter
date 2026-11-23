@@ -13,10 +13,11 @@ destino— para que una instalación sea inspectable y repetible.
     cuyo `name` coincide con el nombre del directorio.
     - Ancla: `checkName` en `src/manifest.js`; `packages/ciclo-tareas/`
     - Origen: épica `docs/epics/001-formato-paquete.md`
-  - **Manifiesto:** el JSON `teleprompter.json` con `name`, `version`,
-    `install` obligatorios y `format`, `description`, `license`,
-    `author`, `requires`, `personalization`, `metadata`, `collection`
-    opcionales.
+  - **Manifiesto:** el JSON `teleprompter.json` con `name`, `version`
+    obligatorios —`install` solo se exige cuando `dependencies` no
+    declara una lista no vacía— y `format`, `description`, `license`,
+    `author`, `requires`, `dependencies`, `personalization`,
+    `metadata`, `collection` opcionales.
     - Ancla: `TOP_LEVEL_FIELDS` y `VALIDATORS` en `src/manifest.js`;
       contrato en `docs/especificacion-paquete.md`
   - **Colección:** un manifiesto con `collection: true` describe un
@@ -41,6 +42,17 @@ destino— para que una instalación sea inspectable y repetible.
   - **Ruta segura:** ruta relativa sin segmentos `..`, ni absoluta
     POSIX, ni absoluta Windows (`C:\`) ni UNC (`\\`).
     - Ancla: `isSafeRelative` en `src/paths.js`
+  - **Entrada dependencies:** objeto `{ "package", "version"? }` que
+    nombra otra pieza del mismo origen —un miembro del índice por
+    nombre, nunca una ruta— con una restricción opcional del
+    vocabulario acotado (`^`, `~`, exacta, comparadores `>=`/`<=`/`>`/`<`
+    componibles por espacio, `*`); la versión ausente admite cualquiera
+    y la restricción valida la `version` del manifiesto obtenido —es
+    aserción, no selección entre versiones—. La lista puede estar
+    vacía: la pieza que no compone nada es la hoja del grafo.
+    - Ancla: `checkDependencies` en `src/manifest.js`; contrato en
+      `docs/especificacion-paquete.md`; épica
+      `docs/epics/011-dependencias-entre-paquetes.md`
   - **Guía de personalización:** el archivo que `personalization`
     declara —debe existir dentro del paquete y ser un archivo—; su
     contenido es texto libre del mantenedor dirigido a un agente,
@@ -59,7 +71,9 @@ destino— para que una instalación sea inspectable y repetible.
   - `name` es kebab-case, ≤64 caracteres, e igual al directorio que lo
     contiene. Ancla: `NAME_RE` en `src/manifest.js`
   - `install` es una lista no vacía de entradas bien formadas cuyo
-    `source` existe. Ancla: `checkInstall` en `src/manifest.js`
+    `source` existe —o `dependencies` declara una lista no vacía en su
+    lugar, para el paquete de composición pura—. Ancla: `checkInstall`
+    en `src/manifest.js`
   - `format`, si está presente, vale `teleprompter-package@1`.
     Ancla: `KNOWN_FORMAT` en `src/manifest.js`
   - Ningún `target` es `teleprompter-lock.json` ni cae dentro de
@@ -93,6 +107,6 @@ destino— para que una instalación sea inspectable y repetible.
 
 ## Estado de salud
 
-- Última revisión: 2026-11-03 (tarea
-  `docs/tasks/060-sondeo-version-publicada.md`)
+- Última revisión: 2026-11-23 (tarea
+  `docs/tasks/065-dependencias-mismo-origen.md`)
 - Divergencias conocidas: Ninguna

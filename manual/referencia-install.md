@@ -59,9 +59,39 @@ paquetes instalar con `--package <nombre>`, repetible para varios.
 Cada paquete seleccionado se instala como una unidad independiente:
 su propio plan, su resolución de colisiones, su guía y su entrada
 en el registro. Las unidades se ejecutan secuencialmente en el
-orden de los flags y cada una es atómica —un fallo en la unidad N
-deja instaladas las N-1 anteriores—; `--force`, `--skip` y
-`--dry-run` aplican a todas.
+orden de dependencia; `--force`, `--skip` y `--dry-run` aplican a
+todas. Un fallo a mitad de ejecución deja instaladas las unidades
+anteriores, pero un manifiesto inválido o un conjunto irresoluble
+abortan antes de escribir nada.
+
+## Dependencias entre paquetes
+
+Un manifiesto puede declarar `dependencies`: las piezas del mismo
+origen que lo completan, con una restricción de versión opcional del
+vocabulario acotado —véase la
+[especificación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/especificacion-paquete.md)—.
+Un paquete puede existir solo para componer: con `dependencies` no
+vacía, `install` deja de ser obligatorio.
+
+La resolución ocurre tras la selección —y tras validar el manifiesto
+de cada unidad seleccionada— y antes de la verificación, el plan y
+cualquier escritura de cada unidad: el conjunto declarado se expande
+transitivamente por el
+índice del origen —mismo árbol, mismo commit—, se ordena de modo que
+cada dependencia se instale antes que su dependiente y cada pieza
+resuelta se instala una sola vez. `--package` conserva su semántica:
+solo entra al conjunto lo que los miembros seleccionados declaran.
+
+La restricción de una entrada es una aserción sobre la `version` que
+el manifiesto de la pieza declara; cuando varias piezas exigen
+restricciones sobre la misma, la obtenida debe satisfacerlas todas.
+Estos fallos abortan el conjunto con código `2` sin escribir —ni
+recursos, ni registro, ni respaldos—:
+
+- una dependencia circular —el diagnóstico muestra la ruta del bucle
+  `a → b → a`; depender de sí mismo es un ciclo de longitud uno—,
+- una pieza que no existe en el origen o cuyo manifiesto no carga,
+- una restricción que la versión obtenida no satisface.
 
 ## Fases
 
@@ -211,7 +241,7 @@ repositorio destino.
 |--------|-----------------------------------------------------------------|
 | `0`    | Éxito                                                           |
 | `1`    | Manifiesto inválido                                             |
-| `2`    | Plan no ejecutable: precondiciones incumplidas o colisiones     |
+| `2`    | Plan no ejecutable: precondiciones incumplidas, colisiones o conjunto de dependencias irresoluble |
 | `3`    | Error de ejecución (informa de lo ya aplicado antes de fallar)  |
 | `4`    | Error de invocación: argumentos ausentes o rutas que no existen |
 | `5`    | Error de obtención: repositorio inaccesible o tiempo agotado, no encontrado (404), error de servidor (5xx), acceso denegado (401/403), descarga que excede el tamaño máximo o archivo corrupto |

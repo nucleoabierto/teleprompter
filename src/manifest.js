@@ -12,11 +12,15 @@ export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // the manifest contract below is stricter and rejects leading zeros.
 export const SEMVER_SHAPE = /^(\d+)\.(\d+)\.(\d+)$/;
 const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+// One atom of the bounded range vocabulary the format declares:
+// `*`, an exact `x.y.z`, or `x.y.z` under one comparator of the
+// bounded set. Composed ranges are atoms separated by spaces.
+const RANGE_ATOM = /^(?:\*|(?:\^|~|>=|<=|>|<)?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$/;
 
 const TOP_LEVEL_FIELDS = new Set([
   'format', 'name', 'version', 'description', 'license', 'author',
-  'collection', 'packages', 'install', 'requires', 'personalization',
-  'metadata',
+  'collection', 'packages', 'install', 'requires', 'dependencies',
+  'personalization', 'metadata',
 ]);
 
 const OBJECT_KEYS = {
@@ -25,9 +29,19 @@ const OBJECT_KEYS = {
   requiresPath: new Set(['path', 'create']),
   installEntry: new Set(['source', 'target']),
   packagesEntry: new Set(['path']),
+  dependenciesEntry: new Set(['package', 'version']),
 };
 
 const isNonEmptyString = (v) => typeof v === 'string' && v.length > 0;
+
+// A dependency restriction is well-formed when every
+// whitespace-separated atom belongs to the bounded vocabulary —
+// `^`, `~`, an exact `x.y.z`, a comparator or `*` —. The semver
+// library would accept more (partials, `||`, hyphen ranges,
+// prereleases): what the format declares is narrower, so the
+// check is lexical, not delegated.
+const isValidRange = (value) => isNonEmptyString(value)
+  && value.trim().split(/\s+/).every((atom) => RANGE_ATOM.test(atom));
 
 function checkKeys(obj, allowed, where, errors) {
   for (const key of Object.keys(obj)) {
@@ -77,6 +91,21 @@ function checkRequiresEntry(entry, index, errors) {
   }
   if (entry.create !== undefined && typeof entry.create !== 'boolean') {
     errors.push(`${where}.create: debe ser booleano`);
+  }
+}
+
+function checkDependencyEntry(entry, index, errors) {
+  const where = `dependencies[${index}]`;
+  if (!isPlainObject(entry)) {
+    errors.push(`${where}: debe ser un objeto { "package", "version"? }`);
+    return;
+  }
+  checkKeys(entry, OBJECT_KEYS.dependenciesEntry, where, errors);
+  if (!isNonEmptyString(entry.package) || !NAME_RE.test(entry.package)) {
+    errors.push(`${where}.package: debe ser un nombre kebab-case`);
+  }
+  if (entry.version !== undefined && !isValidRange(entry.version)) {
+    errors.push(`${where}.version: restricción inválida "${entry.version}"`);
   }
 }
 
@@ -152,6 +181,15 @@ const VALIDATORS = [
     }
   },
   function checkInstall(manifest, { pkgDir }, errors) {
+    // A package of pure composition declares dependencies instead
+    // of resources: `install` is required only while the package
+    // composes nothing.
+    if (manifest.install === undefined) {
+      if (!Array.isArray(manifest.dependencies) || manifest.dependencies.length === 0) {
+        errors.push('install: obligatorio, lista no vacía de { "source", "target" }');
+      }
+      return;
+    }
     if (!Array.isArray(manifest.install) || manifest.install.length === 0) {
       errors.push('install: obligatorio, lista no vacía de { "source", "target" }');
       return;
@@ -192,6 +230,14 @@ const VALIDATORS = [
       return;
     }
     manifest.requires.paths.forEach((entry, index) => checkRequiresEntry(entry, index, errors));
+  },
+  function checkDependencies(manifest, _ctx, errors) {
+    if (manifest.dependencies === undefined) return;
+    if (!Array.isArray(manifest.dependencies)) {
+      errors.push('dependencies: debe ser una lista');
+      return;
+    }
+    manifest.dependencies.forEach((entry, index) => checkDependencyEntry(entry, index, errors));
   },
   checkAuthor,
   function checkPersonalization(manifest, { pkgDir }, errors) {

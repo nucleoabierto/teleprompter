@@ -1,8 +1,8 @@
 import path from 'node:path';
+import semver from 'semver';
 import { hashPath } from './hash.js';
 import { classifyResource, uncoveredUnits } from './drift.js';
 import { isWritten, lockEntry } from './lock.js';
-import { SEMVER_SHAPE } from './manifest.js';
 import {
   canonTarget, hasEntry, isWithin, personalizationTarget, resolvesUnder,
 } from './paths.js';
@@ -31,7 +31,7 @@ export function buildPlan(pkgDir, manifest, destDir, creates, lock) {
       recorded.get(path.normalize(target)) === destHash ? 'managed-update' : undefined
     ),
   };
-  const resources = manifest.install.map((entry) => classifyIncoming(ctx, entry));
+  const resources = (manifest.install ?? []).map((entry) => classifyIncoming(ctx, entry));
   return {
     upToDate: false,
     mkdirs: creates,
@@ -89,7 +89,7 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
   const recordedFiles = record?.files ?? [];
   const recorded = new Map(recordedFiles.map((f) => [canonTarget(f.target), f.sha256]));
   const recordedByTarget = new Map(recordedFiles.map((f) => [canonTarget(f.target), f]));
-  const shipped = new Set(manifest.install.map(({ target }) => canonTarget(target)));
+  const shipped = new Set((manifest.install ?? []).map(({ target }) => canonTarget(target)));
   const updatesAllowed = semverAtLeast(manifest.version, record?.version);
   // The recorded hash of an incoming target is its own entry's when
   // it has one; inside an intact recorded tree the current hash
@@ -122,7 +122,7 @@ export function buildUpdatePlan(pkgDir, manifest, destDir, creates, lock) {
       return destHash === recHash && pkgHash !== recHash ? 'update' : undefined;
     },
   };
-  const resources = manifest.install.map((entry) => classifyIncoming(ctx, entry));
+  const resources = (manifest.install ?? []).map((entry) => classifyIncoming(ctx, entry));
   const { retired, removalConflicts } = plannedRemovals(
     destDir, manifest, record, shipped, recordedFiles, recordedByTarget,
   );
@@ -295,14 +295,14 @@ export function needsBackup(plan) {
 
 // Downgrades are not managed updates: writing older content over a
 // newer recorded install must surface as a conflict, not silently
-// pass as safe.
+// pass as safe. The comparison runs on the semver library, which
+// throws on input it cannot parse — the registry and the manifest
+// are untrusted data, so an unparseable version is «not at least»
+// rather than a crash.
 export function semverAtLeast(version, recordedVersion) {
-  const parse = (v) => SEMVER_SHAPE.exec(v ?? '')?.slice(1).map(Number);
-  const a = parse(version);
-  const b = parse(recordedVersion);
-  if (!a || !b) return false;
-  for (let i = 0; i < 3; i++) {
-    if (a[i] !== b[i]) return a[i] > b[i];
+  try {
+    return semver.gte(version, recordedVersion);
+  } catch {
+    return false;
   }
-  return true;
 }

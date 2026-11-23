@@ -32,7 +32,7 @@ colección (`true`, véase «Colecciones»). Primero el contrato de paquete.
 |---|---|---|
 | `name` | string | Identificador del paquete: minúsculas, números y guiones, máx. 64 caracteres, sin guiones al inicio ni al final. Debe coincidir con el nombre del directorio del paquete. |
 | `version` | string | Versión semver explícita `x.y.z`. La autoridad de la versión es el manifiesto, no el VCS. |
-| `install` | array | Lista no vacía de entradas `{ "source", "target" }`. Véase abajo. Un paquete sin `install` o con la lista vacía es inválido. |
+| `install` | array | Lista no vacía de entradas `{ "source", "target" }`. Véase abajo. Obligatorio salvo que el paquete declare `dependencies` no vacía —un paquete de composición pura no instala recursos propios—. |
 
 Cada entrada de `install` declara una copia:
 
@@ -59,6 +59,7 @@ dentro de `.teleprompter/`: son espacios reservados a la herramienta.
 | `license` | string | Identificador SPDX (`"MIT"`, `"Apache-2.0"`) o referencia a un archivo de licencia. |
 | `author` | object | `{ "name": "...", "email": "...", "url": "..." }`. Solo `name` es obligatorio dentro del objeto. |
 | `requires` | object | Precondiciones del repositorio destino, verificables antes de instalar. De momento solo la clave `paths`. |
+| `dependencies` | array | Lista —posiblemente vacía— de piezas que completan al paquete, entradas `{ "package", "version"? }`. Véase abajo. |
 | `personalization` | string | Ruta dentro del paquete al archivo con las instrucciones de personalización. El archivo debe existir; su contenido es texto libre del mantenedor dirigido a un agente y nunca se valida ni se ejecuta. El instalador lo copia a `.teleprompter/<paquete>/<archivo>` en el destino, entrega su contenido tal cual al final de la instalación y recuerda su ubicación en `teleprompter-lock.json` —consultable después con `teleprompter guide`. |
 | `metadata` | object | Mapa libre clave→valor para datos del autor que el instalador no interpreta. |
 
@@ -71,6 +72,28 @@ ni `..`, ni puede caer dentro de `.teleprompter/`):
 - Si la ruta no existe y `create` es `true`, el instalador la crea
   antes de instalar.
 
+`dependencies` declara las piezas que completan al paquete —una lista
+que puede estar vacía: la pieza que no compone nada es la hoja del
+grafo—. Cada entrada es un objeto:
+
+- `package` — el nombre de otra pieza del **mismo origen**: un miembro
+  del índice de la colección, nombrado como en una selección
+  `--package`, nunca una ruta.
+- `version` — opcional; una restricción del vocabulario acotado:
+  `^x.y.z`, `~x.y.z`, `x.y.z` exacta, comparadores `>=`, `<=`, `>`, `<`
+  —componibles por espacio— o `*`. Su ausencia equivale a cualquier
+  versión. La restricción es una aserción: valida la `version` que el
+  manifiesto de la pieza obtenida declara; no selecciona entre
+  versiones.
+
+Instalar un paquete instala también su conjunto declarado, resuelto
+transitivamente dentro del árbol obtenido: las piezas se ordenan de
+modo que cada dependencia se instale antes que su dependiente, las
+restricciones que varias piezas exigen sobre la misma pieza deben
+satisfacerse todas y un ciclo —incluida la dependencia sobre sí
+mismo—, una pieza inexistente o una versión insatisfecha abortan la
+operación antes de escribir nada.
+
 ### Campos desconocidos
 
 Política mixta:
@@ -79,8 +102,8 @@ Política mixta:
   campo desconocido se ignora y el validador emite un aviso.
 - **Dentro de un objeto conocido** (`author`, `requires`, una entrada
   de `requires.paths`, una entrada de `install`, una entrada de
-  `packages` en una colección): el campo desconocido es un error y el
-  manifiesto no es válido.
+  `dependencies`, una entrada de `packages` en una colección): el
+  campo desconocido es un error y el manifiesto no es válido.
 
 ## Colecciones
 
@@ -107,7 +130,8 @@ nombre de ningún directorio— más:
 La entrada solo declara la ruta: el `name` y la `version` de cada
 paquete se leen de su propio `teleprompter.json`, nunca del índice.
 Los campos propios de paquete (`version`, `install`, `requires`,
-`personalization`) en un manifiesto de colección son un error.
+`dependencies`, `personalization`) en un manifiesto de colección son
+un error.
 
 ## Ejemplo completo
 
@@ -160,9 +184,10 @@ Su manifiesto:
    válido.
 2. `name` en kebab-case, igual al nombre del directorio.
 3. `version` semver `x.y.z`.
-4. `install` no vacío; cada entrada tiene solo `source` y `target`;
-   cada `source` existe dentro del paquete; ninguna ruta es absoluta ni
-   contiene `..`.
+4. `install` no vacío —o `dependencies` no vacía en su lugar, para un
+   paquete de composición pura—; cada entrada tiene solo `source` y
+   `target`; cada `source` existe dentro del paquete; ninguna ruta es
+   absoluta ni contiene `..`.
 5. `source` y `personalization` apuntan dentro del paquete —
    `personalization` a un archivo existente cuyo enlace no resuelve
    fuera del paquete—; `target` y `requires.paths[].path` son relativos

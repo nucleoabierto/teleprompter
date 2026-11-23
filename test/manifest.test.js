@@ -247,3 +247,83 @@ test('loadCollectionManifest warns on unknown fields but keeps the manifest', ()
   assert.equal(manifest.collection, true);
   assert.ok(warnings.some((w) => /raro/.test(w)));
 });
+
+// --- dependencies ---
+
+test('a manifest with well-formed dependencies validates', () => {
+  const errors = errorsOf('p', base('p', {
+    dependencies: [
+      { package: 'alfa' },
+      { package: 'beta', version: '^1.2.3' },
+      { package: 'gamma', version: '>=1.0.0 <2.0.0' },
+      { package: 'delta', version: '*' },
+      { package: 'epsilon', version: '~0.4.0' },
+      { package: 'zeta', version: '1.2.3' },
+    ],
+  }));
+  assert.deepEqual(errors, []);
+});
+
+test('dependencies may be an empty list: the leaf declares nothing', () => {
+  assert.deepEqual(errorsOf('p', base('p', { dependencies: [] })), []);
+});
+
+test('dependencies must be a list', () => {
+  for (const value of ['alfa', 3, {}, null]) {
+    const errors = errorsOf('p', base('p', { dependencies: value }));
+    assert.ok(errors.some((e) => /dependencies: debe ser una lista/.test(e)), JSON.stringify(value));
+  }
+});
+
+test('a dependency entry must be an object naming a member', () => {
+  const cases = ['alfa', [{ version: '^1.0.0' }], [{ package: '' }], [{ package: 'Mayus' }]];
+  for (const deps of cases) {
+    const errors = errorsOf('p', base('p', {
+      dependencies: Array.isArray(deps) ? deps : [deps],
+    }));
+    assert.ok(errors.length > 0, JSON.stringify(deps));
+  }
+  assert.ok(errorsOf('p', base('p', { dependencies: ['alfa'] }))
+    .some((e) => /debe ser un objeto/.test(e)));
+  assert.ok(errorsOf('p', base('p', { dependencies: [{ version: '^1.0.0' }] }))
+    .some((e) => /package/.test(e)));
+  assert.ok(errorsOf('p', base('p', { dependencies: [{ package: 'Mayus' }] }))
+    .some((e) => /kebab-case/.test(e)));
+});
+
+test('a dependency entry rejects unknown fields', () => {
+  const errors = errorsOf('p', base('p', {
+    dependencies: [{ package: 'alfa', origin: 'o/r' }],
+  }));
+  assert.ok(errors.some((e) => /campo desconocido "origin"/.test(e)));
+});
+
+test('a dependency version outside the declared vocabulary is invalid', () => {
+  for (const version of ['cualquier', '1.2', '1.2.x', '1.2.3-4', '^1.2 || ^2.0', '1.0.0 - 2.0.0', '>= 1.0.0', 3]) {
+    const errors = errorsOf('p', base('p', {
+      dependencies: [{ package: 'alfa', version }],
+    }));
+    assert.ok(errors.some((e) => /version: restricción inválida/.test(e)), JSON.stringify(version));
+  }
+});
+
+test('install stays required without a non-empty dependencies list', () => {
+  const manifest = base('p');
+  delete manifest.install;
+  assert.ok(errorsOf('p', manifest).some((e) => /install: obligatorio/.test(e)));
+  assert.ok(errorsOf('p', { ...manifest, dependencies: [] })
+    .some((e) => /install: obligatorio/.test(e)));
+});
+
+test('a package of pure composition needs no install', () => {
+  const manifest = base('p', { dependencies: [{ package: 'alfa' }] });
+  delete manifest.install;
+  assert.deepEqual(errorsOf('p', manifest), []);
+  manifest.install = [];
+  assert.ok(errorsOf('p', manifest).some((e) => /install: obligatorio/.test(e)));
+});
+
+test('loadCollectionManifest rejects dependencies as a package field', () => {
+  const { errors } = collErrors({ ...baseCollection, dependencies: [] });
+  assert.ok(errors.some((e) => /dependencies: campo de paquete/.test(e)));
+});

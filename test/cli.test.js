@@ -396,7 +396,7 @@ test('an index path that does not exist errors when selected', async () => {
   assert.deepEqual(fs.readdirSync(dest), []);
 });
 
-test('a failure on the Nth unit leaves the previous ones installed', async () => {
+test('a selected unit with an invalid manifest aborts the set without writing', async () => {
   const dest = tmp();
   const coll = path.join(tmp(), 'coleccion');
   writeCollection(coll, [
@@ -405,10 +405,7 @@ test('a failure on the Nth unit leaves the previous ones installed', async () =>
   ]);
   const { code } = await run(['--path', coll, dest, '--package', 'alfa', '--package', 'beta']);
   assert.equal(code, EXIT_MANIFEST);
-  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
-  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
-  assert.equal(lock.packages.alfa.version, '1.0.0');
-  assert.equal(lock.packages.beta, undefined);
+  assert.deepEqual(fs.readdirSync(dest), []);
 });
 
 test('--dry-run with several --package prints every plan and writes nothing', async () => {
@@ -3905,4 +3902,123 @@ test('an escaping backup root aborts the set as non-executable', async () => {
   assert.equal(code, EXIT_PLAN);
   assert.match(stderr.join('\n'), /escapa de la raíz/);
   assert.equal(fs.existsSync(path.join(outside, 'a.txt')), false);
+});
+
+// --- dependencias del mismo origen ---
+
+const metaManifest = (name, deps, extra = {}) => ({
+  name, version: '1.0.0', dependencies: deps, ...extra,
+});
+
+test('install pulls the declared set in dependency order, one entry each', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'app', manifest: validManifest('app', { dependencies: [{ package: 'lib' }] }) },
+    { path: 'lib', manifest: validManifest('lib', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+    { path: 'ajena' },
+  ]);
+  const { code, stdout, stderr } = await run(['--path', coll, dest, '--package', 'app']);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.ok(shown.indexOf('instalado: lib') < shown.indexOf('instalado: app'), shown);
+  assert.equal(fs.readFileSync(path.join(dest, 'b.txt'), 'utf8'), 'b');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.app.origin.package, 'app');
+  assert.equal(lock.packages.lib.origin.package, 'lib');
+  assert.equal(lock.packages.ajena, undefined);
+});
+
+test('a pure-composition package installs its set and registers as an install', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'suite', manifest: metaManifest('suite', [{ package: 'alfa' }]) },
+    { path: 'alfa' },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'suite']);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.suite.files, []);
+  assert.equal(lock.packages.suite.origin.package, 'suite');
+  assert.equal(lock.packages.alfa.origin.package, 'alfa');
+});
+
+test('an unsatisfied restriction aborts the set before writing', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'a', manifest: validManifest('a', { dependencies: [{ package: 'b', version: '^2.0.0' }] }) },
+    { path: 'b', manifest: validManifest('b', { version: '1.4.0' }) },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'a']);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /"b"@1\.4\.0 no satisface "\^2\.0\.0"/);
+  assert.match(stderr.join('\n'), /conjunto no instalable/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a dependency cycle aborts the set with the legible loop', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'a', manifest: validManifest('a', { dependencies: [{ package: 'b' }] }) },
+    { path: 'b', manifest: validManifest('b', { dependencies: [{ package: 'a' }] }) },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'a']);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /dependencia circular: a → b → a/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a dependency on a missing member aborts the set', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'a', manifest: validManifest('a', { dependencies: [{ package: 'fantasma' }] }) },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'a']);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /"fantasma".*no existe en el origen/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('--package resolves only the declared set of the selected members', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    { path: 'a', manifest: validManifest('a', { dependencies: [{ package: 'b' }] }) },
+    { path: 'b', manifest: validManifest('b', { install: [{ source: 'b.txt', target: 'b.txt' }] }), files: { 'b.txt': 'b' } },
+    { path: 'c' },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'a']);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(Object.keys(lock.packages).sort(), ['a', 'b']);
+});
+
+test('a standalone package declares dependencies it cannot reach', async () => {
+  const dest = tmp();
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', { dependencies: [{ package: 'b' }] }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /"b".*no existe en el origen/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a package that becomes a metapackage retires its resources on update', async () => {
+  const dest = tmp();
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [{ path: 'alfa' }, { path: 'beta' }]);
+  const installed = await run(['--path', coll, dest, '--package', 'alfa']);
+  assert.equal(installed.code, EXIT_OK, installed.stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'a.txt'), 'utf8'), 'a');
+  writePkg(path.join(coll, 'alfa'), metaManifest('alfa', [{ package: 'beta' }], { version: '2.0.0' }));
+  const { code, stderr } = await run(['update', 'alfa'], { cwd: dest });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.existsSync(path.join(dest, 'a.txt')), false);
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.alfa.version, '2.0.0');
 });

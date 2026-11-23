@@ -53,6 +53,13 @@ el [dominio de instalación](https://github.com/nucleoabierto/teleprompter/blob/
 - **`--dry-run` muestra el plan y termina sin escribir ni registrar.**
 - **`--dry-run` no entrega la guía.**
 - **Un manifiesto inválido aborta sin tocar el destino.**
+- **Un paquete puede declarar `dependencies`:** instalarlo trae las
+  piezas del mismo origen que lo completan, resueltas transitivamente
+  y ordenadas —cada dependencia antes que su dependiente—; un paquete
+  de composición pura no necesita `install`.
+- **El conjunto declarado se resuelve antes de escribir:** un ciclo,
+  una pieza inexistente o una versión que no satisface la restricción
+  declarada abortan todo sin escribir nada.
 - **Una precondición incumplida aborta sin escribir;** con
   `create: true` la ruta se crea como parte del plan.
 - **Los argumentos ausentes, de más o las rutas que no son
