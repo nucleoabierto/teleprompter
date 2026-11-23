@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -435,5 +435,5 @@ con la biblioteca `semver`, que sustituye al comparador propio.
   `semverAtLeast` sobre la biblioteca ensancha lo parseable en
   datos del lock no confiables sin efecto en lo que la herramienta
   escribe.
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-11-23 — Aprueba (PR #29)
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
