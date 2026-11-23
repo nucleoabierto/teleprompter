@@ -246,3 +246,36 @@ test('reinstall restores the declared state of every recorded unit', () => {
   assert.equal(checked.status, 0, checked.stderr);
   assert.doesNotMatch(checked.stdout, /modificado|ausente|no verificable/);
 });
+
+test('a metapackage installs its whole declared set through the real binary', () => {
+  const dest = destWithPriorWork();
+  const coll = fs.mkdtempSync(path.join(os.tmpdir(), 'teleprompter-coll-'));
+  const writePkg = (dir, manifest, files = {}) => {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'teleprompter.json'), JSON.stringify(manifest));
+    for (const [name, content] of Object.entries(files)) {
+      fs.writeFileSync(path.join(dir, name), content);
+    }
+  };
+  writePkg(coll, {
+    collection: true, name: 'suite', packages: [{ path: 'suite' }, { path: 'pieza' }],
+  });
+  writePkg(path.join(coll, 'suite'), {
+    name: 'suite', version: '1.0.0', dependencies: [{ package: 'pieza' }],
+  });
+  writePkg(path.join(coll, 'pieza'), {
+    name: 'pieza', version: '1.0.0',
+    install: [{ source: 'pieza.conf', target: 'pieza.conf' }],
+  }, { 'pieza.conf': 'pieza=1\n' });
+
+  const result = spawnSync(
+    process.execPath, [bin, 'install', '--path', coll, '--package', 'suite', dest],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.indexOf('instalado: pieza') < result.stdout.indexOf('instalado: suite'));
+  assert.equal(fs.readFileSync(path.join(dest, 'pieza.conf'), 'utf8'), 'pieza=1\n');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.suite.files, []);
+  assert.equal(lock.packages.pieza.origin.package, 'pieza');
+});

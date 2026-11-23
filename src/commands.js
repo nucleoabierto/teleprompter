@@ -15,8 +15,9 @@ import {
 } from './paths.js';
 import { fetchRepoTree, specLabel } from './fetch.js';
 import { originOf, sourceOf, reproductionSourceOf } from './origin.js';
-import { loadCollectionManifest, NAME_RE, SEMVER_SHAPE } from './manifest.js';
+import { loadCollectionManifest, loadManifest, NAME_RE, SEMVER_SHAPE } from './manifest.js';
 import { isCollectionDir, resolveSelection, describeIndex } from './collection.js';
+import { resolveSet } from './dependencies.js';
 import {
   printPlan, printGuide, reportBackup, reportWarnings,
   reportExecutionFailure,
@@ -553,7 +554,29 @@ export async function runInstall(io, out, err, { source, dest, flags, packages }
   try {
     const selected = selectUnits(out, err, pkgDir, packages);
     if (selected.units === undefined) return selected.code;
+    // A selected unit with an invalid manifest fails as a manifest
+    // problem, not as an unresolvable piece of the set — the same
+    // verdict the single-package flow always gave.
     for (const unit of selected.units) {
+      const { errors, warnings } = loadManifest(unit.dir);
+      if (errors.length === 0) continue;
+      reportWarnings(out, warnings);
+      for (const error of errors) err(`manifiesto inválido: ${error}`);
+      return EXIT_MANIFEST;
+    }
+    // The declared set resolves before anything else happens: a
+    // cycle, a missing piece or an unsatisfied restriction aborts
+    // without writing, before any unit is verified or planned
+    // (D005). The surviving units install in dependency order —
+    // each an ordinary install whose `origin.package` the lock
+    // already knows how to keep.
+    const resolved = resolveSet(pkgDir, selected.units);
+    if (!resolved.ok) {
+      for (const error of resolved.errors) err(error);
+      err('conjunto no instalable');
+      return EXIT_PLAN;
+    }
+    for (const unit of resolved.units) {
       const code = await installUnit(io, out, err, { source, unit, destDir, flags, commit });
       if (code !== EXIT_OK) return code;
     }

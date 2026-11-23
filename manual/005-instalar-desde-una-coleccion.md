@@ -44,8 +44,13 @@ paquete](https://github.com/nucleoabierto/teleprompter/tree/master/examples/paqu
 - **Un nombre ausente del índice aborta listando los disponibles.**
 - **`--package` sobre un origen que no es colección es un error de
   invocación.**
-- **Un fallo en un paquete de la selección deja instalados los
-  anteriores.**
+- **Un paquete seleccionado instala también las piezas que declara:**
+  `dependencies` se resuelve dentro del mismo origen —la colección ya
+  obtenida— en orden de dependencia; cada pieza entra al registro como
+  una instalación propia.
+- **Un ciclo, una pieza inexistente o una versión insatisfecha
+  abortan todo sin escribir.**
+- **Un fallo a mitad de ejecución deja instalados los anteriores.**
 - **`update` re-resuelve el mismo paquete a través del índice.**
 - **Un paquete retirado del índice aborta con «ya no está en la
   colección».**

@@ -30,6 +30,18 @@ instalado.
     - Ancla: `selectUnits`, `resolveMembers` e `installUnit` en
       `src/commands.js`, `resolveSelection` en `src/collection.js`;
       D019
+  - **Conjunto resuelto:** las unidades que una instalación va a
+    ejecutar —las seleccionadas más la clausura transitiva de sus
+    `dependencies`, todo dentro del árbol obtenido— ordenadas de
+    modo que cada dependencia precede a su dependiente. La
+    identidad del grafo es el nombre de la pieza: entradas
+    repetidas se deduplican y las restricciones sobre la misma
+    pieza se acumulan —la versión obtenida debe satisfacerlas
+    todas—. Un ciclo —la autodependencia es uno de longitud uno—,
+    una pieza inexistente o de manifiesto que no carga, o una
+    restricción insatisfecha hacen el conjunto irresoluble.
+    - Ancla: `resolveSet` en `src/dependencies.js`; épica
+      `docs/epics/011-dependencias-entre-paquetes.md`
   - **Commit resuelto:** el SHA exacto al que la referencia pedida
     apuntaba en el momento de la obtención —la rama por defecto
     cuando no hubo referencia—. Un SHA completo se toma por
@@ -117,8 +129,13 @@ instalado.
 - **Invariantes:**
   - El plan completo se calcula antes de escribir; un plan no
     ejecutable aborta sin escribir nada —ni recursos ni registro
-    (D005). Ancla: `runInstall`/`runUpdate` y las fases
-    `settleConflicts`/`checkGuideDestination` en `src/commands.js`
+    (D005). La regla opera sobre el conjunto: la resolución de
+    dependencias y la verificación de manifiestos preceden a
+    cualquier escritura —un conjunto irresoluble o un manifiesto
+    inválido en la selección abortan sin instalar unidad alguna—.
+    Ancla: `runInstall`/`runUpdate` y las fases
+    `settleConflicts`/`checkGuideDestination` en `src/commands.js`;
+    `resolveSet` en `src/dependencies.js`
   - «Existe» significa «hay una entrada en el directorio», sin seguir
     enlaces: un enlace colgado ocupa su ruta.
     Ancla: `hasEntry` en `src/paths.js`
@@ -150,10 +167,13 @@ instalado.
   - `teleprompter [install] <user/repo[@ref]> [destino]` o
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
     paquete (tarball público de GitHub anclado al commit resuelto o
-    directorio local), verifica,
-    planea, resuelve, ejecuta y registra; el destino por defecto es el
-    directorio de trabajo.
-    - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`
+    directorio local), selecciona las unidades, resuelve su conjunto
+    de dependencias dentro del árbol —dependencia antes que
+    dependiente—, verifica,
+    planea, resuelve, ejecuta y registra cada unidad en ese orden; el
+    destino por defecto es el directorio de trabajo.
+    - Ancla: `bin/teleprompter.js` → `main` en `src/cli.js`;
+      `resolveSet` en `src/dependencies.js`
   - Ejecutar el plan resuelto: `mkdirs` primero, luego cada recurso
     según su acción; `overwrite` elimina el destino antes de escribir
     —nunca a través de un enlace— y los enlaces se copian como
@@ -256,8 +276,8 @@ instalado.
 
 ## Estado de salud
 
-- Última revisión: 2026-11-21 (tarea
-  `docs/tasks/064-comando-reinstall.md`)
+- Última revisión: 2026-11-23 (tarea
+  `docs/tasks/065-dependencias-mismo-origen.md`)
 - Divergencias conocidas: Ninguna —la divergencia de registro
   coexistiendo con contenido sobrescrito por otro paquete vive en el
   dominio 003—.

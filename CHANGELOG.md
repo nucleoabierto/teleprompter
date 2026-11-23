@@ -9,6 +9,7 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ### Added
 
+- `install` instala también las piezas del mismo origen que el manifiesto declara en `dependencies`: el conjunto se resuelve transitivamente dentro del árbol obtenido —existencia, unión de restricciones de versión sobre cada pieza, ciclos con la ruta legible—, se ordena dependencia antes que dependiente y aborta entero sin escribir cuando es irresoluble; el campo admite una lista vacía y hace válido al paquete de composición pura sin `install` (docs/epics/011-dependencias-entre-paquetes.md).
 - `reinstall` reinstala todo lo que el registro declara: reobtiene cada paquete anclado al `commit` que su `origin` registró —el árbol exacto que la instalación consumió, con re-resolución del miembro en colecciones—, muestra el plan del conjunto por unidad antes de decidir, resuelve las divergencias con la política compartida (`--force`/`--skip`, interactiva o listado con aborto) y reescribe cada entrada como una instalación —`origin` intacto, `installedAt` renovado—; una unidad ya conforme se anuncia sin acciones y una no reproducible se diagnostica con su motivo, sin escribir nada hasta que el conjunto entero se muestra ejecutable (docs/epics/010-reproduccion-destino.md).
 
 ## [0.6.0] - 2026-11-06
