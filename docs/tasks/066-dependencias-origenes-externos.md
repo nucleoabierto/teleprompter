@@ -255,7 +255,7 @@ obtiene su propio árbol, selecciona la pieza y se incorpora al
 grafo con la misma deduplicación y orden; la unidad resuelta
 porta su `origin` ya en forma de lock.
 
-- [ ] Extender el contrato: `OBJECT_KEYS.dependenciesEntry`
+- [x] Extender el contrato: `OBJECT_KEYS.dependenciesEntry`
   gana `origin`; el validador exige objeto con exactamente
   `repo` —spec `o/r[@ref]` válido por `parseRepoSpec`— o
   `path` —string no vacío—
@@ -270,7 +270,7 @@ porta su `origin` ya en forma de lock.
     al paquete declarante— y que nombrar el propio origen por
     `o/r` trae el árbol que la ref publica hoy, no el servido:
     el mismo conjunto se expresa sin origen, sin especial-casado
-- [ ] Volver `resolveSet` asíncrono con `io`
+- [x] Volver `resolveSet` asíncrono con `io`
   (`resolveSet(io, rootDir, units)`): una entrada con `origin`
   obtiene su árbol —`fetchRepoTree` para `repo`, directorio
   existente para `path`— anclado a commit; los árboles externos
@@ -281,7 +281,7 @@ porta su `origin` ya en forma de lock.
     planear; ningún temporal queda huérfano
   - Contexto: caché por clave de origen —dos piezas que declaran
     el mismo `repo@ref` se obtienen una sola vez—
-- [ ] Resolución de la unidad externa: colección externa → la
+- [x] Resolución de la unidad externa: colección externa → la
   pieza se resuelve por nombre en su índice (ausente →
   inalcanzable, `package` = nombre de índice); paquete único →
   su `manifest.name` debe igualar `package` —si no, diagnóstico
@@ -295,7 +295,7 @@ porta su `origin` ya en forma de lock.
     diagnóstico de conflicto de identidad—; el camino del ciclo
     muestra `nombre` o `nombre@origen` para que
     `a@o1 → b@o2 → a@o1` sea legible
-- [ ] La unidad externa porta su `origin` ya en forma de lock
+- [x] La unidad externa porta su `origin` ya en forma de lock
   —`{type:'github',repo,ref?,commit}` más `package` si es
   miembro de colección, o `{type:'path',path}`—; `installUnit`
   usa `unit.origin` cuando viene y compone el de la invocación
@@ -303,21 +303,21 @@ porta su `origin` ya en forma de lock.
   - Aporta: cada pieza registra su procedencia real;
     `reinstall` la reproduce anclada a su commit por
     `obtainRecordedUnit` sin cambios
-- [ ] Integración en `runInstall`: `await resolveSet(io, pkgDir,
+- [x] Integración en `runInstall`: `await resolveSet(io, pkgDir,
   selected.units)`, los errores del conjunto salen por `err` con
   «conjunto no instalable» y código 2 —incluida la obtención
   fallida, que es diagnóstico del conjunto, no `EXIT_FETCH`—;
   `finally` libera el cleanup propio y los del conjunto
   - Aporta: el punto de integración no cambia de lugar; la
     firma nueva solo toca al único llamador
-- [ ] Documentación viva: spec (campo `origin`, advertencias
+- [x] Documentación viva: spec (campo `origin`, advertencias
   `path` y auto-origen), `referencia-install` (el conjunto cruza
   orígenes; cada unidad con su origen en el registro), dominio
   001 (`origin` en la entrada) y 002 (conjunto multi-árbol,
   conflicto de identidad, unidad con origen propio)
   - Aporta: contrato, referencia y dominio coherentes con el
     código en el mismo cambio
-- [ ] Pruebas de la suite esperada: contrato en
+- [x] Pruebas de la suite esperada: contrato en
   `manifest.test.js`, unidad del resolvedor en
   `dependencies.test.js`, comando con `run`/`spyFetch` enrutado
   por repo y e2e con origen `path`
@@ -366,8 +366,52 @@ porta su `origin` ya en forma de lock.
 - e2e: una dependencia `path` a un paquete hermano se instala
   por el binario real sin red (CU-3; O)
 
+## Desviaciones
+
+- **El conflicto de identidad se comprueba antes de obtener el
+  árbol.** Es detectable estáticamente —la clave del origen declarado
+  basta—, así que una demanda en conflicto aborta sin descargar el
+  origen que nunca se usaría. Mismo resultado que pedía el plan, sin
+  el coste de la obtención.
+- **`visit` chequea la identidad antes del retorno por deduplicada.**
+  Las pruebas expusieron el agujero: una unidad seleccionada que ya
+  se había resuelto desde un origen externo retornaba en silencio
+  como pieza ya resuelta —el conflicto quedaba indetectado—. Ahora
+  el chequeo de origen precede al `state.has` del atajo.
+- **Las piezas de un árbol externo heredan el origen de su árbol.**
+  Una dependencia sin `origin` declarada dentro de un árbol ajeno
+  resuelve en ese árbol —misma regla de «sin origen = mismo árbol»—,
+  y la unidad porta el `origin` del árbol donde reside, no el de la
+  invocación ni `undefined`.
+- **La clave de origen `path` es la ruta resuelta, no la cadena
+  declarada** — la revisión técnica lo cazó: la misma cadena `"lib"`
+  declarada desde paquetes en directorios distintos apunta a orígenes
+  distintos, y clavear por la cadena instalaba la pieza equivocada en
+  silencio. Se resuelve contra el directorio del declarante antes de
+  clavear —misma corrección en la caché, en el chequeo de identidad
+  y en la deduplicación—.
+- **La comprobación de `path` se hace dentro de `try`.** `statSync`
+  lanza ante más que ENOENT —un padre ilegible abortaba la CLI sin
+  diagnóstico y dejaba temporales huérfanos—; ahora cualquier fallo
+  de acceso es «no es un directorio» y aborta el conjunto limpio.
+- **`origin.path` se rechaza dentro de árboles remotos.** La revisión
+  señaló que un `path` declarado por una pieza descargada solo puede
+  señalar la extracción efímera: el lock registraría una ruta que el
+  cleanup borra y `reinstall` no podría reproducir jamás. `resolveSet`
+  recibe ahora el `origin` de la invocación para distinguir raíz
+  local de remota, y la declaración aborta con diagnóstico —`path`
+  pertenece a árboles locales—. Documentado en spec y manual.
+
 ## Revisión
 
-- Subagente: [fecha] — [Aprueba | Solicita cambios]
+- Subagente: 2026-11-23 — Aprueba, en segunda ronda: la primera
+  pidió cambios —la clave `path` por cadena declarada instalaba la
+  pieza equivocada, `statSync` sin guardia dejaba excepción y
+  temporales, `path` en árbol remoto registraba origen
+  irreproducible—, las tres correcciones se aplicaron y
+  re-verificaron (véase Desviaciones). Observación residual no
+  bloqueante: el diagnóstico de conflicto entre dos `path` muestra
+  la cadena declarada —puede leerse tautológico cuando ambas son
+  iguales—.
 - Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

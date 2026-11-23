@@ -66,9 +66,10 @@ abortan antes de escribir nada.
 
 ## Dependencias entre paquetes
 
-Un manifiesto puede declarar `dependencies`: las piezas del mismo
-origen que lo completan, con una restricción de versión opcional del
-vocabulario acotado —véase la
+Un manifiesto puede declarar `dependencies`: las piezas que lo
+completan, del mismo árbol —sin `origin`— o de un origen ajeno —con
+`{ "repo": "o/r[@ref]" }` o `{ "path": "ruta" }`—, con una
+restricción de versión opcional del vocabulario acotado —véase la
 [especificación](https://github.com/nucleoabierto/teleprompter/blob/master/docs/especificacion-paquete.md)—.
 Un paquete puede existir solo para componer: con `dependencies` no
 vacía, `install` deja de ser obligatorio.
@@ -76,11 +77,21 @@ vacía, `install` deja de ser obligatorio.
 La resolución ocurre tras la selección —y tras validar el manifiesto
 de cada unidad seleccionada— y antes de la verificación, el plan y
 cualquier escritura de cada unidad: el conjunto declarado se expande
-transitivamente por el
-índice del origen —mismo árbol, mismo commit—, se ordena de modo que
+transitivamente a través de todos los orígenes involucrados —cada
+árbol externo se obtiene entero antes de verificar y planear, el de
+`repo` anclado al commit al que la referencia resuelve; el de `path`
+se lee relativo al paquete que lo declara—, se ordena de modo que
 cada dependencia se instale antes que su dependiente y cada pieza
 resuelta se instala una sola vez. `--package` conserva su semántica:
 solo entra al conjunto lo que los miembros seleccionados declaran.
+
+En una colección externa la pieza se selecciona por su nombre en el
+índice —igual que `--package`—; en un origen que no es colección, su
+única pieza es el propio paquete y el `name` de su manifiesto debe
+igualar el `package` declarado —si no, el origen «publica» otra
+pieza y el conjunto aborta—. La identidad del grafo es el nombre:
+el mismo nombre pedido desde dos orígenes distintos es un conflicto
+de identidad.
 
 La restricción de una entrada es una aserción sobre la `version` que
 el manifiesto de la pieza declara; cuando varias piezas exigen
@@ -89,9 +100,21 @@ Estos fallos abortan el conjunto con código `2` sin escribir —ni
 recursos, ni registro, ni respaldos—:
 
 - una dependencia circular —el diagnóstico muestra la ruta del bucle
-  `a → b → a`; depender de sí mismo es un ciclo de longitud uno—,
-- una pieza que no existe en el origen o cuyo manifiesto no carga,
+  `a → b → a`, con `nombre@origen` cuando el ciclo cruza árboles;
+  depender de sí mismo es un ciclo de longitud uno—,
+- una pieza que no existe en su origen, un origen inalcanzable o un
+  manifiesto que no carga,
+- una dependencia `path` declarada dentro de un árbol remoto —la
+  ruta solo señalaría la extracción efímera; `path` solo es válida
+  en árboles locales—,
+- el mismo nombre pedido desde dos orígenes —conflicto de
+  identidad—,
 - una restricción que la versión obtenida no satisface.
+
+Cada unidad externa se registra en `teleprompter-lock.json` como una
+instalación normal con su propio origen —`repo`, `ref` y `commit`
+resuelto, o `path` absoluta—, así que `reinstall` la reproduce
+anclada al commit que se instaló, igual que a la raíz.
 
 ## Fases
 

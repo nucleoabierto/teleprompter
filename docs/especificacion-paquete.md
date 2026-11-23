@@ -59,7 +59,7 @@ dentro de `.teleprompter/`: son espacios reservados a la herramienta.
 | `license` | string | Identificador SPDX (`"MIT"`, `"Apache-2.0"`) o referencia a un archivo de licencia. |
 | `author` | object | `{ "name": "...", "email": "...", "url": "..." }`. Solo `name` es obligatorio dentro del objeto. |
 | `requires` | object | Precondiciones del repositorio destino, verificables antes de instalar. De momento solo la clave `paths`. |
-| `dependencies` | array | Lista —posiblemente vacía— de piezas que completan al paquete, entradas `{ "package", "version"? }`. Véase abajo. |
+| `dependencies` | array | Lista —posiblemente vacía— de piezas que completan al paquete, entradas `{ "package", "version"?, "origin"? }`. Véase abajo. |
 | `personalization` | string | Ruta dentro del paquete al archivo con las instrucciones de personalización. El archivo debe existir; su contenido es texto libre del mantenedor dirigido a un agente y nunca se valida ni se ejecuta. El instalador lo copia a `.teleprompter/<paquete>/<archivo>` en el destino, entrega su contenido tal cual al final de la instalación y recuerda su ubicación en `teleprompter-lock.json` —consultable después con `teleprompter guide`. |
 | `metadata` | object | Mapa libre clave→valor para datos del autor que el instalador no interpreta. |
 
@@ -76,23 +76,56 @@ ni `..`, ni puede caer dentro de `.teleprompter/`):
 que puede estar vacía: la pieza que no compone nada es la hoja del
 grafo—. Cada entrada es un objeto:
 
-- `package` — el nombre de otra pieza del **mismo origen**: un miembro
-  del índice de la colección, nombrado como en una selección
-  `--package`, nunca una ruta.
+- `package` — el nombre de la pieza: un miembro del índice de la
+  colección del árbol donde reside, nombrado como en una selección
+  `--package`, nunca una ruta. En un origen que no es colección la
+  única pieza es el propio paquete, así que `package` debe igualar el
+  `name` que su manifiesto declara.
 - `version` — opcional; una restricción del vocabulario acotado:
   `^x.y.z`, `~x.y.z`, `x.y.z` exacta, comparadores `>=`, `<=`, `>`, `<`
   —componibles por espacio— o `*`. Su ausencia equivale a cualquier
   versión. La restricción es una aserción: valida la `version` que el
   manifiesto de la pieza obtenida declara; no selecciona entre
   versiones.
+- `origin` — opcional; el origen donde reside la pieza, un objeto con
+  exactamente una de estas claves:
+  - `{ "repo": "owner/repo[@ref]" }` — un repositorio de GitHub, con
+    la misma gramática que el argumento posicional de `install`:
+    `ref` puede ser rama, etiqueta o commit y admite barras.
+  - `{ "path": "ruta" }` — un directorio local, relativo al paquete
+    que lo declara. Ata el paquete a una disposición concreta del
+    sistema de archivos, así que reduce su portabilidad: es la forma
+    de enlazar piezas que aún no se publican, no la de publicar
+    paquetes reutilizables. Por eso mismo solo es válida en árboles
+    locales: dentro de un árbol obtenido de un repositorio la ruta
+    solo podría señalar la extracción efímera —que desaparece tras la
+    instalación— y la declaración se rechaza.
+
+  Sin `origin` la entrada nombra una pieza del **mismo árbol** que el
+  paquete que la declara —la forma que ya cubre la instalación dentro
+  de una colección—. Nombrar el propio origen por `repo` no es lo
+  mismo: trae el árbol que esa referencia publica hoy, no el árbol
+  servido por la invocación; para depender de una pieza del mismo
+  árbol se omite `origin`.
+
+La identidad de una pieza en el grafo es su nombre: entradas que lo
+repiten desde el mismo origen se deduplican y unen sus restricciones;
+pedir el mismo nombre desde dos orígenes distintos es un conflicto
+que aborta el conjunto.
 
 Instalar un paquete instala también su conjunto declarado, resuelto
-transitivamente dentro del árbol obtenido: las piezas se ordenan de
-modo que cada dependencia se instale antes que su dependiente, las
-restricciones que varias piezas exigen sobre la misma pieza deben
-satisfacerse todas y un ciclo —incluida la dependencia sobre sí
-mismo—, una pieza inexistente o una versión insatisfecha abortan la
-operación antes de escribir nada.
+transitivamente a través de todos los orígenes involucrados: cada
+árbol externo se obtiene antes de verificar y planear —el de
+`repo` anclado al commit al que la referencia apunta—, las piezas se
+ordenan de modo que cada dependencia se instale antes que su
+dependiente, las restricciones que varias piezas exigen sobre la
+misma pieza deben satisfacerse todas y un ciclo —incluida la
+dependencia sobre sí mismo, aunque cruce orígenes—, una pieza
+inexistente o inalcanzable, un conflicto de identidad o una versión
+insatisfecha abortan la operación antes de escribir nada. Cada pieza
+instalada queda en `teleprompter-lock.json` con su propio origen —el
+`repo`, `ref` y `commit` resuelto, o la `path` absoluta—, de modo que
+`reinstall` la reproduce desde donde realmente vino.
 
 ### Campos desconocidos
 

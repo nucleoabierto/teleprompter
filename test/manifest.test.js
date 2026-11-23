@@ -293,9 +293,39 @@ test('a dependency entry must be an object naming a member', () => {
 
 test('a dependency entry rejects unknown fields', () => {
   const errors = errorsOf('p', base('p', {
-    dependencies: [{ package: 'alfa', origin: 'o/r' }],
+    dependencies: [{ package: 'alfa', extra: 'x' }],
   }));
-  assert.ok(errors.some((e) => /campo desconocido "origin"/.test(e)));
+  assert.ok(errors.some((e) => /campo desconocido "extra"/.test(e)));
+});
+
+test('a dependency origin is a repo spec or a local path', () => {
+  for (const origin of [{ repo: 'o/r' }, { repo: 'o/r@main' }, { repo: 'o/r@cli/v2' }, { path: 'dir' }]) {
+    const errors = errorsOf('p', base('p', {
+      dependencies: [{ package: 'alfa', origin }],
+    }));
+    assert.deepEqual(errors.filter((e) => e.includes('origin')), [], JSON.stringify(origin));
+  }
+});
+
+test('a malformed dependency origin is invalid', () => {
+  const cases = [
+    ['o/r', /objeto/],
+    [{}, /exactamente una de "repo" o "path"/],
+    [{ repo: 'o/r', path: 'd' }, /exactamente una de "repo" o "path"/],
+    [{ repo: 'o/r', extra: 1 }, /campo desconocido "extra"/],
+    [{ repo: 'sin-slash' }, /origen inválido/],
+    [{ repo: 'o/r@' }, /origen inválido/],
+    [{ repo: 'o/r@..bad' }, /origen inválido/],
+    [{ repo: 'o/r@con espacio' }, /origen inválido/],
+    [{ path: '' }, /ruta no vacía/],
+    [{ path: 7 }, /ruta no vacía/],
+  ];
+  for (const [origin, pattern] of cases) {
+    const errors = errorsOf('p', base('p', {
+      dependencies: [{ package: 'alfa', origin }],
+    }));
+    assert.ok(errors.some((e) => pattern.test(e)), `${JSON.stringify(origin)} → ${errors.join(', ')}`);
+  }
 });
 
 test('a dependency version outside the declared vocabulary is invalid', () => {

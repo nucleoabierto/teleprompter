@@ -528,7 +528,12 @@ async function installUnit(io, out, err, { source, unit, destDir, flags, commit 
     return EXIT_OK;
   }
 
-  const origin = { ...originOf(source, commit) };
+  // A unit resolved from an external origin carries its own —the
+  // lock records where each piece actually came from, not where the
+  // invocation came from.
+  const origin = unit.origin !== undefined
+    ? { ...unit.origin }
+    : { ...originOf(source, commit) };
   if (unit.name !== undefined) origin.package = unit.name;
   return executeAndReport(out, err, {
     pkgDir: unit.dir, destDir, lock, plan, manifest, origin, verb: 'instalado',
@@ -565,22 +570,30 @@ export async function runInstall(io, out, err, { source, dest, flags, packages }
       return EXIT_MANIFEST;
     }
     // The declared set resolves before anything else happens: a
-    // cycle, a missing piece or an unsatisfied restriction aborts
-    // without writing, before any unit is verified or planned
-    // (D005). The surviving units install in dependency order —
-    // each an ordinary install whose `origin.package` the lock
-    // already knows how to keep.
-    const resolved = resolveSet(pkgDir, selected.units);
+    // cycle, a missing piece, an unreachable external origin or an
+    // unsatisfied restriction aborts without writing, before any
+    // unit is verified or planned (D005). The surviving units
+    // install in dependency order — each an ordinary install whose
+    // `origin.package` the lock already knows how to keep.
+    const resolved = await resolveSet(
+      io, pkgDir, selected.units, originOf(source, commit),
+    );
     if (!resolved.ok) {
       for (const error of resolved.errors) err(error);
       err('conjunto no instalable');
       return EXIT_PLAN;
     }
-    for (const unit of resolved.units) {
-      const code = await installUnit(io, out, err, { source, unit, destDir, flags, commit });
-      if (code !== EXIT_OK) return code;
+    try {
+      for (const unit of resolved.units) {
+        const code = await installUnit(io, out, err, { source, unit, destDir, flags, commit });
+        if (code !== EXIT_OK) return code;
+      }
+      return EXIT_OK;
+    } finally {
+      // The external trees the set fetched live until the install
+      // ends — their temp dirs release with the invocation's own.
+      for (const release of resolved.cleanups) release();
     }
-    return EXIT_OK;
   } finally {
     if (cleanup !== null) cleanup();
   }

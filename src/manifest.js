@@ -4,6 +4,7 @@ import {
   canonTarget, isSafeRelative, hasEntry, MANAGED_DIR,
 } from './paths.js';
 import { isPlainObject } from './shape.js';
+import { parseRepoSpec } from './fetch.js';
 
 const KNOWN_FORMAT = 'teleprompter-package@1';
 export const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -29,7 +30,8 @@ const OBJECT_KEYS = {
   requiresPath: new Set(['path', 'create']),
   installEntry: new Set(['source', 'target']),
   packagesEntry: new Set(['path']),
-  dependenciesEntry: new Set(['package', 'version']),
+  dependenciesEntry: new Set(['package', 'version', 'origin']),
+  dependencyOrigin: new Set(['repo', 'path']),
 };
 
 const isNonEmptyString = (v) => typeof v === 'string' && v.length > 0;
@@ -94,6 +96,31 @@ function checkRequiresEntry(entry, index, errors) {
   }
 }
 
+// The origin of a dependency is a one-key object —`repo` for a
+// GitHub spec `owner/name[@ref]` or `path` for a local directory—.
+// A bare string would be ambiguous (`foo/bar` parses as both), so
+// the discriminator lives in the key, mirroring the `type` of the
+// lock's `origin`.
+function checkDependencyOrigin(origin, where, errors) {
+  if (!isPlainObject(origin)) {
+    errors.push(`${where}.origin: debe ser un objeto { "repo" } o { "path" }`);
+    return;
+  }
+  checkKeys(origin, OBJECT_KEYS.dependencyOrigin, `${where}.origin`, errors);
+  const hasRepo = origin.repo !== undefined;
+  const hasPath = origin.path !== undefined;
+  if (hasRepo === hasPath) {
+    errors.push(`${where}.origin: declara exactamente una de "repo" o "path"`);
+    return;
+  }
+  if (hasRepo && (typeof origin.repo !== 'string' || parseRepoSpec(origin.repo) === null)) {
+    errors.push(`${where}.origin.repo: origen inválido "${origin.repo}"`);
+  }
+  if (hasPath && !isNonEmptyString(origin.path)) {
+    errors.push(`${where}.origin.path: debe ser una ruta no vacía`);
+  }
+}
+
 function checkDependencyEntry(entry, index, errors) {
   const where = `dependencies[${index}]`;
   if (!isPlainObject(entry)) {
@@ -107,6 +134,7 @@ function checkDependencyEntry(entry, index, errors) {
   if (entry.version !== undefined && !isValidRange(entry.version)) {
     errors.push(`${where}.version: restricción inválida "${entry.version}"`);
   }
+  if (entry.origin !== undefined) checkDependencyOrigin(entry.origin, where, errors);
 }
 
 // The field validators both contracts share. Each receives the

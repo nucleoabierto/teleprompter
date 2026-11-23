@@ -32,14 +32,31 @@ instalado.
       D019
   - **Conjunto resuelto:** las unidades que una instalación va a
     ejecutar —las seleccionadas más la clausura transitiva de sus
-    `dependencies`, todo dentro del árbol obtenido— ordenadas de
-    modo que cada dependencia precede a su dependiente. La
-    identidad del grafo es el nombre de la pieza: entradas
-    repetidas se deduplican y las restricciones sobre la misma
-    pieza se acumulan —la versión obtenida debe satisfacerlas
-    todas—. Un ciclo —la autodependencia es uno de longitud uno—,
-    una pieza inexistente o de manifiesto que no carga, o una
-    restricción insatisfecha hacen el conjunto irresoluble.
+    `dependencies`, a través de todos los orígenes involucrados—
+    ordenadas de modo que cada dependencia precede a su
+    dependiente. Una entrada sin `origin` nombra una pieza del
+    mismo árbol que la declarante; con `origin` obtiene el suyo
+    —`repo` por `fetchRepoTree` anclado al commit resuelto, `path`
+    relativa al paquete declarante y solo desde árboles locales:
+    dentro de un árbol remoto la ruta señalaría la extracción
+    efímera y la declaración se rechaza— y ahí la pieza es un
+    miembro de
+    colección por su nombre de índice o el paquete único, cuyo
+    `name` de manifiesto debe igualar el `package` pedido —si no,
+    «el origen publica X, no Y»—. Todos los árboles se obtienen
+    antes de verificar y planear; las unidades de árboles ajenos
+    portan su propio `origin` en forma de registro —`type`,
+    `repo`, `ref?`, `commit` o `path`— para que el lock anote la
+    procedencia real de cada pieza. La identidad del grafo es el
+    nombre de la pieza: entradas repetidas desde el mismo origen
+    se deduplican, las restricciones sobre la misma pieza se
+    acumulan —la versión obtenida debe satisfacerlas todas— y el
+    mismo nombre pedido desde dos orígenes es un conflicto de
+    identidad. Un ciclo —la autodependencia es uno de longitud
+    uno, y puede cruzar orígenes—, una pieza inexistente, un
+    origen inalcanzable, un manifiesto que no carga, un conflicto
+    de identidad o una restricción insatisfecha hacen el conjunto
+    irresoluble.
     - Ancla: `resolveSet` en `src/dependencies.js`; épica
       `docs/epics/011-dependencias-entre-paquetes.md`
   - **Commit resuelto:** el SHA exacto al que la referencia pedida
@@ -168,7 +185,8 @@ instalado.
     `teleprompter [install] --path <paquete> [destino]` — obtiene el
     paquete (tarball público de GitHub anclado al commit resuelto o
     directorio local), selecciona las unidades, resuelve su conjunto
-    de dependencias dentro del árbol —dependencia antes que
+    de dependencias a través de los orígenes declarados —obteniendo
+    cada árbol externo antes de planear—, dependencia antes que
     dependiente—, verifica,
     planea, resuelve, ejecuta y registra cada unidad en ese orden; el
     destino por defecto es el directorio de trabajo.
