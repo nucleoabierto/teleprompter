@@ -436,4 +436,4 @@ con la biblioteca `semver`, que sustituye al comparador propio.
   datos del lock no confiables sin efecto en lo que la herramienta
   escribe.
 - Usuario (ejecución): 2026-11-23 — Aprueba (PR #29)
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-23 — Aprueba

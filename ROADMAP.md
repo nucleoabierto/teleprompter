@@ -13,6 +13,18 @@ que la revisión señala—.
 
 ## Now
 
+- 1. Dependencias entre paquetes — instalar un paquete instala
+  también las piezas que su manifiesto declara, del mismo árbol o
+  de orígenes ajenos, resueltas, ordenadas y verificadas antes de
+  escribir en una sola invocación (épica 011).
+  - Justificación: el canal ya distribuye piezas sueltas; la
+    composición declarada cierra el reparto —una instalación
+    incompleta por olvido deja de ser posible— y prepara el terreno
+    de las actualizaciones informadas.
+  - Estado: en curso —una de dos tareas completadas.
+
+## Next
+
 - 1. Actualización en lote de lo revisado — actualizar en una
   invocación los paquetes que la revisión señala (idea 008, resto).
   - Justificación: la consulta sin efectos ya existe —`outdated`
@@ -20,15 +32,13 @@ que la revisión señala—.
     salida y la mecánica multi-unidad que la propia revisión
     estableció.
 
-## Next
-
-Vacío.
-
 ## Later
 
 Vacío: las cuatro ideas de la lluvia de 2026-10-04 quedaron
 comprometidas o materializadas —pin y desinstalación ya ejecutadas,
-revisión y reproducción ordenadas entre Now y Next—.
+revisión y reproducción ordenadas entre Now y Next—. La
+actualización en lote queda primera en Next, desplazada por la
+épica de dependencias.
 
 ## No ahora
 
@@ -133,3 +143,8 @@ revisión y reproducción ordenadas entre Now y Next—.
   unidades no reproducibles—; la actualización en lote de lo
   revisado pasa a Now como línea única y el ciclo de vida gana la
   reproducción)
+- Usuario: 2026-11-23 — Aprueba (la épica 011 de dependencias entre
+  paquetes corre en Now —primera tarea completada— y la línea
+  «Actualización en lote de lo revisado», sin arrancar, pasa a Next
+  en primera posición; dirección re-alineada con la ejecución real
+  del índice)
