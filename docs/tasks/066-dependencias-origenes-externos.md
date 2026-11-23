@@ -2,7 +2,7 @@
 
 ## Estado
 
-[~] En progreso
+[r] En revisión
 
 ## Tipo
 
