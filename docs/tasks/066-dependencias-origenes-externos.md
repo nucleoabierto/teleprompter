@@ -2,7 +2,7 @@
 
 ## Estado
 
-[r] En revisión
+[x] Completada
 
 ## Tipo
 
@@ -413,5 +413,5 @@ porta su `origin` ya en forma de lock.
   bloqueante: el diagnóstico de conflicto entre dos `path` muestra
   la cadena declarada —puede leerse tautológico cuando ambas son
   iguales—.
-- Usuario (ejecución): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (ejecución): 2026-11-23 — Aprueba (PR #30)
 - Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]

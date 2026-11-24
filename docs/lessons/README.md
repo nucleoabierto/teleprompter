@@ -34,3 +34,8 @@ Formato de entrada del índice:
   archivos propios.
   - Disparadores: `docs/tasks/`, numeración, promoción, propuesta,
     borradores, glob, serie
+- [abstraccion-segundo-eje.md](abstraccion-segundo-eje.md) — al
+  crecer un recorrido a un segundo eje, elevar la abstracción en
+  vez de anidar ramas en el bucle existente.
+  - Disparadores: `src/dependencies.js`, resolvedor, orígenes,
+    recorrido, `visit`, mapas paralelos, refactor
