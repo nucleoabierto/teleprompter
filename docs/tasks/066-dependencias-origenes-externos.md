@@ -414,4 +414,4 @@ porta su `origin` ya en forma de lock.
   la cadena declarada —puede leerse tautológico cuando ambas son
   iguales—.
 - Usuario (ejecución): 2026-11-23 — Aprueba (PR #30)
-- Usuario (cierre): [fecha] — [Aprueba | Solicita cambios]
+- Usuario (cierre): 2026-11-23 — Aprueba
