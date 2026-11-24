@@ -45,3 +45,20 @@ en `docs/lessons/` las marca como `consolidada`.
   Corrección: consultar los números ocupados en `docs/tasks/` antes
     de asignar y acotar los globs a los archivos propios.
   Estado: consolidada
+- Id: 20261123T181059
+  Tarea: docs/tasks/066-dependencias-origenes-externos.md
+  Esperado: extender el resolvedor al segundo eje —de un árbol a
+    varios orígenes— conservando una estructura que escale.
+  Obtenido: el multi-árbol se injertó ramificando dentro del bucle
+    existente: `visit` cargó siete parámetros posicionales con el
+    origen representado tres veces (`tree`/`key`/`label`/`treeOrigin`
+    y `ext.key`/`ext.label`/`ext.origin`), seis mapas paralelos
+    indexados por el mismo nombre y la selección de miembro por
+    índice duplicada en dos ramas.
+  Corrección: «el código parece tener muchos ifs y muchas
+    condiciones que tal vez se puedan abstraer mejor» — al crecer
+    un resolvedor a un segundo eje, elevar la abstracción (`site`,
+    `piece`) en vez de anidar ramas: un solo objeto porta árbol,
+    identidad de origen, etiquetas y `lockOrigin`; un registro por
+    nombre concentra estado, manifiesto, directorio y origen.
+  Estado: consolidada

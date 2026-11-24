@@ -37,8 +37,9 @@ consumidores que los instalan en su repositorio destino.
   que lo completan con su restricción de versión opcional y su
   origen opcional; sin origen significa «del mismo árbol».
 - **Resolución:** transitiva, dentro del árbol obtenido para las
-  del mismo origen y como unidades propias ancladas a commit para
-  las externas; el conjunto se ordena de modo que cada
+  del mismo origen y como unidades propias para las externas
+  —ancladas al commit resuelto las de repositorio, a su directorio
+  las locales—; el conjunto se ordena de modo que cada
   dependencia se instale antes que su dependiente.
 - **Verificación:** cada restricción se evalúa contra la versión
   que el manifiesto de la pieza obtenida declara; una pieza

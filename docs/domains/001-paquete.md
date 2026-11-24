@@ -42,15 +42,22 @@ destino— para que una instalación sea inspectable y repetible.
   - **Ruta segura:** ruta relativa sin segmentos `..`, ni absoluta
     POSIX, ni absoluta Windows (`C:\`) ni UNC (`\\`).
     - Ancla: `isSafeRelative` en `src/paths.js`
-  - **Entrada dependencies:** objeto `{ "package", "version"? }` que
-    nombra otra pieza del mismo origen —un miembro del índice por
-    nombre, nunca una ruta— con una restricción opcional del
-    vocabulario acotado (`^`, `~`, exacta, comparadores `>=`/`<=`/`>`/`<`
-    componibles por espacio, `*`); la versión ausente admite cualquiera
-    y la restricción valida la `version` del manifiesto obtenido —es
-    aserción, no selección entre versiones—. La lista puede estar
-    vacía: la pieza que no compone nada es la hoja del grafo.
-    - Ancla: `checkDependencies` en `src/manifest.js`; contrato en
+  - **Entrada dependencies:** objeto `{ "package", "version"?,
+    "origin"? }` que nombra una pieza —un miembro del índice de su
+    árbol por nombre, nunca una ruta— con una restricción opcional
+    del vocabulario acotado (`^`, `~`, exacta, comparadores
+    `>=`/`<=`/`>`/`<` componibles por espacio, `*`) y un origen
+    opcional: objeto con exactamente `{ "repo": "o/r[@ref]" }` —
+    misma gramática que el posicional de `install`— o
+    `{ "path": "ruta" }` —relativa al paquete que la declara, con la
+    advertencia de portabilidad que ello implica—; sin `origin` la
+    pieza reside en el mismo árbol que la declarante. La versión
+    ausente admite cualquiera y la restricción valida la `version`
+    del manifiesto obtenido —es aserción, no selección entre
+    versiones—. La lista puede estar vacía: la pieza que no compone
+    nada es la hoja del grafo.
+    - Ancla: `checkDependencies` y `checkDependencyOrigin` en
+      `src/manifest.js`; contrato en
       `docs/especificacion-paquete.md`; épica
       `docs/epics/011-dependencias-entre-paquetes.md`
   - **Guía de personalización:** el archivo que `personalization`

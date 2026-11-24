@@ -4022,3 +4022,185 @@ test('a package that becomes a metapackage retires its resources on update', asy
   const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
   assert.equal(lock.packages.alfa.version, '2.0.0');
 });
+
+// --- dependencias de orígenes externos ---
+
+// A fetch spy routing per repo: the commits-API call resolves the
+// ref, each tarball URL serves the buffer its repo maps to, anything
+// else 404s.
+const remoteRouter = (archives) => spyFetch((url) => {
+  if (url.includes('/commits/')) {
+    return { ok: true, json: async () => ({ sha: RESOLVED }) };
+  }
+  for (const [repo, buf] of Object.entries(archives)) {
+    if (url.includes(`/${repo}/`)) return okResponse(buf);
+  }
+  return { ok: false, status: 404 };
+});
+
+// A collection tarball: the index manifest plus one package dir per
+// member, packed under the `name-abc123` root GitHub produces.
+async function collTarball(name, members) {
+  const work = tmp();
+  writeCollection(path.join(work, `${name}-abc123`), members, { name });
+  const archive = path.join(work, 'a.tgz');
+  await tarCreate({ gzip: true, file: archive, cwd: work }, [`${name}-abc123`]);
+  return fs.readFileSync(archive);
+}
+
+test('an external repo dependency installs first and records its own origin', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const depBuf = await repoTarball('dep', validManifest('dep', { install: [{ source: 'd.txt', target: 'd.txt' }] }), { 'd.txt': 'd' });
+  const spy = remoteRouter({ dep: depBuf });
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'dep', origin: { repo: 'o/dep@v1' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stdout, stderr } = await run(['--path', pkg, dest], { tmpBase, fetch: spy.fetch });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  const shown = stdout.join('\n');
+  assert.ok(shown.indexOf('instalado: dep') < shown.indexOf('instalado: a'), shown);
+  assert.equal(fs.readFileSync(path.join(dest, 'd.txt'), 'utf8'), 'd');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.dep.origin, {
+    type: 'github', repo: 'o/dep', ref: 'v1', commit: RESOLVED,
+  });
+  assert.equal(fs.readdirSync(tmpBase).length, 0);
+});
+
+test('a member of an external collection installs with origin.package', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const suiteBuf = await collTarball('suite', [
+    { path: 'pieza', manifest: validManifest('pieza', { install: [{ source: 'p.txt', target: 'p.txt' }] }), files: { 'p.txt': 'p' } },
+    { path: 'otra' },
+  ]);
+  const spy = remoteRouter({ suite: suiteBuf });
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'pieza', origin: { repo: 'o/suite' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest], { tmpBase, fetch: spy.fetch });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'p.txt'), 'utf8'), 'p');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.equal(lock.packages.pieza.origin.package, 'pieza');
+  assert.equal(lock.packages.pieza.origin.repo, 'o/suite');
+  assert.equal(lock.packages.otra, undefined);
+});
+
+test('an external package whose name differs aborts as the wrong origin', async () => {
+  const dest = tmp();
+  const spy = remoteRouter({ otro: await repoTarball('otro', validManifest('otro'), { 'a.txt': 'a' }) });
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'dep', origin: { repo: 'o/otro' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /el origen "o\/otro" publica "otro", no "dep"/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('a cross-origin cycle aborts with its legible path', async () => {
+  const dest = tmp();
+  const aBuf = await repoTarball('a', validManifest('a', {
+    dependencies: [{ package: 'b', origin: { repo: 'o2/b' } }],
+  }), { 'a.txt': 'a' });
+  const bBuf = await repoTarball('b', validManifest('b', {
+    dependencies: [{ package: 'a', origin: { repo: 'o1/a' } }],
+  }), { 'a.txt': 'a' });
+  const spy = remoteRouter({ 'a': aBuf, 'b': bBuf });
+  const pkg = path.join(tmp(), 'main');
+  writePkg(pkg, validManifest('main', {
+    dependencies: [{ package: 'a', origin: { repo: 'o1/a' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /dependencia circular: a@o1\/a → b@o2\/b → a@o1\/a/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('the same name from two origins aborts as an identity conflict', async () => {
+  const dest = tmp();
+  const spy = remoteRouter({ b: await repoTarball('b', validManifest('b'), { 'a.txt': 'a' }) });
+  const coll = path.join(tmp(), 'coleccion');
+  writeCollection(coll, [
+    {
+      path: 'a',
+      manifest: validManifest('a', {
+        dependencies: [{ package: 'b' }, { package: 'b', origin: { repo: 'o/b' } }],
+      }),
+    },
+    { path: 'b' },
+  ]);
+  const { code, stderr } = await run(['--path', coll, dest, '--package', 'a'], { tmpBase: tmp(), fetch: spy.fetch });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /conflicto de identidad.*"b"/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+});
+
+test('an unreachable external origin aborts the set and leaves no temp', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const spy = remoteRouter({});
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'dep', origin: { repo: 'o/fantasma' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stderr } = await run(['--path', pkg, dest], { tmpBase, fetch: spy.fetch });
+  assert.equal(code, EXIT_PLAN);
+  assert.match(stderr.join('\n'), /"dep".*no es alcanzable/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+  assert.equal(fs.readdirSync(tmpBase).length, 0);
+});
+
+test('a path dependency resolves against the declaring package', async () => {
+  const dest = tmp();
+  const root = tmp();
+  const pkg = path.join(root, 'a');
+  const sibling = path.join(root, 'hermano');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'hermano', origin: { path: '../hermano' } }],
+  }), { 'a.txt': 'a' });
+  writePkg(sibling, validManifest('hermano', { install: [{ source: 'h.txt', target: 'h.txt' }] }), { 'h.txt': 'h' });
+  const { code, stderr } = await run(['--path', pkg, dest]);
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'h.txt'), 'utf8'), 'h');
+  const lock = JSON.parse(fs.readFileSync(path.join(dest, 'teleprompter-lock.json'), 'utf8'));
+  assert.deepEqual(lock.packages.hermano.origin, { type: 'path', path: sibling });
+});
+
+test('--dry-run obtains the external tree, shows its plan and writes nothing', async () => {
+  const dest = tmp();
+  const tmpBase = tmp();
+  const depBuf = await repoTarball('dep', validManifest('dep', { install: [{ source: 'd.txt', target: 'd.txt' }] }), { 'd.txt': 'd' });
+  const spy = remoteRouter({ dep: depBuf });
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'dep', origin: { repo: 'o/dep' } }],
+  }), { 'a.txt': 'a' });
+  const { code, stdout, stderr } = await run(['--path', pkg, dest, '--dry-run'], { tmpBase, fetch: spy.fetch });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.match(stdout.join('\n'), /fin del plan \(--dry-run\)/);
+  assert.deepEqual(fs.readdirSync(dest), []);
+  assert.equal(fs.readdirSync(tmpBase).length, 0);
+});
+
+test('an external unit reinstalls anchored at its recorded commit', async () => {
+  const dest = tmp();
+  const depBuf = await repoTarball('dep', validManifest('dep', { install: [{ source: 'd.txt', target: 'd.txt' }] }), { 'd.txt': 'd' });
+  const spy = remoteRouter({ dep: depBuf });
+  const io = { tmpBase: tmp(), fetch: spy.fetch };
+  const pkg = path.join(tmp(), 'a');
+  writePkg(pkg, validManifest('a', {
+    dependencies: [{ package: 'dep', origin: { repo: 'o/dep@v1' } }],
+  }), { 'a.txt': 'a' });
+  const installed = await run(['--path', pkg, dest], io);
+  assert.equal(installed.code, EXIT_OK, installed.stderr.join('\n'));
+  fs.rmSync(path.join(dest, 'd.txt'));
+  const { code, stderr } = await run(['reinstall'], { cwd: dest, ...io });
+  assert.equal(code, EXIT_OK, stderr.join('\n'));
+  assert.equal(fs.readFileSync(path.join(dest, 'd.txt'), 'utf8'), 'd');
+});

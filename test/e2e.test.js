@@ -279,3 +279,35 @@ test('a metapackage installs its whole declared set through the real binary', ()
   assert.deepEqual(lock.packages.suite.files, []);
   assert.equal(lock.packages.pieza.origin.package, 'pieza');
 });
+
+test('a path dependency installs its sibling package through the real binary', () => {
+  const dest = destWithPriorWork();
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'teleprompter-sib-'));
+  const writePkg = (dir, manifest, files = {}) => {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'teleprompter.json'), JSON.stringify(manifest));
+    for (const [name, content] of Object.entries(files)) {
+      fs.writeFileSync(path.join(dir, name), content);
+    }
+  };
+  const sibling = path.join(root, 'hermano');
+  writePkg(path.join(root, 'a'), {
+    name: 'a', version: '1.0.0',
+    install: [{ source: 'a.conf', target: 'a.conf' }],
+    dependencies: [{ package: 'hermano', origin: { path: '../hermano' } }],
+  }, { 'a.conf': 'a=1\n' });
+  writePkg(sibling, {
+    name: 'hermano', version: '1.0.0',
+    install: [{ source: 'h.conf', target: 'h.conf' }],
+  }, { 'h.conf': 'h=1\n' });
+
+  const result = spawnSync(
+    process.execPath, [bin, 'install', '--path', path.join(root, 'a'), dest],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.indexOf('instalado: hermano') < result.stdout.indexOf('instalado: a'));
+  assert.equal(fs.readFileSync(path.join(dest, 'h.conf'), 'utf8'), 'h=1\n');
+  const lock = readLockFile(dest);
+  assert.deepEqual(lock.packages.hermano.origin, { type: 'path', path: sibling });
+});
