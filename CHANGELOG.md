@@ -7,10 +7,11 @@ y el proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-23
+
 ### Added
 
-- `install` instala también las piezas del mismo origen que el manifiesto declara en `dependencies`: el conjunto se resuelve transitivamente dentro del árbol obtenido —existencia, unión de restricciones de versión sobre cada pieza, ciclos con la ruta legible—, se ordena dependencia antes que dependiente y aborta entero sin escribir cuando es irresoluble; el campo admite una lista vacía y hace válido al paquete de composición pura sin `install` (docs/epics/011-dependencias-entre-paquetes.md).
-- La entrada de `dependencies` admite `origin` —`{ "repo": "o/r[@ref]" }` o `{ "path": "ruta" }`, relativa al paquete declarante y solo en árboles locales—: el conjunto se resuelve transitivamente a través de todos los orígenes involucrados —cada árbol externo se obtiene antes de verificar y planear, anclado a su commit resuelto—, selecciona miembros de colecciones ajenas por nombre, detecta ciclos que cruzan orígenes y conflictos de identidad nombre×origen, y registra cada unidad con su propio `origin` en el lock, reproducible por `reinstall` (docs/epics/011-dependencias-entre-paquetes.md).
+- `install` instala también las piezas que el manifiesto de un paquete declara en `dependencies` —restricción de versión opcional por entrada y `origin` opcional: `{ "repo": "o/r[@ref]" }`, `{ "path": "ruta" }` (local, relativa al paquete declarante y solo en árboles locales) o, sin `origin`, «del mismo árbol»—: el conjunto entero se resuelve transitivamente a través de todos los orígenes antes de verificar y planear —cada árbol externo anclado a su commit resuelto—, une las restricciones sobre cada pieza, selecciona miembros de colecciones ajenas por nombre, detecta ciclos —incluidos los que cruzan orígenes— y conflictos de identidad nombre×origen, y aborta sin escribir cuando es irresoluble; una lista vacía hace válido al paquete de composición pura sin `install` y cada unidad registra su `origin` propio en el lock, reproducible por `reinstall` (docs/epics/011-dependencias-entre-paquetes.md).
 - `reinstall` reinstala todo lo que el registro declara: reobtiene cada paquete anclado al `commit` que su `origin` registró —el árbol exacto que la instalación consumió, con re-resolución del miembro en colecciones—, muestra el plan del conjunto por unidad antes de decidir, resuelve las divergencias con la política compartida (`--force`/`--skip`, interactiva o listado con aborto) y reescribe cada entrada como una instalación —`origin` intacto, `installedAt` renovado—; una unidad ya conforme se anuncia sin acciones y una no reproducible se diagnostica con su motivo, sin escribir nada hasta que el conjunto entero se muestra ejecutable (docs/epics/010-reproduccion-destino.md).
 
 ## [0.6.0] - 2026-11-06
@@ -108,7 +109,8 @@ destino:
 - Especificación pública del formato de paquete y paquete de referencia
   `ciclo-tareas`.
 
-[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/nucleoabierto/teleprompter/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/nucleoabierto/teleprompter/compare/v0.3.0...v0.4.0
